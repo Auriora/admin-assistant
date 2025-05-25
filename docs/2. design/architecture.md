@@ -20,7 +20,7 @@ Admin Assistant is a modular, service-oriented web application designed to autom
 ```mermaid
 graph TD
     A[User] --> B[Flask Web App]
-    B --> C[UI (Bootstrap/Jinja2)]
+    B --> C[UI - Bootstrap/Jinja2]
     B --> D[Business Logic Services]
     D --> E[Calendar Service]
     D --> F[Timesheet Service]
@@ -45,11 +45,11 @@ graph TD
 ```mermaid
 graph LR
     subgraph User Environment
-        U[User (Browser)]
+        U[User - Browser]
     end
     subgraph Application Server
         FW[Flask Web App]
-        UI[UI Layer (Jinja2/Bootstrap)]
+        UI[UI Layer - Jinja2/Bootstrap]
         BL[Business Logic Layer]
         BG[Background Jobs]
         DB[(Database)]
