@@ -27,5 +27,49 @@ This file contains guidelines for AI-generated code in the `admin-assistant` pro
 - This file must be referenced in all AI code generation settings and updated as new requirements arise.
 - All code must comply with Microsoft 365 API usage policies and data privacy requirements.
 
+## Project Directory Structure & Frameworks
+- The project uses the following structure:
+
+```
+admin-assistant/
+│
+├── app/
+│   ├── __init__.py
+│   ├── models.py         # SQLAlchemy models
+│   ├── routes/
+│   │   ├── __init__.py
+│   │   └── main.py       # Flask routes/views
+│   ├── services/
+│   │   ├── __init__.py
+│   │   └── ...           # Business logic modules
+│   ├── templates/
+│   │   └── ...           # Jinja2 HTML templates (Bootstrap)
+│   ├── static/
+│   │   ├── css/
+│   │   │   └── bootstrap.min.css
+│   │   └── js/
+│   │       └── bootstrap.bundle.min.js
+│   └── config.py         # Configuration (env, DB, etc.)
+│
+├── tests/
+│   ├── __init__.py
+│   └── test_basic.py     # Pytest starter
+│
+├── migrations/           # For Alembic/Flask-Migrate (optional, for DB migrations)
+│
+├── .env                  # Environment variables (not committed)
+├── .gitignore
+├── requirements.txt
+├── run.py                # Entry point for Flask app
+│
+└── docs/                 # Documentation
+```
+
+- **Flask** is used as the web framework, following the application factory pattern for modularity and testability.
+- **Bootstrap** is used for responsive UI, included in the `static/` and `templates/` folders.
+- **SQLAlchemy** is used for ORM, with models defined in `app/models.py`.
+- **Pytest** is used for testing, with tests in the `tests/` directory.
+- **SQLite** is the default development database, configurable via `app/config.py`.
+
 ---
 _Last updated: [2025-05-25]_
