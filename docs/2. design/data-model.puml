@@ -1,0 +1,92 @@
+@startuml DataModel
+entity User {
+    * id : integer <<PK>>
+    * email : string <<U, unique>>
+    * name : string
+    * role : string
+    * is_active : boolean
+}
+
+entity Appointment {
+    * id : integer <<PK>>
+    * user_id : integer <<FK>>
+    * start_time : datetime
+    * end_time : datetime
+    * subject : string
+    * location_id : integer <<FK>>
+    * category_id : integer <<FK>>
+    * is_private : boolean
+    * is_archived : boolean
+    * is_out_of_office : boolean
+    * created_at : datetime
+    * updated_at : datetime
+}
+
+entity Location {
+    * id : integer <<PK>>
+    * name : string
+    * address : string
+    * user_id : integer <<FK>>
+}
+
+entity Category {
+    * id : integer <<PK>>
+    * name : string
+    * description : string
+    * user_id : integer <<FK>>
+}
+
+entity Timesheet {
+    * id : integer <<PK>>
+    * user_id : integer <<FK>>
+    * start_date : date
+    * end_date : date
+    * pdf_path : string
+    * csv_path : string
+    * excel_path : string
+    * uploaded_to_onedrive : boolean
+    * uploaded_to_xero : boolean
+    * created_at : datetime
+}
+
+entity AuditLog {
+    * id : integer <<PK>>
+    * user_id : integer <<FK>>
+    * action : string
+    * entity_type : string
+    * entity_id : integer
+    * timestamp : datetime
+    * details : text
+}
+
+entity Rule {
+    * id : integer <<PK>>
+    * user_id : integer <<FK>>
+    * name : string
+    * description : string
+    * rule_json : text
+    * created_at : datetime
+}
+
+entity Notification {
+    * id : integer <<PK>>
+    * user_id : integer <<FK>>
+    * message : string
+    * type : string
+    * is_read : boolean
+    * created_at : datetime
+}
+
+User ||--o{ Appointment : has
+User ||--o{ Location : has
+User ||--o{ Category : has
+User ||--o{ Timesheet : has
+User ||--o{ AuditLog : has
+User ||--o{ Rule : has
+User ||--o{ Notification : has
+
+Appointment }o--|| Location : at
+Appointment }o--|| Category : categorized_as
+Timesheet ||--o{ Appointment : includes
+
+@enduml 
