@@ -2,9 +2,59 @@
 
 This section provides a comprehensive framework for prioritizing requirements based on their importance, complexity, and value. Use this matrix to make informed decisions about what to implement and in what order.
 
+## Prioritization Matrix
+
+| Requirement ID | Priority (MoSCoW) | Complexity (1-5) | Value (1-5) | Value/Complexity Ratio | Implementation Order | Rationale/Notes |
+|----------------|-------------------|------------------|-------------|------------------------|----------------------|-----------------|
+| FR-CAL-001     | Must Have         | 3                | 5           | 1.67                   | 1                    | Core, but needs careful sync logic |
+| FR-CAL-002     | Should Have       | 1                | 3           | 3.0                    | 5                    | Simple UI/button |
+| FR-BIL-001     | Must Have         | 2                | 5           | 2.5                    | 2                    | High value, moderate effort |
+| FR-BIL-003     | Must Have         | 3                | 4           | 1.33                   | 3                    | PDF templating, moderate effort |
+| FR-BIL-004     | Must Have         | 3                | 4           | 1.33                   | 4                    | API integration |
+| FR-LOC-001     | Must Have         | 3                | 4           | 1.33                   | 6                    | Needs config, history logic |
+| FR-TRV-003     | Must Have         | 4                | 4           | 1.0                    | 7                    | API, time logic |
+| FR-CAT-001     | Must Have         | 4                | 5           | 1.25                   | 8                    | OpenAI integration, high value |
+| FR-PRI-001     | Must Have         | 2                | 4           | 2.0                    | 9                    | Simple rules |
+| FR-OOO-001     | Must Have         | 1                | 3           | 3.0                    | 10                   | Simple flag |
+| FR-RUL-001     | Must Have         | 3                | 4           | 1.33                   | 11                   | UI + logic |
+| FR-UI-001      | Must Have         | 3                | 5           | 1.67                   | 12                   | Core, moderate effort |
+| FR-AUD-001     | Should Have       | 2                | 3           | 1.5                    | 13                   | Logging |
+| FR-NOT-001     | Should Have       | 2                | 3           | 1.5                    | 14                   | Email/in-app |
+| FR-EXP-001     | Should Have       | 2                | 3           | 1.5                    | 15                   | Add-on to PDF |
+| FR-MUL-001     | Could Have        | 4                | 2           | 0.5                    | 16                   | Future-proofing |
+| FR-ROL-001     | Could Have        | 4                | 2           | 0.5                    | 17                   | Future-proofing |
+| FR-AI-001      | Must Have         | 4                | 5           | 1.25                   | 18                   | High value, moderate/hard effort |
+| NFR-SEC-001    | Must Have         | 3                | 5           | 1.67                   | 1                    | Core, must-have |
+| NFR-REL-001    | Must Have         | 3                | 5           | 1.67                   | 1                    | Core, must-have |
+| NFR-PERF-001   | Must Have         | 3                | 4           | 1.33                   | 1                    | Core, must-have |
+| NFR-USE-001    | Must Have         | 2                | 5           | 2.5                    | 2                    | High value |
+| NFR-MNT-001    | Must Have         | 2                | 5           | 2.5                    | 2                    | High value |
+| NFR-AUD-001    | Must Have         | 2                | 4           | 2.0                    | 3                    | Compliance |
+| NFR-COM-001    | Must Have         | 3                | 5           | 1.67                   | 1                    | Must-have |
+| NFR-BKP-001    | Must Have         | 3                | 4           | 1.33                   | 3                    | Must-have |
+| NFR-AI-001     | Must Have         | 3                | 5           | 1.67                   | 8                    | Must-have |
+
+## Rationale
+- Requirements with the highest value and lowest complexity are prioritized first.
+- Core security, reliability, compliance, and maintainability are implemented before advanced features.
+- Features that are provisions for future scalability (multi-user, roles) are lower priority.
+- AI-powered features are prioritized after core and UI features are stable.
+
+## Implementation Order
+1. Core Security, Reliability, Compliance, and Maintainability (NFR-SEC-001, NFR-REL-001, NFR-COM-001, NFR-MNT-001, NFR-PERF-001)
+2. UI Foundation and Usability (NFR-USE-001, FR-UI-001)
+3. Archiving and Timesheet Core (FR-CAL-001, FR-BIL-001, FR-BIL-003, FR-BIL-004)
+4. Privacy and Out-of-Office (FR-PRI-001, FR-OOO-001)
+5. Location and Travel (FR-LOC-001, FR-TRV-003)
+6. AI/Rules Integration (FR-CAT-001, FR-AI-001, FR-RUL-001, FR-AI-002, NFR-AI-001)
+7. Audit, Notification, Export, Backup (FR-AUD-001, FR-NOT-001, FR-EXP-001, NFR-AUD-001, NFR-BKP-001)
+8. Multi-user/Role Provisions (FR-MUL-001, FR-ROL-001)
+
+See the table above for detailed rationale and value/complexity analysis for each requirement.
+
 ## How to Use This Matrix
 
-1. **List all requirements** in the table below, using their unique IDs
+1. **List all requirements** in the table above, using their unique IDs
 2. **Assign a MoSCoW priority** to each requirement:
    - **Must Have**: Critical requirements without which the system will not function
    - **Should Have**: Important requirements that should be included if possible
@@ -30,12 +80,6 @@ This section provides a comprehensive framework for prioritizing requirements ba
    - Value/Complexity ratio (higher ratios should generally be implemented earlier)
    - Dependencies between requirements
 7. **Document your rationale** for prioritization decisions
-
-## Prioritization Matrix Template
-
-| Requirement ID | Priority (MoSCoW) | Complexity (1-5) | Value (1-5) | Value/Complexity Ratio | Implementation Order | Rationale/Notes |
-|----------------|-------------------|------------------|-------------|------------------------|----------------------|-----------------|
-| <ID>           | <Priority>        | <Complexity>     | <Value>     | <Ratio>                | <Order>              | <Notes>         |
 
 ## Prioritization Strategies
 

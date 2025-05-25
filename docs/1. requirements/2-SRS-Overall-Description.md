@@ -6,7 +6,7 @@ Admin Assistant is a web application designed for professionals who rely on Micr
 
 ## 2.1 Product Perspective
 
-Admin Assistant operates as a standalone web application, integrating directly with the user's Microsoft 365 account using the Microsoft Graph API. It interacts with external services such as OneDrive, Xero, and Google Directions API for document storage, billing, and travel time estimation, respectively. The system is designed to be extensible for future integration with additional services and multi-user environments.
+Admin Assistant operates as a standalone web application, integrating directly with the user's Microsoft 365 account using the Microsoft Graph API. It interacts with external services such as OneDrive, Xero, Google Directions API, and OpenAI for document storage, billing, travel time estimation, and AI-powered recommendations and automation, respectively. The system is designed to be extensible for future integration with additional services and multi-user environments.
 
 ## 2.2 Product Functions
 
@@ -19,6 +19,7 @@ Admin Assistant operates as a standalone web application, integrating directly w
 - Appointment categorization and privacy management
 - Out-of-Office automation
 - Rules and guidelines management for recommendations
+- AI-powered recommendations and automation using OpenAI
 - User interface for interaction and management
 - Audit logging and notifications
 - Data export in PDF, CSV, and Excel formats
@@ -37,12 +38,16 @@ The following constraints affect the design and implementation of the Admin Assi
 
 - Must use Microsoft Graph API for calendar access
 - Must use Microsoft authentication
-- Must support integration with OneDrive, Xero, and Google Directions API
+- Must support integration with OneDrive, Xero, Google Directions API, and OpenAI
 
 ### Technology Stack Constraints
 
-- Web application (framework TBD)
-- Must be deployable on standard cloud or on-premise infrastructure
+- The project will be implemented in **Python** using the **Flask** web framework.
+- **Bootstrap** will be used for layout and graphics, integrated via **Flask-Bootstrap** or **Flask-Bootstrap4**.
+- Flask's Jinja2 templating engine will be used for dynamic HTML generation.
+- Flask extensions may be used for authentication, forms, and other features as needed.
+- The system must be deployable on standard cloud or on-premise infrastructure.
+- **Alternative:** For future scalability or if a more full-featured framework is required, **Django** (with django-crispy-forms and django-bootstrap4) may be considered.
 
 ### Business Constraints
 

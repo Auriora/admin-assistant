@@ -1,0 +1,440 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="800"
+   height="420"
+   version="1.1"
+   id="svg33"
+   sodipodi:docname="prioritization-matrix.svg"
+   inkscape:version="1.4.2 (ebf0e940d0, 2025-05-08)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs33" />
+  <sodipodi:namedview
+     id="namedview33"
+     pagecolor="#000000"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="1.0571429"
+     inkscape:cx="341.01351"
+     inkscape:cy="68.108108"
+     inkscape:window-width="1920"
+     inkscape:window-height="1132"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg33" />
+  <style
+     id="style1">
+    .axis { stroke: #333; stroke-width: 2; }
+    .grid { stroke: #ccc; stroke-dasharray: 2 2; }
+    .label { font: 14px sans-serif; }
+    .point { stroke: #222; stroke-width: 1; }
+    .legend { font: 13px sans-serif; }
+  </style>
+  <!-- Axes -->
+  <line
+     x1="76"
+     y1="350"
+     x2="616"
+     y2="350"
+     class="axis"
+     id="line1" />
+  <line
+     x1="76"
+     y1="350"
+     x2="76"
+     y2="50"
+     class="axis"
+     id="line2" />
+  <!-- Grid lines and labels -->
+  <!-- Complexity (X) -->
+  <g
+     id="g10"
+     transform="translate(16)">
+    <text
+       x="60"
+       y="370"
+       class="label"
+       text-anchor="middle"
+       id="text2"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:14px;line-height:normal;font-family:sans-serif">1</text>
+    <text
+       x="180"
+       y="370"
+       class="label"
+       text-anchor="middle"
+       id="text3"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:14px;line-height:normal;font-family:sans-serif">2</text>
+    <text
+       x="300"
+       y="370"
+       class="label"
+       text-anchor="middle"
+       id="text4"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:14px;line-height:normal;font-family:sans-serif">3</text>
+    <text
+       x="420"
+       y="370"
+       class="label"
+       text-anchor="middle"
+       id="text5"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:14px;line-height:normal;font-family:sans-serif">4</text>
+    <text
+       x="540"
+       y="370"
+       class="label"
+       text-anchor="middle"
+       id="text6"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:14px;line-height:normal;font-family:sans-serif">5</text>
+    <text
+       x="330"
+       y="400"
+       class="label"
+       text-anchor="middle"
+       id="text7"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:14px;line-height:normal;font-family:sans-serif">Complexity (1 = easy, 5 = hard)</text>
+    <line
+       x1="180"
+       y1="350"
+       x2="180"
+       y2="50"
+       class="grid"
+       id="line7" />
+    <line
+       x1="300"
+       y1="350"
+       x2="300"
+       y2="50"
+       class="grid"
+       id="line8" />
+    <line
+       x1="420"
+       y1="350"
+       x2="420"
+       y2="50"
+       class="grid"
+       id="line9" />
+    <line
+       x1="540"
+       y1="350"
+       x2="540"
+       y2="50"
+       class="grid"
+       id="line10" />
+  </g>
+  <!-- Value (Y) -->
+  <g
+     id="g18"
+     style="fill:#ffffff;fill-opacity:1"
+     transform="translate(16)">
+    <text
+       x="40"
+       y="350"
+       class="label"
+       text-anchor="end"
+       id="text10"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:14px;line-height:normal;font-family:sans-serif;fill:#ffffff;fill-opacity:1">1</text>
+    <text
+       x="40"
+       y="275"
+       class="label"
+       text-anchor="end"
+       id="text11"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:14px;line-height:normal;font-family:sans-serif;fill:#ffffff;fill-opacity:1">2</text>
+    <text
+       x="40"
+       y="200"
+       class="label"
+       text-anchor="end"
+       id="text12"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:14px;line-height:normal;font-family:sans-serif;fill:#ffffff;fill-opacity:1">3</text>
+    <text
+       x="40"
+       y="125"
+       class="label"
+       text-anchor="end"
+       id="text13"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:14px;line-height:normal;font-family:sans-serif;fill:#ffffff;fill-opacity:1">4</text>
+    <text
+       x="40"
+       y="50"
+       class="label"
+       text-anchor="end"
+       id="text14"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:14px;line-height:normal;font-family:sans-serif;fill:#ffffff;fill-opacity:1">5</text>
+    <text
+       x="10"
+       y="200"
+       class="label"
+       text-anchor="middle"
+       transform="rotate(-90,10,200)"
+       id="text15"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:14px;line-height:normal;font-family:sans-serif;fill:#ffffff;fill-opacity:1">Value (1 = low, 5 = high)</text>
+    <line
+       x1="60"
+       y1="275"
+       x2="600"
+       y2="275"
+       class="grid"
+       id="line15"
+       style="fill:#ffffff;fill-opacity:1" />
+    <line
+       x1="60"
+       y1="200"
+       x2="600"
+       y2="200"
+       class="grid"
+       id="line16"
+       style="fill:#ffffff;fill-opacity:1" />
+    <line
+       x1="60"
+       y1="125"
+       x2="600"
+       y2="125"
+       class="grid"
+       id="line17"
+       style="fill:#ffffff;fill-opacity:1" />
+    <line
+       x1="60"
+       y1="50"
+       x2="600"
+       y2="50"
+       class="grid"
+       id="line18"
+       style="fill:#ffffff;fill-opacity:1" />
+  </g>
+  <!-- Points (Requirement IDs) -->
+  <!-- (x = 60 + (complexity-1)*120, y = 350 - (value-1)*75) -->
+  <!-- High priority: blue, medium: orange, low: gray -->
+  <!-- Example: FR-BIL-001 (Complexity 2, Value 5, Order 2) -->
+  <circle
+     cx="196"
+     cy="50"
+     r="16"
+     fill="#1f77b4"
+     class="point"
+     id="circle18" />
+  <text
+     x="196"
+     y="55"
+     text-anchor="middle"
+     fill="#ffffff"
+     font-size="12px"
+     id="text18">FR-BIL-001</text>
+  <circle
+     cx="196"
+     cy="125"
+     r="14"
+     fill="#1f77b4"
+     class="point"
+     id="circle20" />
+  <text
+     x="196"
+     y="130"
+     text-anchor="middle"
+     fill="#ffffff"
+     font-size="11px"
+     id="text20">NFR-USE-001</text>
+  <circle
+     cx="196"
+     cy="200"
+     r="14"
+     fill="#1f77b4"
+     class="point"
+     id="circle21" />
+  <text
+     x="196"
+     y="205"
+     text-anchor="middle"
+     fill="#ffffff"
+     font-size="11px"
+     id="text21">NFR-MNT-001</text>
+  <circle
+     cx="316"
+     cy="125"
+     r="14"
+     fill="#1f77b4"
+     class="point"
+     id="circle24" />
+  <text
+     x="316"
+     y="130"
+     text-anchor="middle"
+     fill="#ffffff"
+     font-size="11px"
+     id="text24">NFR-COM-001</text>
+  <circle
+     cx="316"
+     cy="200"
+     r="12"
+     fill="#ff7f0e"
+     class="point"
+     id="circle25" />
+  <text
+     x="316"
+     y="205"
+     text-anchor="middle"
+     fill="#ffffff"
+     font-size="10px"
+     id="text25">FR-CAL-001</text>
+  <circle
+     cx="436"
+     cy="50"
+     r="12"
+     fill="#ff7f0e"
+     class="point"
+     id="circle26" />
+  <text
+     x="436"
+     y="55"
+     text-anchor="middle"
+     fill="#ffffff"
+     font-size="10px"
+     id="text26">FR-AI-001</text>
+  <circle
+     cx="436"
+     cy="125"
+     r="12"
+     fill="#ff7f0e"
+     class="point"
+     id="circle27" />
+  <text
+     x="436"
+     y="130"
+     text-anchor="middle"
+     fill="#ffffff"
+     font-size="10px"
+     id="text27">FR-CAT-001</text>
+  <circle
+     cx="436"
+     cy="200"
+     r="10"
+     fill="#ff7f0e"
+     class="point"
+     id="circle28" />
+  <text
+     x="436"
+     y="205"
+     text-anchor="middle"
+     fill="#ffffff"
+     font-size="9px"
+     id="text28">FR-TRV-003</text>
+  <circle
+     cx="556"
+     cy="50"
+     r="10"
+     fill="#bbbbbb"
+     class="point"
+     id="circle29" />
+  <text
+     x="556"
+     y="55"
+     text-anchor="middle"
+     fill="#ffffff"
+     font-size="9px"
+     id="text29">FR-MUL-001</text>
+  <circle
+     cx="556"
+     cy="125"
+     r="10"
+     fill="#bbbbbb"
+     class="point"
+     id="circle30" />
+  <text
+     x="556"
+     y="130"
+     text-anchor="middle"
+     fill="#ffffff"
+     font-size="9px"
+     id="text30">FR-ROL-001</text>
+  <!-- Add more points as needed for your requirements -->
+  <!-- Legend -->
+  <rect
+     x="636"
+     y="60"
+     width="18"
+     height="18"
+     fill="#1f77b4"
+     id="rect30" />
+  <text
+     x="661"
+     y="74"
+     class="legend"
+     id="text31"
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:13px;line-height:normal;font-family:sans-serif;fill:#ffffff;fill-opacity:1">High Priority</text>
+  <rect
+     x="636"
+     y="90"
+     width="18"
+     height="18"
+     fill="#ff7f0e"
+     id="rect31" />
+  <text
+     x="661"
+     y="104"
+     class="legend"
+     id="text32"
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:13px;line-height:normal;font-family:sans-serif;fill:#ffffff;fill-opacity:1">Medium Priority</text>
+  <rect
+     x="636"
+     y="120"
+     width="18"
+     height="18"
+     fill="#bbbbbb"
+     id="rect32" />
+  <text
+     x="661"
+     y="134"
+     class="legend"
+     id="text33"
+     style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:13px;line-height:normal;font-family:sans-serif;fill:#ffffff;fill-opacity:1">Low Priority</text>
+  <circle
+     cx="316"
+     cy="50"
+     r="16"
+     fill="#1f77b4"
+     class="point"
+     id="circle19" />
+  <circle
+     cx="316"
+     cy="50"
+     r="14"
+     fill="#1f77b4"
+     class="point"
+     id="circle22" />
+  <circle
+     cx="316"
+     cy="50"
+     r="14"
+     fill="#1f77b4"
+     class="point"
+     id="circle23" />
+  <text
+     x="316"
+     y="65"
+     text-anchor="middle"
+     fill="#ffffff"
+     font-size="11px"
+     id="text23">NFR-REL-001</text>
+  <text
+     x="316"
+     y="55"
+     text-anchor="middle"
+     fill="#ffffff"
+     font-size="12px"
+     id="text19">FR-UI-001</text>
+  <text
+     x="316"
+     y="45"
+     text-anchor="middle"
+     fill="#ffffff"
+     font-size="11px"
+     id="text22">NFR-SEC-001</text>
+</svg>
