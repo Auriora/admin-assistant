@@ -1,5 +1,7 @@
 # GPT AI Code Generation Guidelines
 
+> **Note:** In addition to the SRS found in `docs/1. requirements/`, all AI-generated code and documentation must align with the design documentation found in `docs/2. design/`.
+
 This file contains guidelines for AI-generated code in the `admin-assistant` project. All contributors and AI agents must adhere to these standards to ensure maintainability, clarity, and quality. This file must be updated as new requirements or conventions are established.
 
 ## General Principles
@@ -18,10 +20,10 @@ This file contains guidelines for AI-generated code in the `admin-assistant` pro
 - **Performance awareness**: Write efficient code and avoid unnecessary computations or memory usage.
 - **Accessibility**: Where applicable, ensure user-facing features are accessible.
 
-## SRS Alignment
-- **All AI-generated code and documentation must align with the current Software Requirements Specification (SRS) for the project.**
-- The SRS defines the authoritative requirements, use cases, and constraints. Any generated code must directly support and not contradict the SRS.
-- When the SRS is updated, these guidelines and all generated code must be reviewed for continued compliance.
+## SRS and Design Alignment
+- **All AI-generated code and documentation must align with the current Software Requirements Specification (SRS) in `docs/1. requirements/.**` and the design documentation in `docs/2. design/.**`
+- The SRS defines the authoritative requirements, use cases, and constraints. The design documentation provides architectural, data model, and feature-specific design details. Any generated code must directly support and not contradict the SRS or design documentation.
+- When the SRS or design documentation is updated, these guidelines and all generated code must be reviewed for continued compliance.
 
 ## Project-Specific Notes
 - This file must be referenced in all AI code generation settings and updated as new requirements arise.
