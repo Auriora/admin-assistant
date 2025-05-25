@@ -4,6 +4,12 @@ SQLAlchemy models for Admin Assistant.
 from app import db
 from sqlalchemy.orm import relationship
 from datetime import datetime, date
+from sqlalchemy_utils import EncryptedType
+from sqlalchemy_utils.types.encrypted.encrypted_type import AesEngine
+import os
+
+# Key for encryption (should be stored securely in production)
+ENCRYPTION_KEY = os.environ.get('ENCRYPTION_KEY', 'devkeydevkeydevkeydevkey')
 
 class User(db.Model):
     __tablename__ = 'users'
@@ -12,6 +18,9 @@ class User(db.Model):
     name = db.Column(db.String)
     role = db.Column(db.String)
     is_active = db.Column(db.Boolean, default=True)
+    ms_access_token = db.Column(EncryptedType(db.String, ENCRYPTION_KEY, AesEngine, 'pkcs5'), nullable=True)
+    ms_refresh_token = db.Column(EncryptedType(db.String, ENCRYPTION_KEY, AesEngine, 'pkcs5'), nullable=True)
+    ms_token_expires_at = db.Column(db.DateTime, nullable=True)
 
     appointments = db.relationship('Appointment', back_populates='user')
     locations = db.relationship('Location', back_populates='user')

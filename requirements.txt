@@ -3,3 +3,13 @@ Flask-SQLAlchemy>=3.0
 Flask-Migrate>=4.0
 pytest>=7.0
 # Bootstrap is included via static files or CDN
+# Microsoft Graph API
+msgraph-sdk
+# Xero API (official SDK)
+xero-python
+# OpenAI API
+openai
+# Google Maps Directions API
+googlemaps
+# For encrypted fields in SQLAlchemy models
+sqlalchemy-utils>=0.41.1
