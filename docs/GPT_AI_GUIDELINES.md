@@ -21,7 +21,7 @@ This file contains guidelines for AI-generated code in the `admin-assistant` pro
 - **Type annotations**: All functions and methods must include type hints for parameters and return values.
 
 ## SRS and Design Alignment
-- **All AI-generated code and documentation must align with the current Software Requirements Specification (SRS) in `docs/1. requirements/.**` and the design documentation in `docs/2. design/.**`
+- **All AI-generated code and documentation must align with the current Software Requirements Specification (SRS) in `docs/1-requirements/.**` and the design documentation in `docs/2-design/.**`
 - The SRS defines the authoritative requirements, use cases, and constraints. The design documentation provides architectural, data model, and feature-specific design details. Any generated code must directly support and not contradict the SRS or design documentation.
 - When the SRS or design documentation is updated, these guidelines and all generated code must be reviewed for continued compliance.
 
