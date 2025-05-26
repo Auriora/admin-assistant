@@ -39,3 +39,5 @@ migrations/
 
 # VS Code
 .vscode/ 
+
+logs/
