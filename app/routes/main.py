@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, redirect, request, session, url_for, flash, jsonify
 from app.services import msgraph
-from app.models import db, User, Notification
+from app.models import db, User, Notification, NotificationPreference, NotificationClass
 from datetime import datetime, timedelta
 from app.services.msgraph import MsAuthError
 from flask import current_app
@@ -8,6 +8,8 @@ from flask_login import login_user, logout_user, login_required, current_user
 import requests
 from app.services.calendar_service import CalendarService
 from typing import cast
+from flask import abort
+from sqlalchemy import desc
 
 main_bp = Blueprint('main', __name__)
 
@@ -86,7 +88,7 @@ def ms365_calendar():
         flash('Please authenticate with Microsoft 365 first.', 'warning')
         return redirect(url_for('main.index'))
     try:
-        session_obj = msgraph.get_authenticated_session_for_user(user)
+        session_obj = msgraph.get_authenticated_session_for_user(user)  
         current_app.logger.info(f"User {user.email} accessed calendar successfully.")
         # Placeholder: fetch calendar events here using session_obj
         return 'Authenticated with Microsoft 365! Calendar access ready.'
@@ -109,6 +111,13 @@ def logout():
     flash('You have been logged out.', 'info')
     return redirect(url_for('main.index'))
 
+def get_user_notification_channel(user_id, notification_class):
+    pref = NotificationPreference.query.filter_by(user_id=user_id, notification_class=notification_class).first()
+    if pref:
+        return pref.channel
+    # Default logic: can be 'toast', 'email', 'both', or 'none'
+    return 'toast'
+
 @main_bp.route('/archive/now', methods=['POST'])
 @login_required
 def archive_now():
@@ -122,6 +131,19 @@ def archive_now():
         today = datetime.utcnow().date()
         appointments = CalendarService.fetch_appointments_from_ms365(user, today)
         result = CalendarService.archive_appointments(user, appointments)
+        # Example: create a notification using user preferences
+        channel = get_user_notification_channel(user.id, 'account_activity')
+        notif = Notification(
+            user_id=user.id,
+            message='Archive process started.',
+            type='archive',
+            channel=channel,
+            state='in-progress',
+            pct_complete=0,
+            progress='Starting archive...'
+        )
+        db.session.add(notif)
+        db.session.commit()
         if result["errors"]:
             current_app.logger.error(f"Manual archive errors: {result['errors']}")
             return jsonify({"status": "error", "message": "Archive failed.", "details": result["errors"]}), 500
@@ -139,7 +161,7 @@ def get_notifications():
     Return the current user's notifications as JSON, ordered by created_at descending.
     """
     user = cast(User, current_user)
-    notifications = Notification.query.filter_by(user_id=user.id).order_by(Notification.created_at.desc()).all()
+    notifications = Notification.query.filter_by(user_id=user.id).order_by(desc(Notification.created_at)).all()
     return jsonify([
         {
             'id': n.id,
@@ -165,4 +187,87 @@ def mark_notification_read(notification_id):
         return jsonify({'success': False, 'error': 'Notification not found'}), 404
     notification.is_read = True
     db.session.commit()
-    return jsonify({'success': True}) 
+    return jsonify({'success': True})
+
+@main_bp.route('/notification-preferences', methods=['GET'])
+@login_required
+def get_notification_preferences():
+    user = cast(User, current_user)
+    prefs = NotificationPreference.query.filter_by(user_id=user.id).all()
+    return jsonify([
+        {
+            'id': p.id,
+            'notification_class': p.notification_class,
+            'channel': p.channel
+        }
+        for p in prefs
+    ])
+
+@main_bp.route('/admin/notification-classes', methods=['GET'])
+@login_required
+def list_notification_classes():
+    classes = NotificationClass.query.all()
+    return jsonify([
+        {'id': c.id, 'key': c.key, 'label': c.label, 'description': c.description}
+        for c in classes
+    ])
+
+@main_bp.route('/admin/notification-classes', methods=['POST'])
+@login_required
+def create_notification_class():
+    data = request.get_json()
+    key = data.get('key')
+    label = data.get('label')
+    description = data.get('description')
+    if not key or not label:
+        return jsonify({'success': False, 'error': 'Missing key or label'}), 400
+    if NotificationClass.query.filter_by(key=key).first():
+        return jsonify({'success': False, 'error': 'Key already exists'}), 400
+    nc = NotificationClass(key=key, label=label, description=description)
+    db.session.add(nc)
+    db.session.commit()
+    return jsonify({'success': True, 'id': nc.id, 'key': nc.key, 'label': nc.label, 'description': nc.description})
+
+@main_bp.route('/admin/notification-classes/<int:class_id>', methods=['PUT'])
+@login_required
+def update_notification_class(class_id):
+    nc = NotificationClass.query.get_or_404(class_id)
+    data = request.get_json()
+    nc.label = data.get('label', nc.label)
+    nc.description = data.get('description', nc.description)
+    db.session.commit()
+    return jsonify({'success': True, 'id': nc.id, 'key': nc.key, 'label': nc.label, 'description': nc.description})
+
+@main_bp.route('/admin/notification-classes/<int:class_id>', methods=['DELETE'])
+@login_required
+def delete_notification_class(class_id):
+    nc = NotificationClass.query.get_or_404(class_id)
+    db.session.delete(nc)
+    db.session.commit()
+    return jsonify({'success': True})
+
+@main_bp.route('/notification-preferences', methods=['POST'])
+@login_required
+def set_notification_preference():
+    user = cast(User, current_user)
+    data = request.get_json()
+    notification_class = data.get('notification_class')
+    channel = data.get('channel')
+    if not notification_class or not channel:
+        return jsonify({'success': False, 'error': 'Missing notification_class or channel'}), 400
+    # Backend validation for allowed notification classes
+    if not NotificationClass.query.filter_by(key=notification_class).first():
+        return jsonify({'success': False, 'error': 'Invalid notification_class'}), 400
+    pref = NotificationPreference.query.filter_by(user_id=user.id, notification_class=notification_class).first()
+    if pref:
+        pref.channel = channel
+    else:
+        pref = NotificationPreference(user_id=user.id, notification_class=notification_class, channel=channel)
+        db.session.add(pref)
+    db.session.commit()
+    return jsonify({'success': True, 'id': pref.id, 'notification_class': pref.notification_class, 'channel': pref.channel})
+
+@main_bp.route('/settings')
+@login_required
+def settings():
+    return render_template('home/settings.html', user=current_user) 

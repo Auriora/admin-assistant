@@ -214,44 +214,21 @@
             </div>
             <div class="card card-body border-0 shadow mb-4 mb-xl-0">
                 <h2 class="h5 mb-4">Alerts & Notifications</h2>
-                <ul class="list-group list-group-flush">
-                    <li class="list-group-item d-flex align-items-center justify-content-between px-0 border-bottom">
-                        <div>
-                            <h3 class="h6 mb-1">Company News</h3>
-                            <p class="small pe-4">Get Rocket news, announcements, and product updates</p>
-                        </div>
-                        <div>
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" id="user-notification-1">
-                                <label class="form-check-label" for="user-notification-1"></label>
-                            </div>
-                        </div>
-                    </li>
-                    <li class="list-group-item d-flex align-items-center justify-content-between px-0 border-bottom">
-                        <div>
-                            <h3 class="h6 mb-1">Account Activity</h3>
-                            <p class="small pe-4">Get important notifications about you or activity you've missed</p>
-                        </div>
-                        <div>
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" id="user-notification-2" checked>
-                                <label class="form-check-label" for="user-notification-2"></label>
-                            </div>                                            
-                        </div>
-                    </li>
-                    <li class="list-group-item d-flex align-items-center justify-content-between px-0">
-                        <div>
-                            <h3 class="h6 mb-1">Meetups Near You</h3>
-                            <p class="small pe-4">Get an email when a Dribbble Meetup is posted close to my location</p>
-                        </div>
-                        <div>
-                            <div class="form-check form-switch">
-                                <input class="form-check-input" type="checkbox" id="user-notification-3" checked>
-                                <label class="form-check-label" for="user-notification-3"></label>
-                            </div> 
-                        </div>
-                    </li>
-                </ul>
+                <div id="notification-preferences-container">
+                  <table class="table table-sm align-middle mb-0" id="notification-preferences-table">
+                    <thead>
+                      <tr>
+                        <th>Notification Class</th>
+                        <th>Channel</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <!-- Preferences will be injected here by JS -->
+                    </tbody>
+                  </table>
+                  <div id="notification-preferences-empty" class="text-center text-muted py-4" style="display:none;">No notification classes available</div>
+                </div>
             </div>
         </div>
         <div class="col-12 col-xl-4">
@@ -331,4 +308,78 @@
 {% endblock content %}
 
 <!-- Specific Page JS goes HERE  -->
-{% block javascripts %}{% endblock javascripts %}
+{% block javascripts %}
+{{ super() }}
+<script>
+const NOTIFICATION_CLASSES = [
+  // This should be kept in sync with backend/allowed classes
+  { key: 'company_news', label: 'Company News' },
+  { key: 'account_activity', label: 'Account Activity' },
+  { key: 'meetups_near_you', label: 'Meetups Near You' },
+  // Add more as needed or fetch from admin API
+];
+const CHANNEL_OPTIONS = [
+  { value: 'toast', label: 'Toast' },
+  { value: 'email', label: 'Email' },
+  { value: 'both', label: 'Both' },
+  { value: 'none', label: 'None' },
+];
+async function fetchNotificationPreferences() {
+  const resp = await fetch('/notification-preferences');
+  if (!resp.ok) throw new Error('Failed to fetch preferences');
+  return await resp.json();
+}
+function renderPreferencesTable(prefs) {
+  const table = document.getElementById('notification-preferences-table').querySelector('tbody');
+  const empty = document.getElementById('notification-preferences-empty');
+  table.innerHTML = '';
+  let hasRows = false;
+  NOTIFICATION_CLASSES.forEach(cls => {
+    const pref = prefs.find(p => p.notification_class === cls.key);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${cls.label}</td>
+      <td>
+        <select class="form-select form-select-sm channel-select" data-class="${cls.key}">
+          ${CHANNEL_OPTIONS.map(opt => `<option value="${opt.value}"${pref && pref.channel === opt.value ? ' selected' : ''}>${opt.label}</option>`).join('')}
+        </select>
+      </td>
+      <td><span class="text-success">${pref ? 'Saved' : 'Default'}</span></td>
+    `;
+    table.appendChild(tr);
+    hasRows = true;
+  });
+  empty.style.display = hasRows ? 'none' : '';
+  // Add event listeners
+  table.querySelectorAll('.channel-select').forEach(sel => {
+    sel.addEventListener('change', async function() {
+      const notification_class = this.getAttribute('data-class');
+      const channel = this.value;
+      this.disabled = true;
+      try {
+        const resp = await fetch('/notification-preferences', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ notification_class, channel })
+        });
+        if (!resp.ok) throw new Error('Failed to update');
+        this.closest('tr').querySelector('td:last-child span').textContent = 'Saved';
+      } catch {
+        this.closest('tr').querySelector('td:last-child span').textContent = 'Error';
+      } finally {
+        this.disabled = false;
+      }
+    });
+  });
+}
+document.addEventListener('DOMContentLoaded', async function() {
+  try {
+    const prefs = await fetchNotificationPreferences();
+    renderPreferencesTable(prefs);
+  } catch {
+    document.getElementById('notification-preferences-empty').textContent = 'Failed to load preferences';
+    document.getElementById('notification-preferences-empty').style.display = '';
+  }
+});
+</script>
+{% endblock javascripts %}

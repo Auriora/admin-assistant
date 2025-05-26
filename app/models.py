@@ -31,6 +31,7 @@ class User(UserMixin, db.Model):
     audit_logs = db.relationship('AuditLog', back_populates='user')
     rules = db.relationship('Rule', back_populates='user')
     notifications = db.relationship('Notification', back_populates='user')
+    notification_preferences = db.relationship('NotificationPreference', back_populates='user')
 
 class Location(db.Model):
     __tablename__ = 'locations'
@@ -126,4 +127,39 @@ class Notification(db.Model):
     is_read = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    user = db.relationship('User', back_populates='notifications') 
+    user = db.relationship('User', back_populates='notifications')
+
+    def __init__(self, **kwargs):
+        for field in ['user_id', 'message', 'type', 'channel', 'transaction_id', 'pct_complete', 'progress', 'state', 'is_read', 'created_at']:
+            if field in kwargs:
+                setattr(self, field, kwargs[field])
+        if not hasattr(self, 'created_at') or self.created_at is None:
+            self.created_at = datetime.utcnow()
+
+class NotificationClass(db.Model):
+    __tablename__ = 'notification_classes'
+    id = db.Column(db.Integer, primary_key=True)
+    key = db.Column(db.String, unique=True, nullable=False)
+    label = db.Column(db.String, nullable=False)
+    description = db.Column(db.String, nullable=True)
+    preferences = db.relationship('NotificationPreference', back_populates='notification_class_obj')
+
+    def __init__(self, **kwargs):
+        for field in ['key', 'label', 'description']:
+            if field in kwargs:
+                setattr(self, field, kwargs[field])
+
+class NotificationPreference(db.Model):
+    __tablename__ = 'notification_preferences'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    notification_class = db.Column(db.String, db.ForeignKey('notification_classes.key'), nullable=False)
+    channel = db.Column(db.String, nullable=False)  # 'toast', 'email', 'both', 'none'
+
+    user = db.relationship('User', back_populates='notification_preferences')
+    notification_class_obj = db.relationship('NotificationClass', back_populates='preferences')
+
+    def __init__(self, **kwargs):
+        for field in ['user_id', 'notification_class', 'channel']:
+            if field in kwargs:
+                setattr(self, field, kwargs[field]) 
