@@ -38,3 +38,5 @@ instance/
 .vscode/ 
 
 logs/
+
+.venv/
