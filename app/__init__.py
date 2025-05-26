@@ -9,7 +9,13 @@ migrate = Migrate()
 
 def create_app():
     app = Flask(__name__)
-    app.config.from_object('app.config.Config')
+    env = os.environ.get('APP_ENV', 'development').lower()
+    if env == 'production':
+        app.config.from_object('app.config.ProductionConfig')
+    elif env == 'testing':
+        app.config.from_object('app.config.TestingConfig')
+    else:
+        app.config.from_object('app.config.DevelopmentConfig')
 
     db.init_app(app)
     migrate.init_app(app, db)

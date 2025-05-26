@@ -8,4 +8,20 @@ class Config:
     MS_CLIENT_ID = os.environ.get('MS_CLIENT_ID', 'e255aab8-b12b-434f-ba9c-979f06b46fc0')
     MS_CLIENT_SECRET = os.environ.get('MS_CLIENT_SECRET')
     MS_TENANT_ID = os.environ.get('MS_TENANT_ID', 'b7f5c5a6-16cd-4ef1-a3a7-aaa22266ddcb')
-    MS_REDIRECT_URI = os.environ.get('MS_REDIRECT_URI', 'http://localhost:5000/ms365/auth/callback') 
+    MS_REDIRECT_URI = os.environ.get('MS_REDIRECT_URI', 'http://localhost:5000/ms365/auth/callback')
+    LOG_LEVEL = os.environ.get('LOG_LEVEL', 'WARNING')
+    DEBUG = False
+
+class DevelopmentConfig(Config):
+    DEBUG = True
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DEV_DATABASE_URL', 'sqlite:///admin_assistant_dev.db')
+    LOG_LEVEL = os.environ.get('DEV_LOG_LEVEL', 'DEBUG')
+
+class TestingConfig(Config):
+    TESTING = True
+    SQLALCHEMY_DATABASE_URI = os.environ.get('TEST_DATABASE_URL', 'sqlite:///admin_assistant_test.db')
+    LOG_LEVEL = os.environ.get('TEST_LOG_LEVEL', 'INFO')
+
+class ProductionConfig(Config):
+    SQLALCHEMY_DATABASE_URI = os.environ.get('PROD_DATABASE_URL', 'sqlite:///admin_assistant_prod.db')
+    LOG_LEVEL = os.environ.get('PROD_LOG_LEVEL', 'WARNING') 
