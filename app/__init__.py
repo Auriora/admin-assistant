@@ -35,7 +35,7 @@ def create_app():
     db.init_app(app)
     migrate.init_app(app, db)
     login_manager.init_app(app)
-    login_manager.login_view = 'main_bp.login'  # Adjust if your login route is named differently
+    login_manager.login_view = 'main.login'  # type: ignore[attr-defined]
 
     # --- OpenTelemetry Tracing Setup ---
     if OTEL_AVAILABLE:
