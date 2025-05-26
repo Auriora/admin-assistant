@@ -6,7 +6,9 @@ from datetime import datetime, timedelta
 import msal
 
 # Scopes required for calendar access
-MS_SCOPES = ['Calendars.ReadWrite', 'offline_access', 'User.Read']
+MS_SCOPES = [
+    'Calendars.ReadWrite', 'User.Read'
+]
 
 class MsAuthError(Exception):
     pass
@@ -30,7 +32,8 @@ def get_msal_app():
 def get_authorization_url():
     msal_app = get_msal_app()
     redirect_uri = current_app.config['MS_REDIRECT_URI']
-    scopes = list(MS_SCOPES)
+    print(f"[DEBUG] redirect_uri in get_authorization_url: {redirect_uri}")
+    scopes = MS_SCOPES
     state = os.urandom(16).hex()
     auth_url = msal_app.get_authorization_request_url(
         scopes,
@@ -45,15 +48,16 @@ def get_authorization_url():
 def fetch_token(authorization_response):
     msal_app = get_msal_app()
     redirect_uri = current_app.config['MS_REDIRECT_URI']
-    # Parse code from the response URL
+    print(f"[DEBUG] redirect_uri in fetch_token: {redirect_uri}")
     from urllib.parse import urlparse, parse_qs
     parsed = urlparse(authorization_response)
     code = parse_qs(parsed.query).get('code', [None])[0]
     if not code:
         raise MsAuthError('No authorization code found in callback URL.')
+    scopes = MS_SCOPES
     result = msal_app.acquire_token_by_authorization_code(
         code,
-        scopes=list(MS_SCOPES),
+        scopes=scopes,
         redirect_uri=redirect_uri
     )
     if "access_token" in result:

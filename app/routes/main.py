@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from app.services.msgraph import MsAuthError
 from flask import current_app
 from flask_login import login_user, logout_user, login_required, current_user
+import requests
 
 main_bp = Blueprint('main', __name__)
 
@@ -28,19 +29,35 @@ def ms365_auth_callback():
         flash('Microsoft authentication failed: ' + request.args['error_description'], 'danger')
         return redirect(url_for('main.index'))
     token = msgraph.fetch_token(request.url)
-    user = User.query.first()
-    if user:
-        user.ms_access_token = token['access_token']
-        user.ms_refresh_token = token.get('refresh_token')
-        expires_in = token.get('expires_in', 3600)
-        user.ms_token_expires_at = datetime.utcnow() + timedelta(seconds=expires_in)
+    access_token = token['access_token']
+    # Fetch user profile from Microsoft Graph
+    headers = {'Authorization': f'Bearer {access_token}'}
+    profile_resp = requests.get('https://graph.microsoft.com/v1.0/me', headers=headers)
+    if profile_resp.status_code != 200:
+        current_app.logger.error('Failed to fetch user profile from Microsoft Graph.')
+        flash('Failed to fetch user profile from Microsoft Graph.', 'danger')
+        return redirect(url_for('main.index'))
+    profile = profile_resp.json()
+    email = profile.get('mail') or profile.get('userPrincipalName')
+    name = profile.get('displayName', '')
+    if not email:
+        current_app.logger.error('No email found in Microsoft profile.')
+        flash('No email found in Microsoft profile.', 'danger')
+        return redirect(url_for('main.index'))
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        user = User(email=email, name=name)
+        db.session.add(user)
         db.session.commit()
-        login_user(user)
-        current_app.logger.info(f"Stored tokens for user {user.email}")
-        flash('Microsoft 365 authentication successful and tokens stored securely!', 'success')
-    else:
-        current_app.logger.error('No user found to store tokens.')
-        flash('No user found to store tokens.', 'danger')
+        current_app.logger.info(f"Created new user {email} from Microsoft login.")
+    user.ms_access_token = token['access_token']
+    user.ms_refresh_token = token.get('refresh_token')
+    expires_in = token.get('expires_in', 3600)
+    user.ms_token_expires_at = datetime.utcnow() + timedelta(seconds=expires_in)
+    db.session.commit()
+    login_user(user)
+    current_app.logger.info(f"Stored tokens for user {user.email}")
+    flash('Microsoft 365 authentication successful and tokens stored securely!', 'success')
     return redirect(url_for('main.index'))
 
 @main_bp.route('/ms365/calendar')
