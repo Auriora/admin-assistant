@@ -2,7 +2,7 @@
   "name": "Admin Assistant Dev Container",
   "build": {
     "dockerfile": "Dockerfile",
-    "context": "."
+    "context": ".."
   },
   "forwardPorts": [5000],
   "postCreateCommand": "pip install -r requirements.txt",

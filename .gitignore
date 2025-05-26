@@ -39,4 +39,4 @@ instance/
 
 logs/
 
-.venv/
+*.log
