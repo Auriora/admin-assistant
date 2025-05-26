@@ -1,0 +1,24 @@
+{
+  "name": "Admin Assistant Dev Container",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": "."
+  },
+  "settings": {
+    "python.pythonPath": "/usr/local/bin/python"
+  },
+  "forwardPorts": [5000],
+  "postCreateCommand": "pip install -r requirements.txt",
+  "remoteUser": "devuser",
+  "workspaceFolder": "/workspace",
+  "env": {
+    "APP_ENV": "development"
+  },
+  "extensions": [
+    "ms-python.python",
+    "ms-python.vscode-pylance",
+    "ms-azuretools.vscode-docker",
+    "ms-toolsai.jupyter",
+    "ms-python.black-formatter"
+  ]
+} 
