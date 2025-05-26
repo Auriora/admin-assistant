@@ -18,9 +18,9 @@
                     <div class="col-12 d-flex align-items-center justify-content-center">
                         <div class="bg-white shadow border-0 rounded p-4 p-lg-5 w-100 fmxw-500">
                             <div class="text-center text-md-center mb-4 mt-md-0">
-                                <div class="avatar avatar-lg mx-auto mb-3"><img class="rounded-circle" alt="Image placeholder" src="{{ url_for('static', filename='assets/img/team/profile-picture-3.jpg') }}"></div>
-                                <h1 class="h3">Bonnie Green</h1>
-                                <p class="text-gray">Better to be safe than sorry.</p>
+                                <div class="avatar avatar-lg mx-auto mb-3"><img class="rounded-circle" alt="Image placeholder" src="{{ url_for('static', filename=current_user.profile_photo_url or 'assets/img/team/profile-picture-3.jpg') }}"></div>
+                                <h1 class="h3">{{ current_user.name or current_user.username }}</h1>
+                                <p class="text-gray"><small class="text-muted d-block">{{ current_user.email }}</small></p>
                             </div>
                             <form class="mt-5">
                                 <!-- Form -->

@@ -21,3 +21,5 @@ opentelemetry-instrumentation-flask~=0.54b1
 opentelemetry-exporter-otlp~=1.33.1
 Flask-Login~=0.6.3
 msal~=1.27.0
+Flask-APScheduler~=1.12.5
+pytz~=2024.1

@@ -17,6 +17,7 @@ This section details the specific functional and non-functional requirements of 
 | FR-CAL-007   | System must handle Microsoft Graph API rate limits gracefully, with retries and user notification if limits are hit. | Must-have | Reliability and user awareness.             |
 | FR-CAL-008   | On partial archiving failure, notify user via email and web UI, with options to retry or resolve. | Must-have   | Ensures no silent data loss.                |
 | FR-CAL-009   | Prevent duplicate archiving: if archiving is in progress, new requests wait; only archive from last archived appointment unless overridden. | Must-have | Data integrity and efficiency.              |
+| FR-CAL-010   | Manual archive trigger must provide real-time feedback: show 'archive started' and 'archive complete' notifications, updating the same notification as state changes. | Should-have | Improves user experience and clarity. |
 
 ### 3.1.2 Timesheet Extraction and Billing
 

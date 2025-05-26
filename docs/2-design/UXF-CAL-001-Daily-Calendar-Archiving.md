@@ -117,4 +117,7 @@ This section records the history of changes made to this document. Add a new row
 |---------|------------|-------------|-------------------------------|
 | 1.0     | 2024-06-11 | [Your Name] | Initial version               |
 
-</rewritten_file> 
+## Additional UI/UX Note
+- When the user clicks the manual archive button, a notification should appear indicating 'Archive started'.
+- When the archive completes (success or error), the same notification should be updated to reflect the final state (e.g., 'Archive complete', 'Archive failed').
+- This ensures real-time feedback and avoids notification clutter. 

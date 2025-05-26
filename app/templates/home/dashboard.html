@@ -38,6 +38,12 @@
             </div>
         </div>
     </div>
+    <div class="py-4 d-flex justify-content-end">
+        <button id="archive-now-btn" class="btn btn-primary">
+            <svg class="icon icon-xs me-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+            Archive Now
+        </button>
+    </div>
     <div class="row">
         <div class="col-12 mb-4">
             <div class="card bg-yellow-100 border-0 shadow">
@@ -282,12 +288,12 @@
                                     <div class="col-auto">
                                         <!-- Avatar -->
                                         <a href="#" class="avatar">
-                                            <img class="rounded" alt="Image placeholder" src="{{ url_for('static', filename='assets/img/team/profile-picture-1.jpg') }}">
+                                            <img class="rounded" alt="Image placeholder" src="{{ url_for('static', filename=current_user.profile_photo_url or 'assets/img/team/profile-picture-1.jpg') }}">
                                         </a>
                                     </div>
                                     <div class="col-auto ms--2">
                                         <h4 class="h6 mb-0">
-                                            <a href="#">Chris Wood</a>
+                                            <a href="#">{{ current_user.name or current_user.username }}</a>
                                         </h4>
                                         <div class="d-flex align-items-center">
                                             <div class="bg-success dot rounded-circle me-1"></div>
@@ -307,12 +313,12 @@
                                         <div class="col-auto">
                                             <!-- Avatar -->
                                             <a href="#" class="avatar">
-                                                <img class="rounded" alt="Image placeholder" src="{{ url_for('static', filename='assets/img/team/profile-picture-2.jpg') }}">
+                                                <img class="rounded" alt="Image placeholder" src="{{ url_for('static', filename=user.profile_photo_url or 'assets/img/team/profile-picture-2.jpg') }}">
                                             </a>
                                         </div>
                                         <div class="col-auto ms--2">
                                             <h4 class="h6 mb-0">
-                                                <a href="#">Jose Leos</a>
+                                                <a href="#">{{ user.name or user.username }}</a>
                                             </h4>
                                             <div class="d-flex align-items-center">
                                                 <div class="bg-warning dot rounded-circle me-1"></div>
@@ -332,12 +338,12 @@
                                         <div class="col-auto">
                                             <!-- Avatar -->
                                             <a href="#" class="avatar">
-                                                <img class="rounded" alt="Image placeholder" src="{{ url_for('static', filename='assets/img/team/profile-picture-3.jpg') }}">
+                                                <img class="rounded" alt="Image placeholder" src="{{ url_for('static', filename=user.profile_photo_url or 'assets/img/team/profile-picture-3.jpg') }}">
                                             </a>
                                         </div>
                                         <div class="col-auto ms--2">
                                             <h4 class="h6 mb-0">
-                                                <a href="#">Bonnie Green</a>
+                                                <a href="#">{{ user.name or user.username }}</a>
                                             </h4>
                                             <div class="d-flex align-items-center">
                                                 <div class="bg-danger dot rounded-circle me-1"></div>
@@ -357,12 +363,12 @@
                                         <div class="col-auto">
                                             <!-- Avatar -->
                                             <a href="#" class="avatar">
-                                                <img class="rounded" alt="Image placeholder" src="{{ url_for('static', filename='assets/img/team/profile-picture-4.jpg') }}">
+                                                <img class="rounded" alt="Image placeholder" src="{{ url_for('static', filename=user.profile_photo_url or 'assets/img/team/profile-picture-4.jpg') }}">
                                             </a>
                                         </div>
                                         <div class="col-auto ms--2">
                                         <h4 class="h6 mb-0">
-                                                <a href="#">Neil Sims</a>
+                                                <a href="#">{{ user.name or user.username }}</a>
                                         </h4>
                                         <div class="d-flex align-items-center">
                                             <div class="bg-danger dot rounded-circle me-1"></div>
@@ -577,5 +583,96 @@
 
 {% endblock content %}
 
-<!-- Specific Page JS goes HERE  -->
-{% block javascripts %}{% endblock javascripts %}
+<!-- Toast Notification Container -->
+<div aria-live="polite" aria-atomic="true" class="position-fixed top-0 end-0 p-3" style="z-index: 1080;">
+    <div id="archive-toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="10000">
+        <div class="toast-header">
+            <strong class="me-auto">Calendar Archive</strong>
+            <small class="text-muted" id="archive-toast-time">now</small>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body" id="archive-toast-body">
+            <!-- Archive status will appear here -->
+        </div>
+    </div>
+</div>
+
+{% block javascripts %}
+{{ super() }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const btn = document.getElementById('archive-now-btn');
+    // Configurable toast duration (ms)
+    const TOAST_DURATION = 8000;
+    // Single global Notyf instance with all custom types
+    const notyf = new Notyf({
+        duration: TOAST_DURATION,
+        dismissible: true,
+        types: [
+            {
+                type: 'info',
+                background: '#2563eb', // Tailwind blue-600
+                icon: {
+                    className: 'fas fa-info-circle',
+                    tagName: 'span',
+                    color: '#fff'
+                }
+            },
+            {
+                type: 'success',
+                background: '#22c55e', // Tailwind green-500
+                icon: {
+                    className: 'fas fa-check-circle',
+                    tagName: 'span',
+                    color: '#fff'
+                }
+            },
+            {
+                type: 'error',
+                background: '#ef4444', // Tailwind red-500
+                icon: {
+                    className: 'fas fa-times-circle',
+                    tagName: 'span',
+                    color: '#fff'
+                }
+            }
+        ]
+    });
+    if (btn) {
+        btn.addEventListener('click', function() {
+            alert('Button clicked!'); // DEBUG: Confirm handler is firing
+            console.log('Archive Now button clicked'); // DEBUG
+            // Show blue info toast for 'Archive started...'
+            notyf.open({ type: 'info', message: 'Archive started...', duration: TOAST_DURATION });
+            console.log('About to send fetch POST to /archive/now'); // DEBUG
+            fetch('/archive/now', {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => {
+                console.log('Fetch response received', response); // DEBUG
+                return response.json();
+            })
+            .then(data => {
+                console.log('Fetch JSON data', data); // DEBUG
+                if (data.status === 'success') {
+                    notyf.open({ type: 'success', message: 'Archive complete!', duration: TOAST_DURATION });
+                } else {
+                    notyf.open({ type: 'error', message: data.message || 'Archive failed!', duration: TOAST_DURATION });
+                }
+            })
+            .catch(err => {
+                console.error('Fetch error', err); // DEBUG
+                notyf.open({ type: 'error', message: 'Archive failed!', duration: TOAST_DURATION });
+            });
+        });
+    } else {
+        console.warn('Archive Now button not found in DOM'); // DEBUG
+    }
+});
+</script>
+{% endblock javascripts %}

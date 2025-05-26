@@ -1,7 +1,6 @@
 import os
 import requests
 from flask import current_app, url_for, session
-from app.models import db, User
 from datetime import datetime, timedelta
 import msal
 
@@ -93,6 +92,8 @@ def refresh_token(user):
     return _refresh_token_impl(user)
 
 def _refresh_token_impl(user):
+    # Import db here to avoid circular import
+    from app.models import db
     client_id = current_app.config['MS_CLIENT_ID']
     client_secret = current_app.config['MS_CLIENT_SECRET']
     tenant_id = current_app.config['MS_TENANT_ID']

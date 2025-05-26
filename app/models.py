@@ -22,6 +22,7 @@ class User(UserMixin, db.Model):
     ms_access_token = db.Column(EncryptedType(db.String, ENCRYPTION_KEY, AesEngine, 'pkcs5'), nullable=True)
     ms_refresh_token = db.Column(EncryptedType(db.String, ENCRYPTION_KEY, AesEngine, 'pkcs5'), nullable=True)
     ms_token_expires_at = db.Column(db.DateTime, nullable=True)
+    profile_photo_url = db.Column(db.String, nullable=True)
 
     appointments = db.relationship('Appointment', back_populates='user')
     locations = db.relationship('Location', back_populates='user')

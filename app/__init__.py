@@ -5,6 +5,8 @@ from flask import Flask, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager
+from flask_apscheduler import APScheduler
+from app.services.calendar_service import scheduled_archive_job
 try:
     from opentelemetry import trace
     from opentelemetry.sdk.resources import SERVICE_NAME, Resource
@@ -50,6 +52,20 @@ def create_app():
     else:
         tracer = None
     # --- End OpenTelemetry Setup ---
+
+    # --- Flask-APScheduler Setup ---
+    scheduler = APScheduler()
+    scheduler.init_app(app)
+    scheduler.start()
+    # Schedule the archive job to run daily at 23:59 UTC
+    scheduler.add_job(
+        id='daily_archive',
+        func=scheduled_archive_job,
+        trigger='cron',
+        hour=23,
+        minute=59
+    )
+    # --- End Scheduler Setup ---
 
     # Logging setup
     log_level = app.config.get('LOG_LEVEL', 'WARNING').upper()
