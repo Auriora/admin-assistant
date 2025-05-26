@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, redirect, request, session, url_for, flash, jsonify
 from app.services import msgraph
-from app.models import db, User
+from app.models import db, User, Notification
 from datetime import datetime, timedelta
 from app.services.msgraph import MsAuthError
 from flask import current_app
@@ -130,4 +130,39 @@ def archive_now():
             return jsonify({"status": "success", "message": "Archive complete!"})
     except Exception as e:
         current_app.logger.exception(f"Manual archive exception: {str(e)}")
-        return jsonify({"status": "error", "message": str(e)}), 500 
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@main_bp.route('/notifications')
+@login_required
+def get_notifications():
+    """
+    Return the current user's notifications as JSON, ordered by created_at descending.
+    """
+    user = cast(User, current_user)
+    notifications = Notification.query.filter_by(user_id=user.id).order_by(Notification.created_at.desc()).all()
+    return jsonify([
+        {
+            'id': n.id,
+            'message': n.message,
+            'type': n.type,
+            'channel': n.channel,
+            'transaction_id': n.transaction_id,
+            'pct_complete': n.pct_complete,
+            'progress': n.progress,
+            'state': n.state,
+            'is_read': n.is_read,
+            'created_at': n.created_at.isoformat(),
+        }
+        for n in notifications
+    ])
+
+@main_bp.route('/notifications/<int:notification_id>/read', methods=['POST'])
+@login_required
+def mark_notification_read(notification_id):
+    user = cast(User, current_user)
+    notification = Notification.query.filter_by(id=notification_id, user_id=user.id).first()
+    if not notification:
+        return jsonify({'success': False, 'error': 'Notification not found'}), 404
+    notification.is_read = True
+    db.session.commit()
+    return jsonify({'success': True}) 

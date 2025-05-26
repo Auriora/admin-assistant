@@ -9,8 +9,8 @@
 - **Related Requirements**: FR-NOT-001; UC-NOT-001
 - **Priority**: High
 
-## Flow Objective
-Notify users of missing or conflicting data, errors, or important system events via configurable channels (email, in-app), ensuring user awareness and timely resolution of issues.
+## Extended Flow Objective
+Notify users of missing/conflicting data, errors, or important system events via configurable channels (email, in-app/toast, or both), supporting progress updates, state, and percentage complete. Notifications are updatable by transaction_id and user preferences determine delivery channel. UI allows marking as read and visually distinguishes channel and state.
 
 ## User Personas
 - Professional user (primary, single-user scenario)
@@ -46,10 +46,12 @@ User -> UI: Views notification, takes action
 
 | Step # | Actor        | Action                                      | System Response                                      | UI Elements                | Notes                                  |
 |--------|--------------|---------------------------------------------|------------------------------------------------------|----------------------------|----------------------------------------|
-| 1      | System       | Detects issue (missing/conflicting data)    | Triggers notification via configured channels        | N/A                        | Can be in-app, email, or both          |
-| 2      | Notification | Sends notification to user                  | User receives notification                           | Notification banner/email   |                                        |
-| 3      | User         | Views notification, takes action            | System logs user action/response                     | Notification panel, links   |                                        |
-| 4      | System       | Logs notification and user response         | Updates audit log                                    | N/A                        |                                        |
+| 1      | System       | Detects event/issue or task progress        | Triggers notification via configured channels        | N/A                        | Can be in-app, email, or both          |
+| 2      | Notification | Creates/updates notification (by transaction_id), sets progress, state, pct_complete | User receives notification with progress/state       | Notification banner/email   | Progress bar, state badge, channel icon|
+| 3      | User         | Views notification, sees progress/state     | System logs user action/response                     | Notification panel, links, mark as read |                                        |
+| 4      | User         | Marks notification as read or takes action  | System updates notification, logs response           | Mark as read button/icon    |                                        |
+| 5      | User         | Changes notification preferences            | System updates delivery channel for future events    | Preferences UI/table        |                                        |
+| 6      | System       | Logs notification and user response         | Updates audit log                                    | N/A                        |                                        |
 
 ### Exit Points
 - User is notified of the issue and can take corrective action.
@@ -65,7 +67,9 @@ User -> UI: Views notification, takes action
 ## UI Components
 - Notification banners, modals, or panel in-app
 - Email notification template
-- Notification settings/configuration page
+- Notification settings/configuration page (user can toggle channel per notification class)
+- Progress bar, state badge, channel icon in notification UI
+- Mark as read button/icon
 
 ## Accessibility Considerations
 - All notifications accessible via screen readers

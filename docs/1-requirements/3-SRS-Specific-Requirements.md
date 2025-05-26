@@ -110,6 +110,17 @@ This section details the specific functional and non-functional requirements of 
 | FR-AI-005    | If OpenAI is unavailable, system retries later; not time-critical.                               | Must-have   | Robustness to external API downtime.        |
 | FR-AI-006    | System must sanitize input to OpenAI to prevent prompt injection attacks.                        | Must-have   | Security.                                   |
 
+### 3.1.11 Notification System
+
+| ID           | Requirement                                                                                      | Priority    | Rationale                                   |
+|--------------|--------------------------------------------------------------------------------------------------|-------------|---------------------------------------------|
+| FR-NOT-002   | The system must support notifications via toast (in-app), email, or both, configurable per user and notification class. | Must-have   | User control and awareness.                 |
+| FR-NOT-003   | Notifications must support progress updates, including a progress description, percentage complete, and state (e.g., not started, in-progress, success, failed). | Must-have   | Real-time feedback for long-running tasks.  |
+| FR-NOT-004   | Each notification must be uniquely updatable by a transaction_id, so that progress/state updates do not create duplicates. | Must-have   | Prevents notification clutter.              |
+| FR-NOT-005   | Users must be able to mark notifications as read and configure which notification classes trigger which channels. | Should-have | User experience and control.                |
+| FR-NOT-006   | The UI must visually distinguish notification channels (toast/email/both), show progress and state, and allow marking as read. | Must-have   | Clarity and usability.                      |
+| FR-NOT-007   | All notification events and user responses must be logged for audit and compliance.              | Must-have   | Traceability and compliance.                |
+
 ## 3.2 Non-Functional Requirements
 
 ### 3.2.1 Security

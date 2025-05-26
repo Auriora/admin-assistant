@@ -118,6 +118,11 @@ class Notification(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     message = db.Column(db.String, nullable=False)
     type = db.Column(db.String)
+    channel = db.Column(db.String, default='toast')  # 'toast', 'email', or 'both'
+    transaction_id = db.Column(db.String, nullable=True)  # Unique event/transaction identifier
+    pct_complete = db.Column(db.Integer, nullable=True, default=None)  # Percentage complete
+    progress = db.Column(db.String, nullable=True, default=None)  # Progress description
+    state = db.Column(db.String, nullable=True, default=None)  # e.g. not started, in-progress, success, failed
     is_read = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 

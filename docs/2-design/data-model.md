@@ -11,7 +11,14 @@ This document describes the main entities and relationships for the Admin Assist
 - **Timesheet**: Represents a generated timesheet for a user and date range, with export paths and upload status.
 - **AuditLog**: Records all critical actions for compliance and troubleshooting.
 - **Rule**: User-defined rules/guidelines for automation and recommendations.
-- **Notification**: In-app or email notifications for user issues, errors, or events.
+- **Notification**: In-app or email notifications for user issues, errors, or events. Supports:
+  - `channel`: toast, email, or both (user-configurable per notification class)
+  - `transaction_id`: unique identifier for updatable notifications
+  - `pct_complete`: integer, percentage complete for progress
+  - `progress`: string, progress description
+  - `state`: string, e.g., not started, in-progress, success, failed
+  - `is_read`: boolean, whether the user has read the notification
+  - User preferences determine which channel is used for each notification class.
 
 ### Relationships
 

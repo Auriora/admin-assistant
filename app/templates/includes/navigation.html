@@ -22,107 +22,10 @@
                         <svg class="icon icon-sm text-gray-900" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z"></path></svg>
                       </a>
                       <div class="dropdown-menu dropdown-menu-lg dropdown-menu-center mt-2 py-0">
-                        <div class="list-group list-group-flush">
+                        <div class="list-group list-group-flush" id="notification-list">
                           <a href="#" class="text-center text-primary fw-bold border-bottom border-light py-3">Notifications</a>
-                          <a href="#" class="list-group-item list-group-item-action border-bottom">
-                            <div class="row align-items-center">
-                                <div class="col-auto">
-                                  <!-- Avatar -->
-                                  <img alt="Image placeholder" src="{{ url_for('static', filename='assets/img/team/profile-picture-1.jpg') }}" class="avatar-md rounded">
-                                </div>
-                                <div class="col ps-0 ms-2">
-                                  <div class="d-flex justify-content-between align-items-center">
-                                      <div>
-                                        <h4 class="h6 mb-0 text-small">Jose Leos</h4>
-                                      </div>
-                                      <div class="text-end">
-                                        <small class="text-danger">a few moments ago</small>
-                                      </div>
-                                  </div>
-                                  <p class="font-small mt-1 mb-0">Added you to an event "Project stand-up" tomorrow at 12:30 AM.</p>
-                                </div>
-                            </div>
-                          </a>
-                          <a href="#" class="list-group-item list-group-item-action border-bottom">
-                            <div class="row align-items-center">
-                                <div class="col-auto">
-                                  <!-- Avatar -->
-                                  <img alt="Image placeholder" src="{{ url_for('static', filename='assets/img/team/profile-picture-2.jpg') }}" class="avatar-md rounded">
-                                </div>
-                                <div class="col ps-0 ms-2">
-                                  <div class="d-flex justify-content-between align-items-center">
-                                      <div>
-                                        <h4 class="h6 mb-0 text-small">Neil Sims</h4>
-                                      </div>
-                                      <div class="text-end">
-                                        <small class="text-danger">2 hrs ago</small>
-                                      </div>
-                                  </div>
-                                  <p class="font-small mt-1 mb-0">You've been assigned a task for "Awesome new project".</p>
-                                </div>
-                            </div>
-                          </a>
-                          <a href="#" class="list-group-item list-group-item-action border-bottom">
-                            <div class="row align-items-center">
-                                <div class="col-auto">
-                                  <!-- Avatar -->
-                                  <img alt="Image placeholder" src="{{ url_for('static', filename='assets/img/team/profile-picture-3.jpg') }}" class="avatar-md rounded">
-                                </div>
-                                <div class="col ps-0 m-2">
-                                  <div class="d-flex justify-content-between align-items-center">
-                                      <div>
-                                        <h4 class="h6 mb-0 text-small">Roberta Casas</h4>
-                                      </div>
-                                      <div class="text-end">
-                                        <small>5 hrs ago</small>
-                                      </div>
-                                  </div>
-                                  <p class="font-small mt-1 mb-0">Tagged you in a document called "Financial plans",</p>
-                                </div>
-                            </div>
-                          </a>
-                          <a href="#" class="list-group-item list-group-item-action border-bottom">
-                            <div class="row align-items-center">
-                                <div class="col-auto">
-                                  <!-- Avatar -->
-                                  <img alt="Image placeholder" src="{{ url_for('static', filename='assets/img/team/profile-picture-4.jpg') }}" class="avatar-md rounded">
-                                </div>
-                                <div class="col ps-0 ms-2">
-                                  <div class="d-flex justify-content-between align-items-center">
-                                      <div>
-                                        <h4 class="h6 mb-0 text-small">Joseph Garth</h4>
-                                      </div>
-                                      <div class="text-end">
-                                        <small>1 d ago</small>
-                                      </div>
-                                  </div>
-                                  <p class="font-small mt-1 mb-0">New message: "Hey, what's up? All set for the presentation?"</p>
-                                </div>
-                            </div>
-                          </a>
-                          <a href="#" class="list-group-item list-group-item-action border-bottom">
-                            <div class="row align-items-center">
-                                <div class="col-auto">
-                                  <!-- Avatar -->
-                                  <img alt="Image placeholder" src="{{ url_for('static', filename='assets/img/team/profile-picture-5.jpg') }}" class="avatar-md rounded">
-                                </div>
-                                <div class="col ps-0 ms-2">
-                                  <div class="d-flex justify-content-between align-items-center">
-                                      <div>
-                                        <h4 class="h6 mb-0 text-small">Bonnie Green</h4>
-                                      </div>
-                                      <div class="text-end">
-                                        <small>2 hrs ago</small>
-                                      </div>
-                                  </div>
-                                  <p class="font-small mt-1 mb-0">New message: "We need to improve the UI/UX for the landing page."</p>
-                                </div>
-                            </div>
-                          </a>
-                          <a href="#" class="dropdown-item text-center fw-bold rounded-bottom py-3">
-                            <svg class="icon icon-xxs text-gray-400 me-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"></path></svg>
-                            View all
-                          </a>
+                          <!-- Notifications will be injected here by JS -->
+                          <div id="notifications-empty" class="text-center text-muted py-4" style="display:none;">No notifications</div>
                         </div>
                       </div>
                     </li>
@@ -168,3 +71,115 @@
                 </div>
               </div>
             </nav>
+{% block javascripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const notificationList = document.getElementById('notification-list');
+  const notificationsEmpty = document.getElementById('notifications-empty');
+  function timeAgo(dateString) {
+    const now = new Date();
+    const date = new Date(dateString);
+    const seconds = Math.floor((now - date) / 1000);
+    if (seconds < 60) return 'just now';
+    const intervals = [
+      { label: 'year', seconds: 31536000 },
+      { label: 'month', seconds: 2592000 },
+      { label: 'day', seconds: 86400 },
+      { label: 'hr', seconds: 3600 },
+      { label: 'min', seconds: 60 }
+    ];
+    for (const interval of intervals) {
+      const count = Math.floor(seconds / interval.seconds);
+      if (count >= 1) return `${count} ${interval.label}${count > 1 ? 's' : ''} ago`;
+    }
+    return 'just now';
+  }
+  function getChannelIcon(channel) {
+    if (channel === 'toast') return '<i class="fas fa-bell text-info me-2" title="Toast"></i>';
+    if (channel === 'email') return '<i class="fas fa-envelope text-primary me-2" title="Email"></i>';
+    if (channel === 'both') return '<i class="fas fa-bell text-info me-1"></i><i class="fas fa-envelope text-primary me-1" title="Toast & Email"></i>';
+    return '';
+  }
+  function getStateBadge(state) {
+    if (!state) return '';
+    let color = 'secondary';
+    if (state === 'success' || state === 'complete') color = 'success';
+    else if (state === 'failed' || state === 'error') color = 'danger';
+    else if (state === 'in-progress') color = 'info';
+    else if (state === 'not started') color = 'secondary';
+    return `<span class="badge bg-${color} ms-2">${state.replace(/_/g, ' ')}</span>`;
+  }
+  function renderNotifications(notifications) {
+    Array.from(notificationList.querySelectorAll('.notification-item')).forEach(e => e.remove());
+    if (!notifications.length) {
+      notificationsEmpty.style.display = '';
+      return;
+    }
+    notificationsEmpty.style.display = 'none';
+    notifications.forEach(n => {
+      const item = document.createElement('div');
+      item.className = 'list-group-item list-group-item-action border-bottom notification-item d-flex justify-content-between align-items-center';
+      let progressBar = '';
+      if (typeof n.pct_complete === 'number' && n.pct_complete !== null) {
+        progressBar = `
+          <div class="progress my-1" style="height: 6px;">
+            <div class="progress-bar bg-info" role="progressbar" style="width: ${n.pct_complete}%;" aria-valuenow="${n.pct_complete}" aria-valuemin="0" aria-valuemax="100"></div>
+          </div>
+        `;
+      }
+      item.innerHTML = `
+        <div class="d-flex align-items-center flex-grow-1" style="min-width:0;">
+          ${getChannelIcon(n.channel)}
+          <div class="flex-grow-1" style="min-width:0;">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <h4 class="h6 mb-0 text-small">${n.type ? n.type.charAt(0).toUpperCase() + n.type.slice(1) : 'Notification'}${getStateBadge(n.state)}</h4>
+              </div>
+              <div class="text-end">
+                <small class="text-danger">${timeAgo(n.created_at)}</small>
+              </div>
+            </div>
+            <p class="font-small mt-1 mb-0 text-truncate" title="${n.message}">${n.message}</p>
+            ${n.progress ? `<div class='small text-muted mb-1'>${n.progress}</div>` : ''}
+            ${progressBar}
+          </div>
+        </div>
+        <button class="btn btn-sm btn-link text-success mark-read-btn" title="Mark as read" data-id="${n.id}" ${n.is_read ? 'disabled' : ''}>
+          <i class="fas fa-check-circle${n.is_read ? ' text-muted' : ''}"></i>
+        </button>
+      `;
+      notificationList.appendChild(item);
+    });
+    notificationList.querySelectorAll('.mark-read-btn').forEach(btn => {
+      btn.addEventListener('click', async function(e) {
+        e.stopPropagation();
+        const id = this.getAttribute('data-id');
+        try {
+          const resp = await fetch(`/notifications/${id}/read`, {method: 'POST'});
+          if (resp.ok) {
+            this.disabled = true;
+            this.querySelector('i').classList.add('text-muted');
+          }
+        } catch {}
+      });
+    });
+  }
+  async function fetchNotifications() {
+    try {
+      const resp = await fetch('/notifications');
+      if (!resp.ok) throw new Error('Failed to fetch notifications');
+      const notifications = await resp.json();
+      renderNotifications(notifications);
+    } catch (e) {
+      notificationsEmpty.textContent = 'Failed to load notifications';
+      notificationsEmpty.style.display = '';
+    }
+  }
+  // Fetch notifications when dropdown is shown
+  const bell = document.querySelector('.notification-bell');
+  if (bell) {
+    bell.addEventListener('show.bs.dropdown', fetchNotifications);
+  }
+});
+</script>
+{% endblock %}

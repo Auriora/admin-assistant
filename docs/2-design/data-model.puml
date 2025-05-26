@@ -73,9 +73,16 @@ entity Notification {
     * user_id : integer <<FK>>
     * message : string
     * type : string
+    * channel : string
+    * transaction_id : string
+    * pct_complete : integer
+    * progress : string
+    * state : string
     * is_read : boolean
     * created_at : datetime
 }
+
+' Note: User preferences determine which channel is used for each notification class.
 
 User ||--o{ Appointment : has
 User ||--o{ Location : has

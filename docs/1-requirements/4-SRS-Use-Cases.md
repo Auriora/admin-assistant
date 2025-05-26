@@ -129,3 +129,19 @@ This section describes the key use cases for the Admin Assistant system, focusin
 | **Special Requirements**     | - Notification method configurable                                                                            |
 | **Related FRs**              | FR-NOT-001                                                                                                    |
 | **Related NFRs**             | NFR-REL-001                                                                                                   |
+
+## 4.9 UC-NOT-002 Advanced Notification Handling
+
+| Field                        | Description                                                                                                   |
+|------------------------------|---------------------------------------------------------------------------------------------------------------|
+| **Use Case ID**              | UC-NOT-002                                                                                                    |
+| **Name**                     | Advanced Notification Handling                                                                                |
+| **Primary Actors**           | System, User                                                                                                  |
+| **Stakeholders & Interests** | **User**: Wants timely, actionable, and non-intrusive notifications; control over notification preferences     |
+| **Pre-conditions**           | 1. User is authenticated<br>2. System detects an event requiring notification                                 |
+| **Post-conditions**          | **Successful**: User receives notification via preferred channel(s), can track progress, and mark as read      |
+| **Main Flow**                | 1. System detects event<br>2. System creates/updates notification (by transaction_id)<br>3. Notification delivered via toast/email/both<br>4. User views notification, sees progress/state<br>5. User can mark as read or take action<br>6. System logs all events and responses |
+| **Alternative Flows**        | **AF-1**: User changes notification preferences<br>**AF-2**: Notification delivery fails, fallback to alternate channel |
+| **Special Requirements**     | - Progress, state, and channel must be shown in UI<br>- User can configure notification preferences           |
+| **Related FRs**              | FR-NOT-002, FR-NOT-003, FR-NOT-004, FR-NOT-005, FR-NOT-006, FR-NOT-007                                       |
+| **Related NFRs**             | NFR-REL-001, NFR-USE-001, NFR-AUD-001                                                                         |
