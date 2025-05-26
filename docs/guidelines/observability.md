@@ -1,7 +1,7 @@
-# Logging Guidelines for Admin Assistant
+# Observability Guidelines for Admin Assistant
 
 ## Purpose
-Logging helps with debugging, monitoring, and auditing application behavior. Follow these guidelines to ensure logs are useful and consistent.
+Logging and tracing help with debugging, monitoring, and auditing application behavior. Follow these guidelines to ensure logs and traces are useful and consistent.
 
 ## Log Levels
 - `DEBUG`: Detailed information, typically of interest only when diagnosing problems.

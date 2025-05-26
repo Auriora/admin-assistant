@@ -1,4 +1,4 @@
-# Logging Design for Admin Assistant
+# Observability Design for Admin Assistant
 
 ## Overview
 Logging is implemented using Python's built-in `logging` module and is configured in the Flask app factory (`app/__init__.py`). Logs are written to both the console and a rotating file handler. The log level is determined by the environment (development, testing, production) or can be set via environment variables.
