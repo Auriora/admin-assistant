@@ -4,10 +4,12 @@ from app.models import db, User
 from datetime import datetime, timedelta
 from app.services.msgraph import MsAuthError
 from flask import current_app
+from flask_login import login_user, logout_user, login_required, current_user
 
 main_bp = Blueprint('main', __name__)
 
 @main_bp.route('/')
+@login_required
 def index():
     current_app.logger.debug('Rendering index page')
     return render_template('index.html')
@@ -33,6 +35,7 @@ def ms365_auth_callback():
         expires_in = token.get('expires_in', 3600)
         user.ms_token_expires_at = datetime.utcnow() + timedelta(seconds=expires_in)
         db.session.commit()
+        login_user(user)
         current_app.logger.info(f"Stored tokens for user {user.email}")
         flash('Microsoft 365 authentication successful and tokens stored securely!', 'success')
     else:
@@ -41,8 +44,9 @@ def ms365_auth_callback():
     return redirect(url_for('main.index'))
 
 @main_bp.route('/ms365/calendar')
+@login_required
 def ms365_calendar():
-    user = User.query.first()
+    user = current_user
     if not user or not user.ms_access_token:
         current_app.logger.warning('User not authenticated with Microsoft 365')
         flash('Please authenticate with Microsoft 365 first.', 'warning')
@@ -59,4 +63,14 @@ def ms365_calendar():
     except Exception as e:
         current_app.logger.exception(f"Authentication error: {str(e)}")
         flash(f'Authentication error: {str(e)}', 'danger')
-        return redirect(url_for('main.index')) 
+        return redirect(url_for('main.index'))
+
+@main_bp.route('/login')
+def login():
+    return redirect(url_for('main.ms365_login'))
+
+@main_bp.route('/logout')
+def logout():
+    logout_user()
+    flash('You have been logged out.', 'info')
+    return redirect(url_for('main.index')) 

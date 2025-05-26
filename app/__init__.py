@@ -4,6 +4,7 @@ from logging.handlers import RotatingFileHandler
 from flask import Flask, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
+from flask_login import LoginManager
 try:
     from opentelemetry import trace
     from opentelemetry.sdk.resources import SERVICE_NAME, Resource
@@ -19,6 +20,7 @@ except ImportError:
 # Initialize SQLAlchemy (instance will be used in models.py)
 db = SQLAlchemy()
 migrate = Migrate()
+login_manager = LoginManager()
 
 def create_app():
     app = Flask(__name__)
@@ -32,6 +34,8 @@ def create_app():
 
     db.init_app(app)
     migrate.init_app(app, db)
+    login_manager.init_app(app)
+    login_manager.login_view = 'main_bp.login'  # Adjust if your login route is named differently
 
     # --- OpenTelemetry Tracing Setup ---
     if OTEL_AVAILABLE:
@@ -78,5 +82,10 @@ def create_app():
     # Import and register blueprints
     from app.routes.main import main_bp
     app.register_blueprint(main_bp)
+
+    @login_manager.user_loader
+    def load_user(user_id):
+        from app.models import User
+        return User.query.get(int(user_id))
 
     return app 

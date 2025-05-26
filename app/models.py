@@ -7,11 +7,12 @@ from datetime import datetime, date
 from sqlalchemy_utils import EncryptedType
 from sqlalchemy_utils.types.encrypted.encrypted_type import AesEngine
 import os
+from flask_login import UserMixin
 
 # Key for encryption (should be stored securely in production)
 ENCRYPTION_KEY = os.environ.get('ENCRYPTION_KEY', 'devkeydevkeydevkeydevkey')
 
-class User(db.Model):
+class User(UserMixin, db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String, unique=True, nullable=False)
