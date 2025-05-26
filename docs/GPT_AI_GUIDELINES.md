@@ -1,24 +1,24 @@
 # GPT AI Code Generation Guidelines
 
-> **Note:** In addition to the SRS found in `docs/1. requirements/`, all AI-generated code and documentation must align with the design documentation found in `docs/2. design/`.
-
 This file contains guidelines for AI-generated code in the `admin-assistant` project. All contributors and AI agents must adhere to these standards to ensure maintainability, clarity, and quality. This file must be updated as new requirements or conventions are established.
 
 ## General Principles
 - **All classes must follow SOLID principles**: Ensure code is modular, extensible, and easy to maintain.
-- **Documentation as code**: All code must be self-documenting and include comprehensive docstrings and comments where necessary.
-- **No magic numbers or literals**: All such values must be defined as named constants with clear, descriptive names.
+- **Accessibility**: Where applicable, ensure user-facing features are accessible.
 - **Comprehensive documentation**: Every class, method, and function must include docstrings explaining its purpose, parameters, and return values.
 - **Consistent naming conventions**: Use `snake_case` for variables and functions, `PascalCase` for classes, and `UPPER_CASE` for constants.
-- **Type annotations**: All functions and methods must include type hints for parameters and return values.
+- **Documentation as code**: All code must be self-documenting and include comprehensive docstrings and comments where necessary.
+- **Don't Repeat Yourself (DRY)**: Avoid code duplication by abstracting common functionality into reusable components, functions, and classes.
 - **Error handling**: Implement robust error handling and logging. Avoid silent failures.
+- **Extensibility**: Design code to be easily extended for future features.
+- **No magic numbers or literals**: All such values must be defined as named constants with clear, descriptive names.
+- **Performance awareness**: Write efficient code and avoid unnecessary computations or memory usage.
+- **Prioritise Off-The-Shelf (OTS)**: Use established libraries and frameworks (like Flask, SQLAlchemy, etc.) rather than creating custom solutions when appropriate functionality already exists.
 - **Security best practices**: Never log or expose sensitive information (e.g., credentials, tokens). Use environment variables for secrets.
-- **Testability**: Code should be written to facilitate unit and integration testing. Avoid hard-coded dependencies; use dependency injection where appropriate.
 - **Separation of concerns**: Keep business logic, data access, and presentation layers separate.
 - **Single source of truth**: Avoid duplication of logic or configuration.
-- **Extensibility**: Design code to be easily extended for future features.
-- **Performance awareness**: Write efficient code and avoid unnecessary computations or memory usage.
-- **Accessibility**: Where applicable, ensure user-facing features are accessible.
+- **Testability**: Code should be written to facilitate unit and integration testing. Avoid hard-coded dependencies; use dependency injection where appropriate.
+- **Type annotations**: All functions and methods must include type hints for parameters and return values.
 
 ## SRS and Design Alignment
 - **All AI-generated code and documentation must align with the current Software Requirements Specification (SRS) in `docs/1. requirements/.**` and the design documentation in `docs/2. design/.**`
