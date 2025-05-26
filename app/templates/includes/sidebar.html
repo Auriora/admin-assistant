@@ -52,7 +52,7 @@
               </li>
 
               <li class="nav-item {% if 'dynamic_dt' in segment %}active{% endif %}">
-                <a href="{{ url_for('table_blueprint.dynamic_dt') }}" class="nav-link">
+                {# <a href="{{ url_for('table_blueprint.dynamic_dt') }}" class="nav-link"> #}
                   <span class="sidebar-icon">
                     <svg class="icon icon-xs me-2" fill="currentColor" viewBox="0 0 20 20"
                       xmlns="http://www.w3.org/2000/svg">
@@ -62,10 +62,10 @@
                     </svg>
                   </span>
                   <span class="sidebar-text">Dynamic Tables</span>
-                </a>
+                {# </a> #}
               </li>
               <li class="nav-item {% if 'charts' in segment %}active{% endif %}">
-                <a href="{{ url_for('charts_blueprint.charts') }}" class="nav-link">
+                {# <a href="{{ url_for('charts_blueprint.charts') }}" class="nav-link"> #}
                   <span class="sidebar-icon">
                     <svg class="icon icon-xs me-2" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                       <path
@@ -74,7 +74,7 @@
                     </svg>
                   </span>
                   <span class="sidebar-text">Charts</span>
-                </a>
+                {# </a> #}
               </li>
 
               <li class="nav-item {% if 'transactions' in segment %} active {% endif %}">
@@ -220,7 +220,7 @@
               </li>
               <li role="separator" class="dropdown-divider mt-4 mb-3 border-gray-700"></li>
               <li class="nav-item">
-                <a href="{{ url_for('authentication_blueprint.logout') }}" class="nav-link">
+                <a href="{{ url_for('main.logout') }}" class="nav-link">
                     <span class="sidebar-icon">
                         <svg class="icon icon-xs text-danger me-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
