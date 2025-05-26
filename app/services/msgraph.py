@@ -11,7 +11,19 @@ MS_SCOPES = ['Calendars.ReadWrite', 'offline_access', 'User.Read']
 class MsAuthError(Exception):
     pass
 
+try:
+    from opentelemetry import trace
+    tracer = trace.get_tracer(__name__)
+except ImportError:
+    tracer = None
+
 def get_ms_oauth_session(state=None, token=None):
+    if tracer:
+        with tracer.start_as_current_span("msgraph.get_ms_oauth_session"):
+            return _get_ms_oauth_session_impl(state, token)
+    return _get_ms_oauth_session_impl(state, token)
+
+def _get_ms_oauth_session_impl(state=None, token=None):
     client_id = current_app.config['MS_CLIENT_ID']
     client_secret = current_app.config['MS_CLIENT_SECRET']
     redirect_uri = current_app.config['MS_REDIRECT_URI']
@@ -27,12 +39,24 @@ def get_ms_oauth_session(state=None, token=None):
     ), auth_base
 
 def get_authorization_url():
+    if tracer:
+        with tracer.start_as_current_span("msgraph.get_authorization_url"):
+            return _get_authorization_url_impl()
+    return _get_authorization_url_impl()
+
+def _get_authorization_url_impl():
     oauth, auth_base = get_ms_oauth_session()
     authorization_url, state = oauth.authorization_url(f'{auth_base}/authorize')
     current_app.logger.info(f"Generated Microsoft authorization URL: {authorization_url}")
     return authorization_url, state
 
 def fetch_token(authorization_response):
+    if tracer:
+        with tracer.start_as_current_span("msgraph.fetch_token"):
+            return _fetch_token_impl(authorization_response)
+    return _fetch_token_impl(authorization_response)
+
+def _fetch_token_impl(authorization_response):
     oauth, auth_base = get_ms_oauth_session(state=session.get('oauth_state'))
     token = oauth.fetch_token(
         f'{auth_base}/token',
@@ -43,6 +67,14 @@ def fetch_token(authorization_response):
     return token
 
 def is_token_expired(user):
+    if tracer:
+        with tracer.start_as_current_span("msgraph.is_token_expired") as span:
+            if user and hasattr(user, 'email'):
+                span.set_attribute("user.email", getattr(user, 'email', ''))
+            return _is_token_expired_impl(user)
+    return _is_token_expired_impl(user)
+
+def _is_token_expired_impl(user):
     if not user.ms_token_expires_at:
         current_app.logger.debug("User token has no expiry; treating as expired.")
         return True
@@ -52,6 +84,14 @@ def is_token_expired(user):
     return expired
 
 def refresh_token(user):
+    if tracer:
+        with tracer.start_as_current_span("msgraph.refresh_token") as span:
+            if user and hasattr(user, 'email'):
+                span.set_attribute("user.email", getattr(user, 'email', ''))
+            return _refresh_token_impl(user)
+    return _refresh_token_impl(user)
+
+def _refresh_token_impl(user):
     client_id = current_app.config['MS_CLIENT_ID']
     client_secret = current_app.config['MS_CLIENT_SECRET']
     tenant_id = current_app.config['MS_TENANT_ID']
@@ -84,6 +124,14 @@ def refresh_token(user):
         raise MsAuthError('Microsoft 365 authentication expired or revoked. Please re-authenticate.')
 
 def get_authenticated_session_for_user(user):
+    if tracer:
+        with tracer.start_as_current_span("msgraph.get_authenticated_session_for_user") as span:
+            if user and hasattr(user, 'email'):
+                span.set_attribute("user.email", getattr(user, 'email', ''))
+            return _get_authenticated_session_for_user_impl(user)
+    return _get_authenticated_session_for_user_impl(user)
+
+def _get_authenticated_session_for_user_impl(user):
     if is_token_expired(user):
         current_app.logger.info(f"Refreshing expired token for user {user.email}")
         refresh_token(user)
