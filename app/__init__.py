@@ -4,6 +4,17 @@ from logging.handlers import RotatingFileHandler
 from flask import Flask, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
+try:
+    from opentelemetry import trace
+    from opentelemetry.sdk.resources import SERVICE_NAME, Resource
+    from opentelemetry.sdk.trace import TracerProvider
+    from opentelemetry.sdk.trace.export import BatchSpanProcessor
+    from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+    from opentelemetry.instrumentation.flask import FlaskInstrumentor
+    import opentelemetry.sdk.trace as sdk_trace
+    OTEL_AVAILABLE = True
+except ImportError:
+    OTEL_AVAILABLE = False
 
 # Initialize SQLAlchemy (instance will be used in models.py)
 db = SQLAlchemy()
@@ -21,6 +32,20 @@ def create_app():
 
     db.init_app(app)
     migrate.init_app(app, db)
+
+    # --- OpenTelemetry Tracing Setup ---
+    if OTEL_AVAILABLE:
+        resource = Resource(attributes={SERVICE_NAME: "admin-assistant"})
+        provider = TracerProvider(resource=resource)
+        trace.set_tracer_provider(provider)
+        otlp_exporter = OTLPSpanExporter()
+        span_processor = BatchSpanProcessor(otlp_exporter)
+        provider.add_span_processor(span_processor)
+        FlaskInstrumentor().instrument_app(app)
+        tracer = trace.get_tracer(__name__)
+    else:
+        tracer = None
+    # --- End OpenTelemetry Setup ---
 
     # Logging setup
     log_level = app.config.get('LOG_LEVEL', 'WARNING').upper()
@@ -45,6 +70,10 @@ def create_app():
     @app.before_request
     def log_request_info():
         app.logger.info(f"Request: {request.method} {request.path} from {request.remote_addr}")
+        # Example custom span for request
+        if tracer:
+            with tracer.start_as_current_span("log_request_info"):
+                pass
 
     # Import and register blueprints
     from app.routes.main import main_bp

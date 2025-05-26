@@ -37,4 +37,21 @@ except Exception as e:
 
 ## Further Reading
 - [Python logging documentation](https://docs.python.org/3/library/logging.html)
-- [Flask logging](https://flask.palletsprojects.com/en/latest/logging/) 
+- [Flask logging](https://flask.palletsprojects.com/en/latest/logging/)
+
+## OpenTelemetry Guidelines
+- Use OpenTelemetry for distributed tracing of HTTP requests and key business logic.
+- Prefer automatic instrumentation for Flask and supported libraries.
+- For custom operations, use `tracer.start_as_current_span()` to create spans.
+- Always name spans meaningfully (e.g., 'msgraph.refresh_token', 'user.login').
+- Do not include sensitive data in span attributes or events.
+- Configure exporters and sampling via environment variables or app config.
+- Review traces in your observability backend (e.g., Jaeger, OTLP collector).
+
+## Example
+```python
+from opentelemetry import trace
+tracer = trace.get_tracer(__name__)
+with tracer.start_as_current_span("service.operation"):
+    ...
+``` 

@@ -19,6 +19,7 @@ This file contains guidelines for AI-generated code in the `admin-assistant` pro
 - **Single source of truth**: Avoid duplication of logic or configuration.
 - **Testability**: Code should be written to facilitate unit and integration testing. Avoid hard-coded dependencies; use dependency injection where appropriate.
 - **Type annotations**: All functions and methods must include type hints for parameters and return values.
+- **Observability:** All new code must use OpenTelemetry for distributed tracing. Follow the guidelines in `docs/guidelines/logging.md` for best practices.
 
 ## SRS and Design Alignment
 - **All AI-generated code and documentation must align with the current Software Requirements Specification (SRS) in `docs/1-requirements/.**` and the design documentation in `docs/2-design/.**`

@@ -36,4 +36,26 @@ Logging is implemented using Python's built-in `logging` module and is configure
 
 ## Maintenance
 - Log files are rotated automatically. Old logs are kept as backups (up to 5 files).
-- Monitor log file size and adjust `maxBytes`/`backupCount` in `app/__init__.py` if needed. 
+- Monitor log file size and adjust `maxBytes`/`backupCount` in `app/__init__.py` if needed.
+
+## OpenTelemetry Integration
+- **Tracing:**
+  - The application is instrumented with OpenTelemetry for distributed tracing.
+  - Flask routes and key service functions are automatically traced.
+  - Traces are exported using the OTLP exporter (default: localhost:4317, configurable via environment variables).
+- **Metrics:**
+  - OpenTelemetry metrics can be enabled for future observability needs.
+- **Configuration:**
+  - OpenTelemetry is initialized in `app/__init__.py`.
+  - Exporter and sampling configuration can be set via environment variables or in the app config.
+- **Usage:**
+  - Traces are automatically generated for HTTP requests and selected service logic.
+  - Custom spans can be added using the OpenTelemetry API for critical business logic.
+
+## Example: Custom Span
+```python
+from opentelemetry import trace
+tracer = trace.get_tracer(__name__)
+with tracer.start_as_current_span("my_custom_operation"):
+    # business logic here
+``` 
