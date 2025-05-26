@@ -34,9 +34,6 @@ instance/
 # Environment variables
 .env
 
-# Migrations
-migrations/
-
 # VS Code
 .vscode/ 
 
