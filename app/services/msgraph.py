@@ -1,9 +1,9 @@
 import os
 import requests
 from flask import current_app, url_for, session
-from requests_oauthlib import OAuth2Session
 from app.models import db, User
 from datetime import datetime, timedelta
+import msal
 
 # Scopes required for calendar access
 MS_SCOPES = ['Calendars.ReadWrite', 'offline_access', 'User.Read']
@@ -17,54 +17,51 @@ try:
 except ImportError:
     tracer = None
 
-def get_ms_oauth_session(state=None, token=None):
-    if tracer:
-        with tracer.start_as_current_span("msgraph.get_ms_oauth_session"):
-            return _get_ms_oauth_session_impl(state, token)
-    return _get_ms_oauth_session_impl(state, token)
-
-def _get_ms_oauth_session_impl(state=None, token=None):
+def get_msal_app():
     client_id = current_app.config['MS_CLIENT_ID']
     client_secret = current_app.config['MS_CLIENT_SECRET']
-    redirect_uri = current_app.config['MS_REDIRECT_URI']
-    tenant_id = current_app.config['MS_TENANT_ID']
-    auth_base = f'https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0'
-    current_app.logger.debug(f"Creating OAuth2Session for tenant {tenant_id}")
-    return OAuth2Session(
+    authority = f"https://login.microsoftonline.com/{current_app.config['MS_TENANT_ID']}"
+    return msal.ConfidentialClientApplication(
         client_id,
-        redirect_uri=redirect_uri,
-        scope=MS_SCOPES,
-        state=state,
-        token=token
-    ), auth_base
+        authority=authority,
+        client_credential=client_secret
+    )
 
 def get_authorization_url():
-    if tracer:
-        with tracer.start_as_current_span("msgraph.get_authorization_url"):
-            return _get_authorization_url_impl()
-    return _get_authorization_url_impl()
-
-def _get_authorization_url_impl():
-    oauth, auth_base = get_ms_oauth_session()
-    authorization_url, state = oauth.authorization_url(f'{auth_base}/authorize')
-    current_app.logger.info(f"Generated Microsoft authorization URL: {authorization_url}")
-    return authorization_url, state
+    msal_app = get_msal_app()
+    redirect_uri = current_app.config['MS_REDIRECT_URI']
+    scopes = list(MS_SCOPES)
+    state = os.urandom(16).hex()
+    auth_url = msal_app.get_authorization_request_url(
+        scopes,
+        state=state,
+        redirect_uri=redirect_uri
+    )
+    current_app.logger.debug(f"[MSAL] Using tenant_id: {current_app.config['MS_TENANT_ID']}")
+    current_app.logger.info(f"[MSAL] Generated Microsoft authorization URL: {auth_url}")
+    current_app.logger.debug(f"[MSAL] Full authorization URL: {auth_url}")
+    return auth_url, state
 
 def fetch_token(authorization_response):
-    if tracer:
-        with tracer.start_as_current_span("msgraph.fetch_token"):
-            return _fetch_token_impl(authorization_response)
-    return _fetch_token_impl(authorization_response)
-
-def _fetch_token_impl(authorization_response):
-    oauth, auth_base = get_ms_oauth_session(state=session.get('oauth_state'))
-    token = oauth.fetch_token(
-        f'{auth_base}/token',
-        authorization_response=authorization_response,
-        client_secret=current_app.config['MS_CLIENT_SECRET']
+    msal_app = get_msal_app()
+    redirect_uri = current_app.config['MS_REDIRECT_URI']
+    # Parse code from the response URL
+    from urllib.parse import urlparse, parse_qs
+    parsed = urlparse(authorization_response)
+    code = parse_qs(parsed.query).get('code', [None])[0]
+    if not code:
+        raise MsAuthError('No authorization code found in callback URL.')
+    result = msal_app.acquire_token_by_authorization_code(
+        code,
+        scopes=list(MS_SCOPES),
+        redirect_uri=redirect_uri
     )
-    current_app.logger.info("Fetched Microsoft OAuth token.")
-    return token
+    if "access_token" in result:
+        current_app.logger.info("[MSAL] Fetched Microsoft OAuth token.")
+        return result
+    else:
+        current_app.logger.error(f"[MSAL] Token acquisition failed: {result}")
+        raise MsAuthError('Microsoft 365 authentication failed. ' + str(result.get('error_description', '')))
 
 def is_token_expired(user):
     if tracer:
