@@ -17,6 +17,7 @@ def get_ms_oauth_session(state=None, token=None):
     redirect_uri = current_app.config['MS_REDIRECT_URI']
     tenant_id = current_app.config['MS_TENANT_ID']
     auth_base = f'https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0'
+    current_app.logger.debug(f"Creating OAuth2Session for tenant {tenant_id}")
     return OAuth2Session(
         client_id,
         redirect_uri=redirect_uri,
@@ -28,6 +29,7 @@ def get_ms_oauth_session(state=None, token=None):
 def get_authorization_url():
     oauth, auth_base = get_ms_oauth_session()
     authorization_url, state = oauth.authorization_url(f'{auth_base}/authorize')
+    current_app.logger.info(f"Generated Microsoft authorization URL: {authorization_url}")
     return authorization_url, state
 
 def fetch_token(authorization_response):
@@ -37,12 +39,17 @@ def fetch_token(authorization_response):
         authorization_response=authorization_response,
         client_secret=current_app.config['MS_CLIENT_SECRET']
     )
+    current_app.logger.info("Fetched Microsoft OAuth token.")
     return token
 
 def is_token_expired(user):
     if not user.ms_token_expires_at:
+        current_app.logger.debug("User token has no expiry; treating as expired.")
         return True
-    return user.ms_token_expires_at <= datetime.utcnow()
+    expired = user.ms_token_expires_at <= datetime.utcnow()
+    if expired:
+        current_app.logger.info(f"Token for user {user.email} is expired.")
+    return expired
 
 def refresh_token(user):
     client_id = current_app.config['MS_CLIENT_ID']
@@ -65,6 +72,7 @@ def refresh_token(user):
         expires_in = token.get('expires_in', 3600)
         user.ms_token_expires_at = datetime.utcnow() + timedelta(seconds=expires_in)
         db.session.commit()
+        current_app.logger.info(f"Refreshed token for user {user.email}")
         return token['access_token']
     else:
         # Clear tokens and require re-authentication
@@ -72,11 +80,14 @@ def refresh_token(user):
         user.ms_refresh_token = None
         user.ms_token_expires_at = None
         db.session.commit()
+        current_app.logger.error(f"Failed to refresh token for user {user.email}: {resp.text}")
         raise MsAuthError('Microsoft 365 authentication expired or revoked. Please re-authenticate.')
 
 def get_authenticated_session_for_user(user):
     if is_token_expired(user):
+        current_app.logger.info(f"Refreshing expired token for user {user.email}")
         refresh_token(user)
     session_obj = requests.Session()
     session_obj.headers.update({'Authorization': f"Bearer {user.ms_access_token}"})
+    current_app.logger.debug(f"Created authenticated session for user {user.email}")
     return session_obj 
