@@ -17,6 +17,7 @@ def test_fetch_and_save_ms365_calendar_data():
         appointments = CalendarService.fetch_appointments_from_ms365(user, start_date, end_date)
         assert isinstance(appointments, list)
         os.makedirs('tests/data', exist_ok=True)
-        with open('tests/data/ms365_calendar_sample.json', 'w') as f:
+        filename = f"tests/data/ms365_calendar_{start_date.strftime('%Y%m%d')}_to_{end_date.strftime('%Y%m%d')}.json"
+        with open(filename, 'w') as f:
             json.dump(appointments, f, indent=2, default=str)
-        print(f"Saved {len(appointments)} appointments to tests/data/ms365_calendar_sample.json") 
+        print(f"Saved {len(appointments)} appointments to {filename}")
