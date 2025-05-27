@@ -83,5 +83,16 @@ admin-assistant/
 - Always prefer bash over PowerShell for running shell commands, unless specifically instructed otherwise.
 - For database migrations, use Flask-Migrate (`flask db` commands) instead of direct Alembic commands.
 
+## AI Agent Operational Best Practices
+
+- **Tool-Driven Exploration:** Always use available codebase exploration tools (semantic search, file search, directory listing, etc.) to gather information before making assumptions or generating code.
+- **Minimal and Contextual Edits:** When editing files, specify only the minimal code necessary for the change, using context markers to avoid accidental code removal. Never output unchanged code unless necessary for context.
+- **Error Handling:** Attempt to fix linter or syntax errors if the solution is clear. After three unsuccessful attempts, escalate to the user.
+- **Command Line Usage:** Use non-interactive flags for shell commands and avoid commands requiring user interaction unless instructed. Run long-running jobs in the background.
+- **Query Focus:** When a <most_important_user_query> is present, treat it as the authoritative query and ignore previous queries.
+- **Clarification:** Always ask clarifying questions if requirements are ambiguous. Prefer tool-based discovery over user queries when possible.
+- **Process Transparency:** Justify all actions taken and explain them in the context of the user's request.
+- **Security:** Never output, log, or expose sensitive information in any user-facing message or code output.
+
 ---
 _Last updated: [2025-05-27]_
