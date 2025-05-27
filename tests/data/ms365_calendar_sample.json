@@ -1,1 +1,1828 @@
-[]
+[
+  {
+    "@odata.etag": "W/\"sHKVScJ/9EOsKHgmr+i57gAIAqg2cA==\"",
+    "id": "AQMkADAwATM3ZmYAZS05ZmQzLTljNjAtMDACLTAwCgBGAAADkCL3cqm8KEuRPfSf7t743AcAsHKVScJ-9EOsKHgmr_i57gAAAgENAAAAsHKVScJ-9EOsKHgmr_i57gAIAl_1vgAAAA==",
+    "createdDateTime": "2025-05-19T13:19:44.3788095Z",
+    "lastModifiedDateTime": "2025-05-22T20:34:44.429071Z",
+    "changeKey": "sHKVScJ/9EOsKHgmr+i57gAIAqg2cA==",
+    "categories": [],
+    "transactionId": "localevent:f4a37ff1-5151-7362-6b16-fa5ab89bfab0",
+    "originalStartTimeZone": "South Africa Standard Time",
+    "originalEndTimeZone": "South Africa Standard Time",
+    "iCalUId": "040000008200E00074C5B7101A82E008000000006E75A7AFC0C8DB0100000000000000001000000064DA5E33A6D6DC439BAD5C184F397E94",
+    "uid": "040000008200E00074C5B7101A82E008000000006E75A7AFC0C8DB0100000000000000001000000064DA5E33A6D6DC439BAD5C184F397E94",
+    "reminderMinutesBeforeStart": 15,
+    "isReminderOn": false,
+    "hasAttachments": false,
+    "subject": "Travel",
+    "bodyPreview": "",
+    "importance": "normal",
+    "sensitivity": "normal",
+    "isAllDay": false,
+    "isCancelled": false,
+    "isOrganizer": true,
+    "responseRequested": true,
+    "seriesMasterId": null,
+    "showAs": "busy",
+    "type": "singleInstance",
+    "webLink": "https://outlook.live.com/owa/?itemid=AQMkADAwATM3ZmYAZS05ZmQzLTljNjAtMDACLTAwCgBGAAADkCL3cqm8KEuRPfSf7t743AcAsHKVScJ%2F9EOsKHgmr%2Bi57gAAAgENAAAAsHKVScJ%2F9EOsKHgmr%2Bi57gAIAl%2B1vgAAAA%3D%3D&exvsurl=1&path=/calendar/item",
+    "onlineMeetingUrl": null,
+    "isOnlineMeeting": false,
+    "onlineMeetingProvider": "unknown",
+    "allowNewTimeProposals": true,
+    "occurrenceId": null,
+    "isDraft": false,
+    "hideAttendees": false,
+    "responseStatus": {
+      "response": "organizer",
+      "time": "0001-01-01T00:00:00Z"
+    },
+    "body": {
+      "contentType": "html",
+      "content": ""
+    },
+    "start": {
+      "dateTime": "2025-05-21T11:45:00.0000000",
+      "timeZone": "UTC"
+    },
+    "end": {
+      "dateTime": "2025-05-21T12:00:00.0000000",
+      "timeZone": "UTC"
+    },
+    "location": {
+      "displayName": "",
+      "locationType": "default",
+      "uniqueIdType": "unknown",
+      "address": {},
+      "coordinates": {}
+    },
+    "locations": [],
+    "recurrence": null,
+    "attendees": [],
+    "organizer": {
+      "emailAddress": {
+        "name": "Bruce Cherrington",
+        "address": "bruce.cherrington@outlook.com"
+      }
+    },
+    "onlineMeeting": null
+  },
+  {
+    "@odata.etag": "W/\"sHKVScJ/9EOsKHgmr+i57gAIAqg2cQ==\"",
+    "id": "AQMkADAwATM3ZmYAZS05ZmQzLTljNjAtMDACLTAwCgBGAAADkCL3cqm8KEuRPfSf7t743AcAsHKVScJ-9EOsKHgmr_i57gAAAgENAAAAsHKVScJ-9EOsKHgmr_i57gAIAl_1vQAAAA==",
+    "createdDateTime": "2025-05-19T13:19:23.0566887Z",
+    "lastModifiedDateTime": "2025-05-22T20:34:45.0877234Z",
+    "changeKey": "sHKVScJ/9EOsKHgmr+i57gAIAqg2cQ==",
+    "categories": [],
+    "transactionId": "localevent:f17fd172-ee74-95d5-ee40-2d026e655e94",
+    "originalStartTimeZone": "South Africa Standard Time",
+    "originalEndTimeZone": "South Africa Standard Time",
+    "iCalUId": "040000008200E00074C5B7101A82E0080000000021F8F0A2C0C8DB01000000000000000010000000C3D6C851952D5843A93C33DDB1A10619",
+    "uid": "040000008200E00074C5B7101A82E0080000000021F8F0A2C0C8DB01000000000000000010000000C3D6C851952D5843A93C33DDB1A10619",
+    "reminderMinutesBeforeStart": 15,
+    "isReminderOn": false,
+    "hasAttachments": false,
+    "subject": "Sky to VET for blood test",
+    "bodyPreview": "",
+    "importance": "normal",
+    "sensitivity": "normal",
+    "isAllDay": false,
+    "isCancelled": false,
+    "isOrganizer": true,
+    "responseRequested": true,
+    "seriesMasterId": null,
+    "showAs": "busy",
+    "type": "singleInstance",
+    "webLink": "https://outlook.live.com/owa/?itemid=AQMkADAwATM3ZmYAZS05ZmQzLTljNjAtMDACLTAwCgBGAAADkCL3cqm8KEuRPfSf7t743AcAsHKVScJ%2F9EOsKHgmr%2Bi57gAAAgENAAAAsHKVScJ%2F9EOsKHgmr%2Bi57gAIAl%2B1vQAAAA%3D%3D&exvsurl=1&path=/calendar/item",
+    "onlineMeetingUrl": null,
+    "isOnlineMeeting": false,
+    "onlineMeetingProvider": "unknown",
+    "allowNewTimeProposals": true,
+    "occurrenceId": null,
+    "isDraft": false,
+    "hideAttendees": false,
+    "responseStatus": {
+      "response": "organizer",
+      "time": "0001-01-01T00:00:00Z"
+    },
+    "body": {
+      "contentType": "html",
+      "content": ""
+    },
+    "start": {
+      "dateTime": "2025-05-21T12:00:00.0000000",
+      "timeZone": "UTC"
+    },
+    "end": {
+      "dateTime": "2025-05-21T12:30:00.0000000",
+      "timeZone": "UTC"
+    },
+    "location": {
+      "displayName": "",
+      "locationType": "default",
+      "uniqueIdType": "unknown",
+      "address": {},
+      "coordinates": {}
+    },
+    "locations": [],
+    "recurrence": null,
+    "attendees": [],
+    "organizer": {
+      "emailAddress": {
+        "name": "Bruce Cherrington",
+        "address": "bruce.cherrington@outlook.com"
+      }
+    },
+    "onlineMeeting": null
+  },
+  {
+    "@odata.etag": "W/\"sHKVScJ/9EOsKHgmr+i57gAIAqg2bQ==\"",
+    "id": "AQMkADAwATM3ZmYAZS05ZmQzLTljNjAtMDACLTAwCgBGAAADkCL3cqm8KEuRPfSf7t743AcAsHKVScJ-9EOsKHgmr_i57gAAAgENAAAAsHKVScJ-9EOsKHgmr_i57gAIAl_1vwAAAA==",
+    "createdDateTime": "2025-05-19T13:19:47.7484322Z",
+    "lastModifiedDateTime": "2025-05-22T20:34:43.5392275Z",
+    "changeKey": "sHKVScJ/9EOsKHgmr+i57gAIAqg2bQ==",
+    "categories": [],
+    "transactionId": "localevent:7410800f-83e2-38d9-a8c7-7e183570c90e",
+    "originalStartTimeZone": "South Africa Standard Time",
+    "originalEndTimeZone": "South Africa Standard Time",
+    "iCalUId": "040000008200E00074C5B7101A82E008000000002B12A8B1C0C8DB010000000000000000100000004B9FD88B23C0C545AA4A377B9DD3D9F9",
+    "uid": "040000008200E00074C5B7101A82E008000000002B12A8B1C0C8DB010000000000000000100000004B9FD88B23C0C545AA4A377B9DD3D9F9",
+    "reminderMinutesBeforeStart": 15,
+    "isReminderOn": false,
+    "hasAttachments": false,
+    "subject": "Travel",
+    "bodyPreview": "",
+    "importance": "normal",
+    "sensitivity": "normal",
+    "isAllDay": false,
+    "isCancelled": false,
+    "isOrganizer": true,
+    "responseRequested": true,
+    "seriesMasterId": null,
+    "showAs": "busy",
+    "type": "singleInstance",
+    "webLink": "https://outlook.live.com/owa/?itemid=AQMkADAwATM3ZmYAZS05ZmQzLTljNjAtMDACLTAwCgBGAAADkCL3cqm8KEuRPfSf7t743AcAsHKVScJ%2F9EOsKHgmr%2Bi57gAAAgENAAAAsHKVScJ%2F9EOsKHgmr%2Bi57gAIAl%2B1vwAAAA%3D%3D&exvsurl=1&path=/calendar/item",
+    "onlineMeetingUrl": null,
+    "isOnlineMeeting": false,
+    "onlineMeetingProvider": "unknown",
+    "allowNewTimeProposals": true,
+    "occurrenceId": null,
+    "isDraft": false,
+    "hideAttendees": false,
+    "responseStatus": {
+      "response": "organizer",
+      "time": "0001-01-01T00:00:00Z"
+    },
+    "body": {
+      "contentType": "html",
+      "content": ""
+    },
+    "start": {
+      "dateTime": "2025-05-21T12:30:00.0000000",
+      "timeZone": "UTC"
+    },
+    "end": {
+      "dateTime": "2025-05-21T12:45:00.0000000",
+      "timeZone": "UTC"
+    },
+    "location": {
+      "displayName": "",
+      "locationType": "default",
+      "uniqueIdType": "unknown",
+      "address": {},
+      "coordinates": {}
+    },
+    "locations": [],
+    "recurrence": null,
+    "attendees": [],
+    "organizer": {
+      "emailAddress": {
+        "name": "Bruce Cherrington",
+        "address": "bruce.cherrington@outlook.com"
+      }
+    },
+    "onlineMeeting": null
+  },
+  {
+    "@odata.etag": "W/\"sHKVScJ/9EOsKHgmr+i57gAIAqg2Yw==\"",
+    "id": "AQMkADAwATM3ZmYAZS05ZmQzLTljNjAtMDACLTAwCgBGAAADkCL3cqm8KEuRPfSf7t743AcAsHKVScJ-9EOsKHgmr_i57gAAAgENAAAAsHKVScJ-9EOsKHgmr_i57gAIAl_1xwAAAA==",
+    "createdDateTime": "2025-05-21T16:09:17.253159Z",
+    "lastModifiedDateTime": "2025-05-22T20:34:39.4805769Z",
+    "changeKey": "sHKVScJ/9EOsKHgmr+i57gAIAqg2Yw==",
+    "categories": [
+      "Billable - Modena"
+    ],
+    "transactionId": "localevent:b3df7b78-2b28-a897-9ba2-b394899c5df3",
+    "originalStartTimeZone": "South Africa Standard Time",
+    "originalEndTimeZone": "South Africa Standard Time",
+    "iCalUId": "040000008200E00074C5B7101A82E00800000000A2AEFBB36ACADB010000000000000000100000006C51072453BDFE4EA3A31B6553879237",
+    "uid": "040000008200E00074C5B7101A82E00800000000A2AEFBB36ACADB010000000000000000100000006C51072453BDFE4EA3A31B6553879237",
+    "reminderMinutesBeforeStart": 15,
+    "isReminderOn": false,
+    "hasAttachments": false,
+    "subject": "Teraco project scoping review",
+    "bodyPreview": "",
+    "importance": "normal",
+    "sensitivity": "normal",
+    "isAllDay": false,
+    "isCancelled": false,
+    "isOrganizer": true,
+    "responseRequested": true,
+    "seriesMasterId": null,
+    "showAs": "busy",
+    "type": "singleInstance",
+    "webLink": "https://outlook.live.com/owa/?itemid=AQMkADAwATM3ZmYAZS05ZmQzLTljNjAtMDACLTAwCgBGAAADkCL3cqm8KEuRPfSf7t743AcAsHKVScJ%2F9EOsKHgmr%2Bi57gAAAgENAAAAsHKVScJ%2F9EOsKHgmr%2Bi57gAIAl%2B1xwAAAA%3D%3D&exvsurl=1&path=/calendar/item",
+    "onlineMeetingUrl": null,
+    "isOnlineMeeting": false,
+    "onlineMeetingProvider": "unknown",
+    "allowNewTimeProposals": true,
+    "occurrenceId": null,
+    "isDraft": false,
+    "hideAttendees": false,
+    "responseStatus": {
+      "response": "organizer",
+      "time": "0001-01-01T00:00:00Z"
+    },
+    "body": {
+      "contentType": "html",
+      "content": ""
+    },
+    "start": {
+      "dateTime": "2025-05-21T13:00:00.0000000",
+      "timeZone": "UTC"
+    },
+    "end": {
+      "dateTime": "2025-05-21T16:00:00.0000000",
+      "timeZone": "UTC"
+    },
+    "location": {
+      "displayName": "",
+      "locationType": "default",
+      "uniqueIdType": "unknown",
+      "address": {},
+      "coordinates": {}
+    },
+    "locations": [],
+    "recurrence": null,
+    "attendees": [],
+    "organizer": {
+      "emailAddress": {
+        "name": "Bruce Cherrington",
+        "address": "bruce.cherrington@outlook.com"
+      }
+    },
+    "onlineMeeting": null
+  },
+  {
+    "@odata.etag": "W/\"sHKVScJ/9EOsKHgmr+i57gAIAqg2YA==\"",
+    "id": "AQMkADAwATM3ZmYAZS05ZmQzLTljNjAtMDACLTAwCgBGAAADkCL3cqm8KEuRPfSf7t743AcAsHKVScJ-9EOsKHgmr_i57gAAAgENAAAAsHKVScJ-9EOsKHgmr_i57gAIAl_1yAAAAA==",
+    "createdDateTime": "2025-05-22T08:57:53.9504973Z",
+    "lastModifiedDateTime": "2025-05-22T20:34:38.5356017Z",
+    "changeKey": "sHKVScJ/9EOsKHgmr+i57gAIAqg2YA==",
+    "categories": [
+      "Billable - Modena"
+    ],
+    "transactionId": "localevent:995268f2-3d17-f9b5-0625-0f5e058d9fe8",
+    "originalStartTimeZone": "South Africa Standard Time",
+    "originalEndTimeZone": "South Africa Standard Time",
+    "iCalUId": "040000008200E00074C5B7101A82E00800000000719BBF9AF7CADB010000000000000000100000004A96E51CCA97FD409D6616EE873DA5E4",
+    "uid": "040000008200E00074C5B7101A82E00800000000719BBF9AF7CADB010000000000000000100000004A96E51CCA97FD409D6616EE873DA5E4",
+    "reminderMinutesBeforeStart": 15,
+    "isReminderOn": false,
+    "hasAttachments": false,
+    "subject": "Dev Catchup",
+    "bodyPreview": "",
+    "importance": "normal",
+    "sensitivity": "normal",
+    "isAllDay": false,
+    "isCancelled": false,
+    "isOrganizer": true,
+    "responseRequested": true,
+    "seriesMasterId": null,
+    "showAs": "busy",
+    "type": "singleInstance",
+    "webLink": "https://outlook.live.com/owa/?itemid=AQMkADAwATM3ZmYAZS05ZmQzLTljNjAtMDACLTAwCgBGAAADkCL3cqm8KEuRPfSf7t743AcAsHKVScJ%2F9EOsKHgmr%2Bi57gAAAgENAAAAsHKVScJ%2F9EOsKHgmr%2Bi57gAIAl%2B1yAAAAA%3D%3D&exvsurl=1&path=/calendar/item",
+    "onlineMeetingUrl": null,
+    "isOnlineMeeting": false,
+    "onlineMeetingProvider": "unknown",
+    "allowNewTimeProposals": true,
+    "occurrenceId": null,
+    "isDraft": false,
+    "hideAttendees": false,
+    "responseStatus": {
+      "response": "organizer",
+      "time": "0001-01-01T00:00:00Z"
+    },
+    "body": {
+      "contentType": "html",
+      "content": ""
+    },
+    "start": {
+      "dateTime": "2025-05-22T08:30:00.0000000",
+      "timeZone": "UTC"
+    },
+    "end": {
+      "dateTime": "2025-05-22T09:00:00.0000000",
+      "timeZone": "UTC"
+    },
+    "location": {
+      "displayName": "",
+      "locationType": "default",
+      "uniqueIdType": "unknown",
+      "address": {},
+      "coordinates": {}
+    },
+    "locations": [],
+    "recurrence": null,
+    "attendees": [],
+    "organizer": {
+      "emailAddress": {
+        "name": "Bruce Cherrington",
+        "address": "bruce.cherrington@outlook.com"
+      }
+    },
+    "onlineMeeting": null
+  },
+  {
+    "@odata.etag": "W/\"sHKVScJ/9EOsKHgmr+i57gAIAqg2aA==\"",
+    "id": "AQMkADAwATM3ZmYAZS05ZmQzLTljNjAtMDACLTAwCgBGAAADkCL3cqm8KEuRPfSf7t743AcAsHKVScJ-9EOsKHgmr_i57gAAAgENAAAAsHKVScJ-9EOsKHgmr_i57gAIAl_1xQAAAA==",
+    "createdDateTime": "2025-05-19T13:21:39.5069766Z",
+    "lastModifiedDateTime": "2025-05-22T20:34:40.5738069Z",
+    "changeKey": "sHKVScJ/9EOsKHgmr+i57gAIAqg2aA==",
+    "categories": [
+      "Billable - Modena"
+    ],
+    "transactionId": "localevent:c20fdc52-c3cf-78d9-66a0-5fea4a832f2b",
+    "originalStartTimeZone": "South Africa Standard Time",
+    "originalEndTimeZone": "South Africa Standard Time",
+    "iCalUId": "040000008200E00074C5B7101A82E00800000000378946F4C0C8DB01000000000000000010000000BF2EADED822A614F881C31457A15DB04",
+    "uid": "040000008200E00074C5B7101A82E00800000000378946F4C0C8DB01000000000000000010000000BF2EADED822A614F881C31457A15DB04",
+    "reminderMinutesBeforeStart": 15,
+    "isReminderOn": false,
+    "hasAttachments": false,
+    "subject": "Travel",
+    "bodyPreview": "",
+    "importance": "normal",
+    "sensitivity": "normal",
+    "isAllDay": false,
+    "isCancelled": false,
+    "isOrganizer": true,
+    "responseRequested": true,
+    "seriesMasterId": null,
+    "showAs": "busy",
+    "type": "singleInstance",
+    "webLink": "https://outlook.live.com/owa/?itemid=AQMkADAwATM3ZmYAZS05ZmQzLTljNjAtMDACLTAwCgBGAAADkCL3cqm8KEuRPfSf7t743AcAsHKVScJ%2F9EOsKHgmr%2Bi57gAAAgENAAAAsHKVScJ%2F9EOsKHgmr%2Bi57gAIAl%2B1xQAAAA%3D%3D&exvsurl=1&path=/calendar/item",
+    "onlineMeetingUrl": null,
+    "isOnlineMeeting": false,
+    "onlineMeetingProvider": "unknown",
+    "allowNewTimeProposals": true,
+    "occurrenceId": null,
+    "isDraft": false,
+    "hideAttendees": false,
+    "responseStatus": {
+      "response": "organizer",
+      "time": "0001-01-01T00:00:00Z"
+    },
+    "body": {
+      "contentType": "html",
+      "content": ""
+    },
+    "start": {
+      "dateTime": "2025-05-22T11:30:00.0000000",
+      "timeZone": "UTC"
+    },
+    "end": {
+      "dateTime": "2025-05-22T12:00:00.0000000",
+      "timeZone": "UTC"
+    },
+    "location": {
+      "displayName": "",
+      "locationType": "default",
+      "uniqueIdType": "unknown",
+      "address": {},
+      "coordinates": {}
+    },
+    "locations": [],
+    "recurrence": null,
+    "attendees": [],
+    "organizer": {
+      "emailAddress": {
+        "name": "Bruce Cherrington",
+        "address": "bruce.cherrington@outlook.com"
+      }
+    },
+    "onlineMeeting": null
+  },
+  {
+    "@odata.etag": "W/\"sHKVScJ/9EOsKHgmr+i57gAIBkuafQ==\"",
+    "id": "AQMkADAwATM3ZmYAZS05ZmQzLTljNjAtMDACLTAwCgBGAAADkCL3cqm8KEuRPfSf7t743AcAsHKVScJ-9EOsKHgmr_i57gAAAgENAAAAsHKVScJ-9EOsKHgmr_i57gAIAl_1wAAAAA==",
+    "createdDateTime": "2025-05-19T13:20:17.2993078Z",
+    "lastModifiedDateTime": "2025-05-25T14:24:49.6700583Z",
+    "changeKey": "sHKVScJ/9EOsKHgmr+i57gAIBkuafQ==",
+    "categories": [],
+    "transactionId": "localevent:2f42dc56-36f5-8d8a-8c61-6dcb5385d985",
+    "originalStartTimeZone": "South Africa Standard Time",
+    "originalEndTimeZone": "South Africa Standard Time",
+    "iCalUId": "040000008200E00074C5B7101A82E0080000000040AB44C3C0C8DB01000000000000000010000000765D0ADBB0DACE44ACDA7E47097C7F9D",
+    "uid": "040000008200E00074C5B7101A82E0080000000040AB44C3C0C8DB01000000000000000010000000765D0ADBB0DACE44ACDA7E47097C7F9D",
+    "reminderMinutesBeforeStart": 15,
+    "isReminderOn": false,
+    "hasAttachments": false,
+    "subject": "Travel",
+    "bodyPreview": "",
+    "importance": "normal",
+    "sensitivity": "private",
+    "isAllDay": false,
+    "isCancelled": false,
+    "isOrganizer": true,
+    "responseRequested": true,
+    "seriesMasterId": null,
+    "showAs": "busy",
+    "type": "singleInstance",
+    "webLink": "https://outlook.live.com/owa/?itemid=AQMkADAwATM3ZmYAZS05ZmQzLTljNjAtMDACLTAwCgBGAAADkCL3cqm8KEuRPfSf7t743AcAsHKVScJ%2F9EOsKHgmr%2Bi57gAAAgENAAAAsHKVScJ%2F9EOsKHgmr%2Bi57gAIAl%2B1wAAAAA%3D%3D&exvsurl=1&path=/calendar/item",
+    "onlineMeetingUrl": null,
+    "isOnlineMeeting": false,
+    "onlineMeetingProvider": "unknown",
+    "allowNewTimeProposals": true,
+    "occurrenceId": null,
+    "isDraft": false,
+    "hideAttendees": false,
+    "responseStatus": {
+      "response": "organizer",
+      "time": "0001-01-01T00:00:00Z"
+    },
+    "body": {
+      "contentType": "html",
+      "content": ""
+    },
+    "start": {
+      "dateTime": "2025-05-23T09:30:00.0000000",
+      "timeZone": "UTC"
+    },
+    "end": {
+      "dateTime": "2025-05-23T10:00:00.0000000",
+      "timeZone": "UTC"
+    },
+    "location": {
+      "displayName": "",
+      "locationType": "default",
+      "uniqueIdType": "unknown",
+      "address": {},
+      "coordinates": {}
+    },
+    "locations": [],
+    "recurrence": null,
+    "attendees": [],
+    "organizer": {
+      "emailAddress": {
+        "name": "Bruce Cherrington",
+        "address": "bruce.cherrington@outlook.com"
+      }
+    },
+    "onlineMeeting": null
+  },
+  {
+    "@odata.etag": "W/\"sHKVScJ/9EOsKHgmr+i57gAIAqa7qQ==\"",
+    "id": "AQMkADAwATM3ZmYAZS05ZmQzLTljNjAtMDACLTAwCgBGAAADkCL3cqm8KEuRPfSf7t743AcAsHKVScJ-9EOsKHgmr_i57gAAAgENAAAAsHKVScJ-9EOsKHgmr_i57gAH4DGMfAAAAA==",
+    "createdDateTime": "2025-03-28T11:12:54.9510257Z",
+    "lastModifiedDateTime": "2025-05-19T13:20:39.0895393Z",
+    "changeKey": "sHKVScJ/9EOsKHgmr+i57gAIAqa7qQ==",
+    "categories": [],
+    "transactionId": null,
+    "originalStartTimeZone": "tzone://Microsoft/Utc",
+    "originalEndTimeZone": "tzone://Microsoft/Utc",
+    "iCalUId": "040000008200E00074C5B7101A82E0080000000000000000000000000000000000000000270000007643616C2D556964010000004576656E7449442E3834352E3535363036352E3331303532313300",
+    "uid": "EventID.845.556065.3105213",
+    "reminderMinutesBeforeStart": 0,
+    "isReminderOn": false,
+    "hasAttachments": false,
+    "subject": "Appointment for 'BRUCE CHERRINGTON' with 'Ashnee Kasseepursad' and reference ':: REQ-556065-3105213 ::'",
+    "bodyPreview": "Hi,\r\n\r\nDescription: The following is a new meeting request:\r\n\r\nSubject: Appointment for \"BRUCE CHERRINGTON\" with \"Ashnee Kasseepursad\" and reference :: REQ-556065-3105213 ::\r\n\r\nOrganiser: \"Ashnee Kasseepursad\" <Ashnee.kasseepursad@gmail.com>\r\n\r\nTime: ",
+    "importance": "normal",
+    "sensitivity": "private",
+    "isAllDay": false,
+    "isCancelled": false,
+    "isOrganizer": false,
+    "responseRequested": true,
+    "seriesMasterId": null,
+    "showAs": "busy",
+    "type": "singleInstance",
+    "webLink": "https://outlook.live.com/owa/?itemid=AQMkADAwATM3ZmYAZS05ZmQzLTljNjAtMDACLTAwCgBGAAADkCL3cqm8KEuRPfSf7t743AcAsHKVScJ%2F9EOsKHgmr%2Bi57gAAAgENAAAAsHKVScJ%2F9EOsKHgmr%2Bi57gAH4DGMfAAAAA%3D%3D&exvsurl=1&path=/calendar/item",
+    "onlineMeetingUrl": null,
+    "isOnlineMeeting": false,
+    "onlineMeetingProvider": "unknown",
+    "allowNewTimeProposals": true,
+    "occurrenceId": null,
+    "isDraft": false,
+    "hideAttendees": false,
+    "responseStatus": {
+      "response": "accepted",
+      "time": "2025-05-19T13:20:10.4768526Z"
+    },
+    "body": {
+      "contentType": "html",
+      "content": "<html><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\r\n<meta name=\"Generator\" content=\"Microsoft Exchange Server\">\r\n<!-- converted from text -->\r\n<style><!-- .EmailQuote { margin-left: 1pt; padding-left: 4pt; border-left: #800000 2px solid; } --></style></head>\r\n<body>\r\n<font size=\"2\"><span style=\"font-size:11pt;\"><div class=\"PlainText\"><br>\r\n<br>\r\nHi,<br>\r\n<br>\r\nDescription: The following is a new meeting request:<br>\r\n<br>\r\nSubject: Appointment for &quot;BRUCE CHERRINGTON&quot; with &quot;Ashnee Kasseepursad&quot; and reference :: REQ-556065-3105213 ::<br>\r\n<br>\r\nOrganiser: &quot;Ashnee Kasseepursad&quot; &lt;Ashnee.kasseepursad@gmail.com&gt;<br>\r\n<br>\r\nTime: Fri, 23 May 2025 12:00 - 13:00 (SAST)<br>\r\nRepeat: -<br>\r\n<br>\r\nAttendees: &quot;BRUCE CHERRINGTON&quot; &lt;bcherrington@tiscali.co.za&gt;<br>\r\n<br>\r\nBooking location: Default Location<br>\r\n<br>\r\nRegards,<br>\r\n<br>\r\n--<br>\r\n<br>\r\nsmeMetrics Support<br>\r\n<br>\r\nsmeMetrics is a product of piMetix (Pty) Ltd<br>\r\n<br>\r\nWebsite : <a href=\"https://emea01.safelinks.protection.outlook.com/?url=https%3A%2F%2Fwww.smemetrics.com%2F&amp;data=05%7C02%7C%7Ce0915dfa8b1e4a23c95408dd6de97beb%7C84df9e7fe9f640afb435aaaaaaaaaaaa%7C1%7C0%7C638787571748544273%7CUnknown%7CTWFpbGZsb3d8eyJFbXB0eU1hcGkiOnRydWUsIlYiOiIwLjAuMDAwMCIsIlAiOiJXaW4zMiIsIkFOIjoiTWFpbCIsIldUIjoyfQ%3D%3D%7C0%7C%7C%7C&amp;sdata=C6I%2BC5LHQWOBP7Uvnp6huaeY3zbVxK%2BvSnYQME%2BrfD0%3D&amp;reserved=0\">https://emea01.safelinks.protection.outlook.com/?url=https%3A%2F%2Fwww.smemetrics.com%2F&amp;data=05%7C02%7C%7Ce0915dfa8b1e4a23c95408dd6de97beb%7C84df9e7fe9f640afb435aaaaaaaaaaaa%7C1%7C0%7C638787571748544273%7CUnknown%7CTWFpbGZsb3d8eyJFbXB0eU1hcGkiOnRydWUsIlYiOiIwLjAuMDAwMCIsIlAiOiJXaW4zMiIsIkFOIjoiTWFpbCIsIldUIjoyfQ%3D%3D%7C0%7C%7C%7C&amp;sdata=C6I%2BC5LHQWOBP7Uvnp6huaeY3zbVxK%2BvSnYQME%2BrfD0%3D&amp;reserved=0</a><br>\r\nEmail : info@kitrin.com<br>\r\n<br>\r\nDisclaimer: The information in this email is confidential and may be legally privileged. It is intended solely for the addressee. Access to this email by anyone else is unauthorised. If you are not the intended recipient, any disclosure, copying, distribution or any action taken or omitted to be taken in reliance on it, is prohibited and may be unlawful. If you are not the intended recipient please return the message to the sender and delete it from your records.<br>\r\n<br>\r\n&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </div></span></font>\r\n</body>\r\n</html>\r\n"
+    },
+    "start": {
+      "dateTime": "2025-05-23T10:00:00.0000000",
+      "timeZone": "UTC"
+    },
+    "end": {
+      "dateTime": "2025-05-23T11:00:00.0000000",
+      "timeZone": "UTC"
+    },
+    "location": {
+      "displayName": " Default Location",
+      "locationType": "default",
+      "uniqueId": " Default Location",
+      "uniqueIdType": "private"
+    },
+    "locations": [
+      {
+        "displayName": " Default Location",
+        "locationType": "default",
+        "uniqueId": " Default Location",
+        "uniqueIdType": "private"
+      }
+    ],
+    "recurrence": null,
+    "attendees": [
+      {
+        "type": "required",
+        "status": {
+          "response": "none",
+          "time": "0001-01-01T00:00:00Z"
+        },
+        "emailAddress": {
+          "name": "Ashnee Kasseepursad",
+          "address": "Ashnee.kasseepursad@gmail.com"
+        }
+      },
+      {
+        "type": "required",
+        "status": {
+          "response": "none",
+          "time": "0001-01-01T00:00:00Z"
+        },
+        "emailAddress": {
+          "name": "BRUCE CHERRINGTON",
+          "address": "bcherrington@tiscali.co.za"
+        }
+      }
+    ],
+    "organizer": {
+      "emailAddress": {
+        "name": "Ashnee Kasseepursad",
+        "address": "Ashnee.kasseepursad@gmail.com"
+      }
+    },
+    "onlineMeeting": null
+  },
+  {
+    "@odata.etag": "W/\"sHKVScJ/9EOsKHgmr+i57gAIBkuafA==\"",
+    "id": "AQMkADAwATM3ZmYAZS05ZmQzLTljNjAtMDACLTAwCgBGAAADkCL3cqm8KEuRPfSf7t743AcAsHKVScJ-9EOsKHgmr_i57gAAAgENAAAAsHKVScJ-9EOsKHgmr_i57gAIAl_1wQAAAA==",
+    "createdDateTime": "2025-05-19T13:20:34.1043887Z",
+    "lastModifiedDateTime": "2025-05-25T14:24:48.8027422Z",
+    "changeKey": "sHKVScJ/9EOsKHgmr+i57gAIBkuafA==",
+    "categories": [],
+    "transactionId": "localevent:48799c19-5514-8f24-940d-f4e1b5299f33",
+    "originalStartTimeZone": "South Africa Standard Time",
+    "originalEndTimeZone": "South Africa Standard Time",
+    "iCalUId": "040000008200E00074C5B7101A82E00800000000591C4ACDC0C8DB0100000000000000001000000058EFFF810E1C46459E5EDB7A74CB5BD0",
+    "uid": "040000008200E00074C5B7101A82E00800000000591C4ACDC0C8DB0100000000000000001000000058EFFF810E1C46459E5EDB7A74CB5BD0",
+    "reminderMinutesBeforeStart": 15,
+    "isReminderOn": false,
+    "hasAttachments": false,
+    "subject": "Travel",
+    "bodyPreview": "",
+    "importance": "normal",
+    "sensitivity": "private",
+    "isAllDay": false,
+    "isCancelled": false,
+    "isOrganizer": true,
+    "responseRequested": true,
+    "seriesMasterId": null,
+    "showAs": "busy",
+    "type": "singleInstance",
+    "webLink": "https://outlook.live.com/owa/?itemid=AQMkADAwATM3ZmYAZS05ZmQzLTljNjAtMDACLTAwCgBGAAADkCL3cqm8KEuRPfSf7t743AcAsHKVScJ%2F9EOsKHgmr%2Bi57gAAAgENAAAAsHKVScJ%2F9EOsKHgmr%2Bi57gAIAl%2B1wQAAAA%3D%3D&exvsurl=1&path=/calendar/item",
+    "onlineMeetingUrl": null,
+    "isOnlineMeeting": false,
+    "onlineMeetingProvider": "unknown",
+    "allowNewTimeProposals": true,
+    "occurrenceId": null,
+    "isDraft": false,
+    "hideAttendees": false,
+    "responseStatus": {
+      "response": "organizer",
+      "time": "0001-01-01T00:00:00Z"
+    },
+    "body": {
+      "contentType": "html",
+      "content": ""
+    },
+    "start": {
+      "dateTime": "2025-05-23T11:00:00.0000000",
+      "timeZone": "UTC"
+    },
+    "end": {
+      "dateTime": "2025-05-23T11:30:00.0000000",
+      "timeZone": "UTC"
+    },
+    "location": {
+      "displayName": "",
+      "locationType": "default",
+      "uniqueIdType": "unknown",
+      "address": {},
+      "coordinates": {}
+    },
+    "locations": [],
+    "recurrence": null,
+    "attendees": [],
+    "organizer": {
+      "emailAddress": {
+        "name": "Bruce Cherrington",
+        "address": "bruce.cherrington@outlook.com"
+      }
+    },
+    "onlineMeeting": null
+  },
+  {
+    "@odata.etag": "W/\"sHKVScJ/9EOsKHgmr+i57gAIBkwEhA==\"",
+    "id": "AQMkADAwATM3ZmYAZS05ZmQzLTljNjAtMDACLTAwCgBGAAADkCL3cqm8KEuRPfSf7t743AcAsHKVScJ-9EOsKHgmr_i57gAAAgENAAAAsHKVScJ-9EOsKHgmr_i57gAIAl_1ygAAAA==",
+    "createdDateTime": "2025-05-23T12:37:43.4048159Z",
+    "lastModifiedDateTime": "2025-05-26T10:13:55.433374Z",
+    "changeKey": "sHKVScJ/9EOsKHgmr+i57gAIBkwEhA==",
+    "categories": [
+      "Billable - Modena"
+    ],
+    "transactionId": null,
+    "originalStartTimeZone": "South Africa Standard Time",
+    "originalEndTimeZone": "South Africa Standard Time",
+    "iCalUId": "040000008200E00074C5B7101A82E0080000000030F8C32AEFCBDB01000000000000000010000000D078E59E2F6E064E89C2F95C8742769F",
+    "uid": "040000008200E00074C5B7101A82E0080000000030F8C32AEFCBDB01000000000000000010000000D078E59E2F6E064E89C2F95C8742769F",
+    "reminderMinutesBeforeStart": 15,
+    "isReminderOn": false,
+    "hasAttachments": false,
+    "subject": "Teraco Engagement Team - Services and Initiatives ",
+    "bodyPreview": "________________________________________________________________________________\r\nMicrosoft Teams Need help?\r\nJoin the meeting now\r\nMeeting ID: 343 158 466 556 1\r\nPasscode: LE2mC6Sk\r\n________________________________\r\nFor organizers: Meeting options",
+    "importance": "normal",
+    "sensitivity": "normal",
+    "isAllDay": false,
+    "isCancelled": false,
+    "isOrganizer": false,
+    "responseRequested": true,
+    "seriesMasterId": null,
+    "showAs": "busy",
+    "type": "singleInstance",
+    "webLink": "https://outlook.live.com/owa/?itemid=AQMkADAwATM3ZmYAZS05ZmQzLTljNjAtMDACLTAwCgBGAAADkCL3cqm8KEuRPfSf7t743AcAsHKVScJ%2F9EOsKHgmr%2Bi57gAAAgENAAAAsHKVScJ%2F9EOsKHgmr%2Bi57gAIAl%2B1ygAAAA%3D%3D&exvsurl=1&path=/calendar/item",
+    "onlineMeetingUrl": null,
+    "isOnlineMeeting": true,
+    "onlineMeetingProvider": "teamsForBusiness",
+    "allowNewTimeProposals": true,
+    "occurrenceId": null,
+    "isDraft": false,
+    "hideAttendees": false,
+    "responseStatus": {
+      "response": "accepted",
+      "time": "2025-05-26T08:00:28.6335522Z"
+    },
+    "body": {
+      "contentType": "html",
+      "content": "<html>\r\n<head>\r\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\r\n<meta name=\"Generator\" content=\"Microsoft Word 15 (filtered medium)\">\r\n<style>\r\n<!--\r\n@font-face\r\n\t{font-family:\"Cambria Math\"}\r\n@font-face\r\n\t{font-family:Aptos}\r\n@font-face\r\n\t{font-family:\"Segoe UI\"}\r\np.MsoNormal, li.MsoNormal, div.MsoNormal\r\n\t{margin:0cm;\r\n\tfont-size:11.0pt;\r\n\tfont-family:\"Aptos\",sans-serif}\r\na:link, span.MsoHyperlink\r\n\t{color:#467886;\r\n\ttext-decoration:underline}\r\nspan.me-email-text\r\n\t{}\r\nspan.me-email-text-secondary\r\n\t{}\r\nspan.EmailStyle20\r\n\t{}\r\n.MsoChpDefault\r\n\t{font-size:10.0pt}\r\n@page WordSection1\r\n\t{margin:72.0pt 72.0pt 72.0pt 72.0pt}\r\ndiv.WordSection1\r\n\t{}\r\n-->\r\n</style>\r\n</head>\r\n<body lang=\"EN-ZA\" link=\"#467886\" vlink=\"#96607D\" style=\"word-wrap:break-word\">\r\n<div class=\"WordSection1\">\r\n<p class=\"MsoNormal\">&nbsp;</p>\r\n<div>\r\n<div style=\"margin-bottom:18.0pt; overflow:hidden\">\r\n<p class=\"MsoNormal\"><span style=\"font-family:&quot;Segoe UI&quot;,sans-serif; color:#242424\">&nbsp;</span></p>\r\n</div>\r\n</div>\r\n<p class=\"MsoNormal\">&nbsp;</p>\r\n<div>\r\n<div>\r\n<div style=\"margin-bottom:18.0pt; overflow:hidden\">\r\n<p class=\"MsoNormal\"><span style=\"font-family:&quot;Segoe UI&quot;,sans-serif; color:#242424\">________________________________________________________________________________</span><span style=\"font-size:12.0pt; font-family:&quot;Segoe UI&quot;,sans-serif; color:#242424\"></span></p>\r\n</div>\r\n<div style=\"margin-bottom:9.0pt\">\r\n<p class=\"MsoNormal\"><span class=\"me-email-text\"><b><span style=\"font-size:18.0pt; font-family:&quot;Segoe UI&quot;,sans-serif; color:#242424\">Microsoft Teams</span></b></span><span style=\"font-family:&quot;Segoe UI&quot;,sans-serif; color:#242424\">\r\n<a href=\"https://emea01.safelinks.protection.outlook.com/?url=https%3A%2F%2Faka.ms%2FJoinTeamsMeeting%3Fomkt%3Den-US&amp;data=05%7C02%7C%7C6c3faa8058c948fcd87e08dd9c2ae999%7C84df9e7fe9f640afb435aaaaaaaaaaaa%7C1%7C0%7C638838430308899053%7CUnknown%7CTWFpbGZsb3d8eyJFbXB0eU1hcGkiOnRydWUsIlYiOiIwLjAuMDAwMCIsIlAiOiJXaW4zMiIsIkFOIjoiTWFpbCIsIldUIjoyfQ%3D%3D%7C0%7C%7C%7C&amp;sdata=McH7zrzetkSXSZ1sDST9XQDJegpXcT1OytTiRqPcfBY%3D&amp;reserved=0\" originalsrc=\"https://aka.ms/JoinTeamsMeeting?omkt=en-US\">\r\n<span style=\"font-size:10.5pt; color:#5B5FC7\">Need help?</span></a> </span></p>\r\n</div>\r\n<div style=\"margin-bottom:4.5pt\">\r\n<p class=\"MsoNormal\"><span style=\"font-family:&quot;Segoe UI&quot;,sans-serif; color:#242424\"><a href=\"https://emea01.safelinks.protection.outlook.com/ap/t-59584e83/?url=https%3A%2F%2Fteams.microsoft.com%2Fl%2Fmeetup-join%2F19%253ameeting_ZThmNGM0NDktYzQ3Zi00MmNjLWE1NDktN2U0NGJjMTdmNDdi%2540thread.v2%2F0%3Fcontext%3D%257b%2522Tid%2522%253a%2522193daea9-73e0-467d-a9c8-2cf78c9485ba%2522%252c%2522Oid%2522%253a%25228f23e5fe-c699-44ee-8b40-59f33788077f%2522%257d&amp;data=05%7C02%7C%7C6c3faa8058c948fcd87e08dd9c2ae999%7C84df9e7fe9f640afb435aaaaaaaaaaaa%7C1%7C0%7C638838430308924058%7CUnknown%7CTWFpbGZsb3d8eyJFbXB0eU1hcGkiOnRydWUsIlYiOiIwLjAuMDAwMCIsIlAiOiJXaW4zMiIsIkFOIjoiTWFpbCIsIldUIjoyfQ%3D%3D%7C0%7C%7C%7C&amp;sdata=sUA1%2FxMlWFk2r87FehnEWbniQtXGZoPByLvvQBZp%2FHo%3D&amp;reserved=0\" originalsrc=\"https://teams.microsoft.com/l/meetup-join/19%3ameeting_ZThmNGM0NDktYzQ3Zi00MmNjLWE1NDktN2U0NGJjMTdmNDdi%40thread.v2/0?context=%7b%22Tid%22%3a%22193daea9-73e0-467d-a9c8-2cf78c9485ba%22%2c%22Oid%22%3a%228f23e5fe-c699-44ee-8b40-59f33788077f%22%7d\" title=\"Meeting join link\"><b><span style=\"font-size:15.0pt; color:#5B5FC7\">Join\r\n the meeting now</span></b></a> </span></p>\r\n</div>\r\n<div style=\"margin-bottom:4.5pt\">\r\n<p class=\"MsoNormal\"><span class=\"me-email-text-secondary\"><span style=\"font-size:10.5pt; font-family:&quot;Segoe UI&quot;,sans-serif; color:#616161\">Meeting ID:\r\n</span></span><span class=\"me-email-text\"><span style=\"font-size:10.5pt; font-family:&quot;Segoe UI&quot;,sans-serif; color:#242424\">343 158 466 556 1</span></span><span style=\"font-family:&quot;Segoe UI&quot;,sans-serif; color:#242424\">\r\n</span></p>\r\n</div>\r\n<div style=\"margin-bottom:18.0pt\">\r\n<p class=\"MsoNormal\"><span class=\"me-email-text-secondary\"><span style=\"font-size:10.5pt; font-family:&quot;Segoe UI&quot;,sans-serif; color:#616161\">Passcode:\r\n</span></span><span class=\"me-email-text\"><span style=\"font-size:10.5pt; font-family:&quot;Segoe UI&quot;,sans-serif; color:#242424\">LE2mC6Sk</span></span><span style=\"font-family:&quot;Segoe UI&quot;,sans-serif; color:#242424\">\r\n</span></p>\r\n</div>\r\n<div style=\"margin-bottom:18.0pt\">\r\n<div class=\"MsoNormal\" align=\"center\" style=\"text-align:center\"><span style=\"font-family:&quot;Segoe UI&quot;,sans-serif; color:#242424\">\r\n<hr size=\"1\" width=\"100%\" align=\"center\">\r\n</span></div>\r\n</div>\r\n<div>\r\n<p class=\"MsoNormal\"><span class=\"me-email-text-secondary\"><span style=\"font-size:10.5pt; font-family:&quot;Segoe UI&quot;,sans-serif; color:#616161\">For organizers:\r\n</span></span><span style=\"font-family:&quot;Segoe UI&quot;,sans-serif; color:#242424\"><a href=\"https://emea01.safelinks.protection.outlook.com/?url=https%3A%2F%2Fteams.microsoft.com%2FmeetingOptions%2F%3ForganizerId%3D8f23e5fe-c699-44ee-8b40-59f33788077f%26tenantId%3D193daea9-73e0-467d-a9c8-2cf78c9485ba%26threadId%3D19_meeting_ZThmNGM0NDktYzQ3Zi00MmNjLWE1NDktN2U0NGJjMTdmNDdi%40thread.v2%26messageId%3D0%26language%3Den-US&amp;data=05%7C02%7C%7C6c3faa8058c948fcd87e08dd9c2ae999%7C84df9e7fe9f640afb435aaaaaaaaaaaa%7C1%7C0%7C638838430308942545%7CUnknown%7CTWFpbGZsb3d8eyJFbXB0eU1hcGkiOnRydWUsIlYiOiIwLjAuMDAwMCIsIlAiOiJXaW4zMiIsIkFOIjoiTWFpbCIsIldUIjoyfQ%3D%3D%7C0%7C%7C%7C&amp;sdata=sRf%2FhRWlbVQlel3Dz1xK0PiBS8tp%2Fwpvz4eyqaBqXmg%3D&amp;reserved=0\" originalsrc=\"https://teams.microsoft.com/meetingOptions/?organizerId=8f23e5fe-c699-44ee-8b40-59f33788077f&amp;tenantId=193daea9-73e0-467d-a9c8-2cf78c9485ba&amp;threadId=19_meeting_ZThmNGM0NDktYzQ3Zi00MmNjLWE1NDktN2U0NGJjMTdmNDdi@thread.v2&amp;messageId=0&amp;language=en-US\"><span style=\"font-size:10.5pt; color:#5B5FC7\">Meeting\r\n options</span></a> </span></p>\r\n</div>\r\n<div style=\"margin-bottom:18.0pt; overflow:hidden\">\r\n<p class=\"MsoNormal\"><span style=\"font-family:&quot;Segoe UI&quot;,sans-serif; color:#242424\">________________________________________________________________________________</span></p>\r\n</div>\r\n</div>\r\n</div>\r\n<p class=\"MsoNormal\">&nbsp;</p>\r\n</div>\r\n</body>\r\n</html>\r\n"
+    },
+    "start": {
+      "dateTime": "2025-05-26T08:00:00.0000000",
+      "timeZone": "UTC"
+    },
+    "end": {
+      "dateTime": "2025-05-26T09:00:00.0000000",
+      "timeZone": "UTC"
+    },
+    "location": {
+      "displayName": "Boardroom 3 (First Floor Small); Teams Meeting",
+      "locationType": "default",
+      "uniqueId": "Boardroom 3 (First Floor Small); Teams Meeting",
+      "uniqueIdType": "private"
+    },
+    "locations": [
+      {
+        "displayName": "Boardroom 3 (First Floor Small)",
+        "locationUri": "Boardroom3@modena-aec.co.za",
+        "locationType": "conferenceRoom",
+        "uniqueId": "Boardroom3@modena-aec.co.za",
+        "uniqueIdType": "directory",
+        "address": {
+          "street": "",
+          "city": "",
+          "state": "",
+          "countryOrRegion": "",
+          "postalCode": ""
+        },
+        "coordinates": {}
+      },
+      {
+        "displayName": "Teams Meeting",
+        "locationType": "default",
+        "uniqueId": "Teams Meeting",
+        "uniqueIdType": "private"
+      }
+    ],
+    "recurrence": null,
+    "attendees": [
+      {
+        "type": "required",
+        "status": {
+          "response": "none",
+          "time": "0001-01-01T00:00:00Z"
+        },
+        "emailAddress": {
+          "name": "Modena Consulting Calendar",
+          "address": "Modenaconsultingcalendar@modena-aec.co.za"
+        }
+      },
+      {
+        "type": "required",
+        "status": {
+          "response": "none",
+          "time": "0001-01-01T00:00:00Z"
+        },
+        "emailAddress": {
+          "name": "Bruce Cherrington",
+          "address": "bruce.cherrington@outlook.com"
+        }
+      },
+      {
+        "type": "required",
+        "status": {
+          "response": "none",
+          "time": "0001-01-01T00:00:00Z"
+        },
+        "emailAddress": {
+          "name": "Michael Bredenkamp",
+          "address": "michaelb@modena-aec.co.za"
+        }
+      },
+      {
+        "type": "required",
+        "status": {
+          "response": "none",
+          "time": "0001-01-01T00:00:00Z"
+        },
+        "emailAddress": {
+          "name": "Machiel Odendaal",
+          "address": "machiel@modena-aec.co.za"
+        }
+      },
+      {
+        "type": "required",
+        "status": {
+          "response": "none",
+          "time": "0001-01-01T00:00:00Z"
+        },
+        "emailAddress": {
+          "name": "Nikayle Govender",
+          "address": "nikayle@modena-aec.co.za"
+        }
+      },
+      {
+        "type": "required",
+        "status": {
+          "response": "none",
+          "time": "0001-01-01T00:00:00Z"
+        },
+        "emailAddress": {
+          "name": "Nyasha Nyatsine",
+          "address": "nyasha@modena-aec.co.za"
+        }
+      },
+      {
+        "type": "required",
+        "status": {
+          "response": "none",
+          "time": "0001-01-01T00:00:00Z"
+        },
+        "emailAddress": {
+          "name": "Ahmed Cassim",
+          "address": "ahmed@modena-aec.co.za"
+        }
+      },
+      {
+        "type": "optional",
+        "status": {
+          "response": "none",
+          "time": "0001-01-01T00:00:00Z"
+        },
+        "emailAddress": {
+          "name": "Thabelo Netshivhungululu",
+          "address": "thabelo@modena-aec.co.za"
+        }
+      },
+      {
+        "type": "resource",
+        "status": {
+          "response": "none",
+          "time": "0001-01-01T00:00:00Z"
+        },
+        "emailAddress": {
+          "name": "Boardroom 3 (First Floor Small)",
+          "address": "Boardroom3@modena-aec.co.za"
+        }
+      }
+    ],
+    "organizer": {
+      "emailAddress": {
+        "name": "Modena Consulting Calendar",
+        "address": "Modenaconsultingcalendar@modena-aec.co.za"
+      }
+    },
+    "onlineMeeting": {
+      "joinUrl": "https://teams.microsoft.com/l/meetup-join/19%3ameeting_ZThmNGM0NDktYzQ3Zi00MmNjLWE1NDktN2U0NGJjMTdmNDdi%40thread.v2/0?context=%7b%22Tid%22%3a%22193daea9-73e0-467d-a9c8-2cf78c9485ba%22%2c%22Oid%22%3a%228f23e5fe-c699-44ee-8b40-59f33788077f%22%7d"
+    }
+  },
+  {
+    "@odata.etag": "W/\"sHKVScJ/9EOsKHgmr+i57gAIBkv8mg==\"",
+    "id": "AQMkADAwATM3ZmYAZS05ZmQzLTljNjAtMDACLTAwCgFRAAgIAN2csWyAwABGAAACkCL3cqm8KEuRPfSf7t743AcAsHKVScJ-9EOsKHgmr_i57gAAAgENAAAAsHKVScJ-9EOsKHgmr_i57gAIAl_1ywAAABA=",
+    "createdDateTime": "2025-05-23T12:49:59.9131431Z",
+    "lastModifiedDateTime": "2025-05-26T05:50:29.8052935Z",
+    "changeKey": "sHKVScJ/9EOsKHgmr+i57gAIBkv8mg==",
+    "categories": [
+      "Billable - Modena"
+    ],
+    "transactionId": null,
+    "originalStartTimeZone": "South Africa Standard Time",
+    "originalEndTimeZone": "South Africa Standard Time",
+    "iCalUId": "040000008200E00074C5B7101A82E00807E9051BF01FA1CCF1CBDB0100000000000000001000000004718FD040F4E240B1ED7ED80A69FCE3",
+    "uid": "040000008200E00074C5B7101A82E00800000000F01FA1CCF1CBDB0100000000000000001000000004718FD040F4E240B1ED7ED80A69FCE3",
+    "reminderMinutesBeforeStart": 15,
+    "isReminderOn": true,
+    "hasAttachments": false,
+    "subject": "Bruce & Chantel - Check In ",
+    "bodyPreview": "",
+    "importance": "normal",
+    "sensitivity": "normal",
+    "isAllDay": false,
+    "isCancelled": false,
+    "isOrganizer": false,
+    "responseRequested": true,
+    "seriesMasterId": "AQMkADAwATM3ZmYAZS05ZmQzLTljNjAtMDACLTAwCgBGAAADkCL3cqm8KEuRPfSf7t743AcAsHKVScJ-9EOsKHgmr_i57gAAAgENAAAAsHKVScJ-9EOsKHgmr_i57gAIAl_1ywAAAA==",
+    "showAs": "busy",
+    "type": "occurrence",
+    "webLink": "https://outlook.live.com/owa/?itemid=AQMkADAwATM3ZmYAZS05ZmQzLTljNjAtMDACLTAwCgFRAAgIAN2csWyAwABGAAACkCL3cqm8KEuRPfSf7t743AcAsHKVScJ%2F9EOsKHgmr%2Bi57gAAAgENAAAAsHKVScJ%2F9EOsKHgmr%2Bi57gAIAl%2B1ywAAABA%3D&exvsurl=1&path=/calendar/item",
+    "onlineMeetingUrl": null,
+    "isOnlineMeeting": false,
+    "onlineMeetingProvider": "unknown",
+    "allowNewTimeProposals": true,
+    "occurrenceId": "OID.AQMkADAwATM3ZmYAZS05ZmQzLTljNjAtMDACLTAwCgBGAAADkCL3cqm8KEuRPfSf7t743AcAsHKVScJ-9EOsKHgmr_i57gAAAgENAAAAsHKVScJ-9EOsKHgmr_i57gAIAl_1ywAAAA==.2025-05-27",
+    "isDraft": false,
+    "hideAttendees": false,
+    "responseStatus": {
+      "response": "accepted",
+      "time": "2025-05-26T05:50:29.6637118Z"
+    },
+    "body": {
+      "contentType": "html",
+      "content": "<html>\r\n<head>\r\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\r\n<meta name=\"Generator\" content=\"Microsoft Word 15 (filtered medium)\">\r\n<style>\r\n<!--\r\n@font-face\r\n\t{font-family:\"Cambria Math\"}\r\n@font-face\r\n\t{font-family:Aptos}\r\n@font-face\r\n\t{font-family:\"Segoe UI\"}\r\np.MsoNormal, li.MsoNormal, div.MsoNormal\r\n\t{margin:0cm;\r\n\tfont-size:11.0pt;\r\n\tfont-family:\"Aptos\",sans-serif}\r\nspan.EmailStyle18\r\n\t{}\r\n.MsoChpDefault\r\n\t{font-size:10.0pt}\r\n@page WordSection1\r\n\t{margin:72.0pt 72.0pt 72.0pt 72.0pt}\r\ndiv.WordSection1\r\n\t{}\r\n-->\r\n</style>\r\n</head>\r\n<body lang=\"EN-ZA\" link=\"#467886\" vlink=\"#96607D\" style=\"word-wrap:break-word\">\r\n<div class=\"WordSection1\">\r\n<p class=\"MsoNormal\">&nbsp;</p>\r\n<div>\r\n<div style=\"margin-bottom:18.0pt; overflow:hidden\">\r\n<p class=\"MsoNormal\"><span style=\"font-family:&quot;Segoe UI&quot;,sans-serif; color:#242424\">&nbsp;</span></p>\r\n</div>\r\n</div>\r\n<p class=\"MsoNormal\">&nbsp;</p>\r\n</div>\r\n</body>\r\n</html>\r\n"
+    },
+    "start": {
+      "dateTime": "2025-05-27T08:30:00.0000000",
+      "timeZone": "UTC"
+    },
+    "end": {
+      "dateTime": "2025-05-27T09:00:00.0000000",
+      "timeZone": "UTC"
+    },
+    "location": {
+      "displayName": "Boardroom 3 (First Floor Small)",
+      "locationType": "default",
+      "uniqueId": "Boardroom 3 (First Floor Small)",
+      "uniqueIdType": "private"
+    },
+    "locations": [
+      {
+        "displayName": "Boardroom 3 (First Floor Small)",
+        "locationUri": "Boardroom3@modena-aec.co.za",
+        "locationType": "conferenceRoom",
+        "uniqueId": "Boardroom3@modena-aec.co.za",
+        "uniqueIdType": "directory",
+        "address": {
+          "street": "",
+          "city": "",
+          "state": "",
+          "countryOrRegion": "",
+          "postalCode": ""
+        },
+        "coordinates": {}
+      }
+    ],
+    "recurrence": null,
+    "attendees": [
+      {
+        "type": "required",
+        "status": {
+          "response": "none",
+          "time": "0001-01-01T00:00:00Z"
+        },
+        "emailAddress": {
+          "name": "Chantel Haffejee",
+          "address": "chantel@modena-aec.co.za"
+        }
+      },
+      {
+        "type": "required",
+        "status": {
+          "response": "none",
+          "time": "0001-01-01T00:00:00Z"
+        },
+        "emailAddress": {
+          "name": "Bruce Cherrington",
+          "address": "bruce.cherrington@outlook.com"
+        }
+      },
+      {
+        "type": "resource",
+        "status": {
+          "response": "none",
+          "time": "0001-01-01T00:00:00Z"
+        },
+        "emailAddress": {
+          "name": "Boardroom 3 (First Floor Small)",
+          "address": "Boardroom3@modena-aec.co.za"
+        }
+      }
+    ],
+    "organizer": {
+      "emailAddress": {
+        "name": "Chantel Haffejee",
+        "address": "chantel@modena-aec.co.za"
+      }
+    },
+    "onlineMeeting": null
+  },
+  {
+    "@odata.etag": "W/\"sHKVScJ/9EOsKHgmr+i57gAIAqefew==\"",
+    "id": "AQMkADAwATM3ZmYAZS05ZmQzLTljNjAtMDACLTAwCgFRAAgIAN2b6EIXAAAARgAAApAi93KpvChLkT30n_7e_NwHALBylUnCf-RDrCh4Jq-oue4AAAIBDQAAALBylUnCf-RDrCh4Jq-oue4ACACWNgwAAAAQ",
+    "createdDateTime": "2025-05-16T11:20:40.4140286Z",
+    "lastModifiedDateTime": "2025-05-21T08:55:30.3634521Z",
+    "changeKey": "sHKVScJ/9EOsKHgmr+i57gAIAqefew==",
+    "categories": [
+      "Billable - Modena"
+    ],
+    "transactionId": null,
+    "originalStartTimeZone": "South Africa Standard Time",
+    "originalEndTimeZone": "South Africa Standard Time",
+    "iCalUId": "040000008200E00074C5B7101A82E00807E9051AE0E36AFA64C6DB01000000000000000010000000FBD1F85D5481314AA34D65718113139A",
+    "uid": "040000008200E00074C5B7101A82E00800000000E0E36AFA64C6DB01000000000000000010000000FBD1F85D5481314AA34D65718113139A",
+    "reminderMinutesBeforeStart": 15,
+    "isReminderOn": true,
+    "hasAttachments": true,
+    "subject": "Teraco Fortnight Update",
+    "bodyPreview": "Good afternoon Campbell.\r\n\r\nThank you again for your time.\r\n\r\nAs mentioned, we would like to continue with the fortnightly meetings to discuss the current progress and any outstanding items across the projects.\r\n\r\nPlease feel free to add anyone else to th",
+    "importance": "normal",
+    "sensitivity": "normal",
+    "isAllDay": false,
+    "isCancelled": false,
+    "isOrganizer": false,
+    "responseRequested": true,
+    "seriesMasterId": "AQMkADAwATM3ZmYAZS05ZmQzLTljNjAtMDACLTAwCgBGAAADkCL3cqm8KEuRPfSf7t743AcAsHKVScJ-9EOsKHgmr_i57gAAAgENAAAAsHKVScJ-9EOsKHgmr_i57gAIAJY2DAAAAA==",
+    "showAs": "busy",
+    "type": "occurrence",
+    "webLink": "https://outlook.live.com/owa/?itemid=AQMkADAwATM3ZmYAZS05ZmQzLTljNjAtMDACLTAwCgFRAAgIAN2b6EIXAAAARgAAApAi93KpvChLkT30n%2B7e%2BNwHALBylUnCf%2FRDrCh4Jq%2Foue4AAAIBDQAAALBylUnCf%2FRDrCh4Jq%2Foue4ACACWNgwAAAAQ&exvsurl=1&path=/calendar/item",
+    "onlineMeetingUrl": null,
+    "isOnlineMeeting": true,
+    "onlineMeetingProvider": "teamsForBusiness",
+    "allowNewTimeProposals": true,
+    "occurrenceId": "OID.AQMkADAwATM3ZmYAZS05ZmQzLTljNjAtMDACLTAwCgBGAAADkCL3cqm8KEuRPfSf7t743AcAsHKVScJ-9EOsKHgmr_i57gAAAgENAAAAsHKVScJ-9EOsKHgmr_i57gAIAJY2DAAAAA==.2025-05-26",
+    "isDraft": false,
+    "hideAttendees": false,
+    "responseStatus": {
+      "response": "accepted",
+      "time": "2025-05-16T13:13:02.6917161Z"
+    },
+    "body": {
+      "contentType": "html",
+      "content": "<html>\r\n<head>\r\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\r\n<meta name=\"Generator\" content=\"Microsoft Word 15 (filtered medium)\">\r\n<style>\r\n<!--\r\n@font-face\r\n\t{font-family:\"Cambria Math\"}\r\n@font-face\r\n\t{font-family:Aptos}\r\n@font-face\r\n\t{font-family:\"Segoe UI\"}\r\np.MsoNormal, li.MsoNormal, div.MsoNormal\r\n\t{margin:0cm;\r\n\tfont-size:11.0pt;\r\n\tfont-family:\"Aptos\",sans-serif}\r\na:link, span.MsoHyperlink\r\n\t{color:#467886;\r\n\ttext-decoration:underline}\r\nspan.me-email-text\r\n\t{}\r\nspan.me-email-text-secondary\r\n\t{}\r\nspan.rsnormal\r\n\t{}\r\nspan.EmailStyle21\r\n\t{}\r\n.MsoChpDefault\r\n\t{font-size:10.0pt}\r\n@page WordSection1\r\n\t{margin:72.0pt 72.0pt 72.0pt 72.0pt}\r\ndiv.WordSection1\r\n\t{}\r\n-->\r\n</style>\r\n</head>\r\n<body lang=\"EN-ZA\" link=\"#467886\" vlink=\"#96607D\" style=\"word-wrap:break-word\">\r\n<div class=\"WordSection1\">\r\n<p class=\"MsoNormal\">Good afternoon Campbell.</p>\r\n<p class=\"MsoNormal\"><br>\r\nThank you again for your time.</p>\r\n<p class=\"MsoNormal\"><br>\r\nAs mentioned, we would like to continue with the fortnightly meetings to discuss the current progress and any outstanding items across the projects.</p>\r\n<p class=\"MsoNormal\">&nbsp;</p>\r\n<p class=\"MsoNormal\">Please feel free to add anyone else to the meeting.</p>\r\n<p class=\"MsoNormal\">&nbsp;</p>\r\n<p class=\"MsoNormal\">We look forward to chatting to you then.</p>\r\n<p class=\"MsoNormal\">&nbsp;</p>\r\n<table class=\"MsoNormalTable\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\" width=\"650\" style=\"width:487.5pt\">\r\n<tbody>\r\n<tr>\r\n<td style=\"padding:0cm 0cm 15.0pt 0cm\">\r\n<p class=\"MsoNormal\"><span style=\"font-size:10.0pt; font-family:&quot;Arial&quot;,sans-serif; color:#223B92\">Kind regards,</span></p>\r\n</td>\r\n</tr>\r\n<tr>\r\n<td style=\"padding:0cm 0cm 0cm 0cm\">\r\n<table class=\"MsoNormalTable\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\">\r\n<tbody>\r\n<tr>\r\n<td style=\"padding:0cm 0cm 0cm 0cm\">\r\n<table class=\"MsoNormalTable\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\">\r\n<tbody>\r\n<tr>\r\n<td style=\"padding:0cm 0cm 0cm 0cm\">\r\n<p class=\"MsoNormal\"><span class=\"rsnormal\"><b><span style=\"font-family:&quot;Arial&quot;,sans-serif; color:#223B92; text-transform:uppercase\">Michael</span></b></span><b><span style=\"font-family:&quot;Arial&quot;,sans-serif; color:#223B92; text-transform:uppercase\">\r\n<span class=\"rsnormal\">Bredenkamp</span></span></b><b><span style=\"font-size:12.0pt; font-family:&quot;Arial&quot;,sans-serif; color:#223B92; text-transform:uppercase\"></span></b></p>\r\n</td>\r\n</tr>\r\n<tr>\r\n<td style=\"padding:0cm 0cm 15.0pt 0cm\">\r\n<p class=\"MsoNormal\"><span class=\"rsnormal\"><span style=\"font-size:10.0pt; font-family:&quot;Arial&quot;,sans-serif; color:#223B92\">Sales Manager</span></span><span style=\"font-size:10.0pt; font-family:&quot;Arial&quot;,sans-serif; color:#223B92\"></span></p>\r\n</td>\r\n</tr>\r\n</tbody>\r\n</table>\r\n</td>\r\n</tr>\r\n<tr>\r\n<td style=\"padding:0cm 0cm 0cm 0cm\">\r\n<table class=\"MsoNormalTable\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\">\r\n<tbody>\r\n<tr>\r\n<td style=\"padding:0cm 0cm 0cm 0cm\">\r\n<p class=\"MsoNormal\"><span style=\"font-size:10.0pt; font-family:&quot;Arial&quot;,sans-serif; color:#223B92\">T:&nbsp;<span class=\"rsnormal\">+27 10 595 2500</span></span></p>\r\n</td>\r\n<td style=\"padding:0cm 0cm 0cm 0cm\">\r\n<p class=\"MsoNormal\"><span style=\"font-size:10.0pt; font-family:&quot;Arial&quot;,sans-serif; color:#223B92\">&nbsp;|&nbsp;M:&nbsp;<span class=\"rsnormal\">+27 71 322 8040</span></span></p>\r\n</td>\r\n<td style=\"padding:0cm 0cm 0cm 0cm\">\r\n<p class=\"MsoNormal\"><span style=\"font-size:10.0pt; font-family:&quot;Arial&quot;,sans-serif; color:#223B92\">&nbsp;|&nbsp;E:&nbsp;<span class=\"rsnormal\"><a href=\"mailto:michaelb@modena-aec.co.za\"><span style=\"color:#223B92\">michaelb@modena-aec.co.za</span></a></span></span></p>\r\n</td>\r\n<td style=\"padding:0cm 0cm 0cm 0cm\">\r\n<p class=\"MsoNormal\"><span style=\"font-size:10.0pt; font-family:&quot;Arial&quot;,sans-serif; color:#223B92\">&nbsp;|&nbsp;<span class=\"rsnormal\"><a href=\"https://emea01.safelinks.protection.outlook.com/?url=https%3A%2F%2Fwww.linkedin.com%2Fin%2Fmichael-bredenkamp-95122a11a%2F&amp;data=05%7C02%7C%7Cdad439e19f714d39f9d908dd947a8453%7C84df9e7fe9f640afb435aaaaaaaaaaaa%7C1%7C0%7C638829976120003592%7CUnknown%7CTWFpbGZsb3d8eyJFbXB0eU1hcGkiOnRydWUsIlYiOiIwLjAuMDAwMCIsIlAiOiJXaW4zMiIsIkFOIjoiTWFpbCIsIldUIjoyfQ%3D%3D%7C0%7C%7C%7C&amp;sdata=HoHw1Bo3tRHPeqHuJEMPyh3HgHnnnosQCoOTZLgebcM%3D&amp;reserved=0\" originalsrc=\"https://www.linkedin.com/in/michael-bredenkamp-95122a11a/\"><span style=\"color:#223B92\">LinkedIn</span></a></span></span></p>\r\n</td>\r\n</tr>\r\n</tbody>\r\n</table>\r\n</td>\r\n</tr>\r\n<tr>\r\n<td style=\"padding:0cm 0cm 0cm 0cm\">\r\n<table class=\"MsoNormalTable\" border=\"0\" cellspacing=\"0\" cellpadding=\"0\">\r\n<tbody>\r\n<tr>\r\n<td style=\"padding:0cm 0cm 0cm 0cm\">\r\n<p class=\"MsoNormal\"><span class=\"rsnormal\"><span style=\"font-size:10.0pt; font-family:&quot;Arial&quot;,sans-serif; color:#223B92\"><a href=\"https://emea01.safelinks.protection.outlook.com/?url=https%3A%2F%2Fwww.modena-aec.co.za%2F&amp;data=05%7C02%7C%7Cdad439e19f714d39f9d908dd947a8453%7C84df9e7fe9f640afb435aaaaaaaaaaaa%7C1%7C0%7C638829976120367816%7CUnknown%7CTWFpbGZsb3d8eyJFbXB0eU1hcGkiOnRydWUsIlYiOiIwLjAuMDAwMCIsIlAiOiJXaW4zMiIsIkFOIjoiTWFpbCIsIldUIjoyfQ%3D%3D%7C0%7C%7C%7C&amp;sdata=7c0xUX5JZN5itsqQptKvwiXzLVe12sn4ZAGsgzq1pNA%3D&amp;reserved=0\" originalsrc=\"https://www.modena-aec.co.za/\"><span style=\"color:#223B92\">www.modena-aec.co.za</span></a></span></span><span style=\"font-size:10.0pt; font-family:&quot;Arial&quot;,sans-serif; color:#223B92\"></span></p>\r\n</td>\r\n<td style=\"padding:0cm 0cm 0cm 0cm\">\r\n<p class=\"MsoNormal\"><span style=\"font-size:10.0pt; font-family:&quot;Arial&quot;,sans-serif; color:#223B92\">&nbsp;|&nbsp;<span class=\"rsnormal\"><a href=\"https://emea01.safelinks.protection.outlook.com/?url=https%3A%2F%2Fwww.modena-aec.co.za%2Fdisclaimer%2F%23emaildisclaimer&amp;data=05%7C02%7C%7Cdad439e19f714d39f9d908dd947a8453%7C84df9e7fe9f640afb435aaaaaaaaaaaa%7C1%7C0%7C638829976120400189%7CUnknown%7CTWFpbGZsb3d8eyJFbXB0eU1hcGkiOnRydWUsIlYiOiIwLjAuMDAwMCIsIlAiOiJXaW4zMiIsIkFOIjoiTWFpbCIsIldUIjoyfQ%3D%3D%7C0%7C%7C%7C&amp;sdata=FYEy%2FwZTy3r%2BTBy%2FKv3pi1059kunoQGNkMydlNzEHXY%3D&amp;reserved=0\" originalsrc=\"https://www.modena-aec.co.za/disclaimer/#emaildisclaimer\"><span style=\"color:#223B92\">Disclaimer</span></a></span></span></p>\r\n</td>\r\n<td style=\"padding:0cm 0cm 0cm 0cm\">\r\n<p class=\"MsoNormal\"><span style=\"font-size:10.0pt; font-family:&quot;Arial&quot;,sans-serif; color:#223B92\">&nbsp;|&nbsp;<span class=\"rsnormal\"><a href=\"https://emea01.safelinks.protection.outlook.com/?url=https%3A%2F%2Fmaps.app.goo.gl%2FUo3nZukvTepVZxow7&amp;data=05%7C02%7C%7Cdad439e19f714d39f9d908dd947a8453%7C84df9e7fe9f640afb435aaaaaaaaaaaa%7C1%7C0%7C638829976120427214%7CUnknown%7CTWFpbGZsb3d8eyJFbXB0eU1hcGkiOnRydWUsIlYiOiIwLjAuMDAwMCIsIlAiOiJXaW4zMiIsIkFOIjoiTWFpbCIsIldUIjoyfQ%3D%3D%7C0%7C%7C%7C&amp;sdata=eCZrRm5MX6tkwquvY7VRR%2BHQhEsrkPL5Zg7Nd4VwlIw%3D&amp;reserved=0\" originalsrc=\"https://maps.app.goo.gl/Uo3nZukvTepVZxow7\"><span style=\"color:#223B92\">Location</span></a></span></span></p>\r\n</td>\r\n</tr>\r\n</tbody>\r\n</table>\r\n</td>\r\n</tr>\r\n</tbody>\r\n</table>\r\n</td>\r\n</tr>\r\n<tr>\r\n<td style=\"padding:0cm 0cm 0cm 0cm\">\r\n<p class=\"MsoNormal\"><span style=\"\"><img data-imagetype=\"AttachmentByCid\" originalSrc=\"cid:image001.gif@01DBC673.F6CED390\" src=\"cid:image001.gif@01DBC673.F6CED390\" border=\"0\" width=\"650\" height=\"87\" id=\"img145723\" style=\"width:6.775in; height:.9083in\"></span><span style=\"font-size:12.0pt\"></span></p>\r\n</td>\r\n</tr>\r\n</tbody>\r\n</table>\r\n<p class=\"MsoNormal\">&nbsp;</p>\r\n<p class=\"MsoNormal\">&nbsp;</p>\r\n<div>\r\n<div style=\"margin-bottom:18.0pt; overflow:hidden\">\r\n<p class=\"MsoNormal\"><span style=\"font-family:&quot;Segoe UI&quot;,sans-serif; color:#242424\">________________________________________________________________________________</span><span style=\"font-size:12.0pt; font-family:&quot;Segoe UI&quot;,sans-serif; color:#242424\"></span></p>\r\n</div>\r\n<div style=\"margin-bottom:9.0pt\">\r\n<p class=\"MsoNormal\"><span class=\"me-email-text\"><b><span style=\"font-size:18.0pt; font-family:&quot;Segoe UI&quot;,sans-serif; color:#242424\">Microsoft Teams</span></b></span><span style=\"font-family:&quot;Segoe UI&quot;,sans-serif; color:#242424\">\r\n<a href=\"https://emea01.safelinks.protection.outlook.com/?url=https%3A%2F%2Faka.ms%2FJoinTeamsMeeting%3Fomkt%3Den-US&amp;data=05%7C02%7C%7Cdad439e19f714d39f9d908dd947a8453%7C84df9e7fe9f640afb435aaaaaaaaaaaa%7C1%7C0%7C638829976120449942%7CUnknown%7CTWFpbGZsb3d8eyJFbXB0eU1hcGkiOnRydWUsIlYiOiIwLjAuMDAwMCIsIlAiOiJXaW4zMiIsIkFOIjoiTWFpbCIsIldUIjoyfQ%3D%3D%7C0%7C%7C%7C&amp;sdata=vkd%2B5GvpBqUydMhPQRX%2FXN%2FvXK9TRnkNk9BQk%2F5uq5Q%3D&amp;reserved=0\" originalsrc=\"https://aka.ms/JoinTeamsMeeting?omkt=en-US\">\r\n<span style=\"font-size:10.5pt; color:#5B5FC7\">Need help?</span></a> </span></p>\r\n</div>\r\n<div style=\"margin-bottom:4.5pt\">\r\n<p class=\"MsoNormal\"><span style=\"font-family:&quot;Segoe UI&quot;,sans-serif; color:#242424\"><a href=\"https://emea01.safelinks.protection.outlook.com/ap/t-59584e83/?url=https%3A%2F%2Fteams.microsoft.com%2Fl%2Fmeetup-join%2F19%253ameeting_Y2Q2NDhlMmItZjdhNy00ODVlLTgzMDUtMzdmYmYyMzE0MWIw%2540thread.v2%2F0%3Fcontext%3D%257b%2522Tid%2522%253a%2522193daea9-73e0-467d-a9c8-2cf78c9485ba%2522%252c%2522Oid%2522%253a%25228f23e5fe-c699-44ee-8b40-59f33788077f%2522%257d&amp;data=05%7C02%7C%7Cdad439e19f714d39f9d908dd947a8453%7C84df9e7fe9f640afb435aaaaaaaaaaaa%7C1%7C0%7C638829976120468878%7CUnknown%7CTWFpbGZsb3d8eyJFbXB0eU1hcGkiOnRydWUsIlYiOiIwLjAuMDAwMCIsIlAiOiJXaW4zMiIsIkFOIjoiTWFpbCIsIldUIjoyfQ%3D%3D%7C0%7C%7C%7C&amp;sdata=QJ3Hv6UB0TZvmWGtLCk1fqwlSKkK8tfNS%2FEsQFUeAYE%3D&amp;reserved=0\" originalsrc=\"https://teams.microsoft.com/l/meetup-join/19%3ameeting_Y2Q2NDhlMmItZjdhNy00ODVlLTgzMDUtMzdmYmYyMzE0MWIw%40thread.v2/0?context=%7b%22Tid%22%3a%22193daea9-73e0-467d-a9c8-2cf78c9485ba%22%2c%22Oid%22%3a%228f23e5fe-c699-44ee-8b40-59f33788077f%22%7d\" title=\"Meeting join link\"><b><span style=\"font-size:15.0pt; color:#5B5FC7\">Join\r\n the meeting now</span></b></a> </span></p>\r\n</div>\r\n<div style=\"margin-bottom:4.5pt\">\r\n<p class=\"MsoNormal\"><span class=\"me-email-text-secondary\"><span style=\"font-size:10.5pt; font-family:&quot;Segoe UI&quot;,sans-serif; color:#616161\">Meeting ID:\r\n</span></span><span class=\"me-email-text\"><span style=\"font-size:10.5pt; font-family:&quot;Segoe UI&quot;,sans-serif; color:#242424\">385 575 905 024 8</span></span><span style=\"font-family:&quot;Segoe UI&quot;,sans-serif; color:#242424\">\r\n</span></p>\r\n</div>\r\n<div style=\"margin-bottom:18.0pt\">\r\n<p class=\"MsoNormal\"><span class=\"me-email-text-secondary\"><span style=\"font-size:10.5pt; font-family:&quot;Segoe UI&quot;,sans-serif; color:#616161\">Passcode:\r\n</span></span><span class=\"me-email-text\"><span style=\"font-size:10.5pt; font-family:&quot;Segoe UI&quot;,sans-serif; color:#242424\">Lj9Gy7Y2</span></span><span style=\"font-family:&quot;Segoe UI&quot;,sans-serif; color:#242424\">\r\n</span></p>\r\n</div>\r\n<div style=\"margin-bottom:18.0pt\">\r\n<div class=\"MsoNormal\" align=\"center\" style=\"text-align:center\"><span style=\"font-family:&quot;Segoe UI&quot;,sans-serif; color:#242424\">\r\n<hr size=\"1\" width=\"100%\" align=\"center\">\r\n</span></div>\r\n</div>\r\n<div>\r\n<p class=\"MsoNormal\"><span class=\"me-email-text-secondary\"><span style=\"font-size:10.5pt; font-family:&quot;Segoe UI&quot;,sans-serif; color:#616161\">For organizers:\r\n</span></span><span style=\"font-family:&quot;Segoe UI&quot;,sans-serif; color:#242424\"><a href=\"https://emea01.safelinks.protection.outlook.com/?url=https%3A%2F%2Fteams.microsoft.com%2FmeetingOptions%2F%3ForganizerId%3D8f23e5fe-c699-44ee-8b40-59f33788077f%26tenantId%3D193daea9-73e0-467d-a9c8-2cf78c9485ba%26threadId%3D19_meeting_Y2Q2NDhlMmItZjdhNy00ODVlLTgzMDUtMzdmYmYyMzE0MWIw%40thread.v2%26messageId%3D0%26language%3Den-US&amp;data=05%7C02%7C%7Cdad439e19f714d39f9d908dd947a8453%7C84df9e7fe9f640afb435aaaaaaaaaaaa%7C1%7C0%7C638829976120485221%7CUnknown%7CTWFpbGZsb3d8eyJFbXB0eU1hcGkiOnRydWUsIlYiOiIwLjAuMDAwMCIsIlAiOiJXaW4zMiIsIkFOIjoiTWFpbCIsIldUIjoyfQ%3D%3D%7C0%7C%7C%7C&amp;sdata=eo2YMYPaZYNv7DXfjPM3mye6WeuAO7O2U%2F5Iuqu%2FFLs%3D&amp;reserved=0\" originalsrc=\"https://teams.microsoft.com/meetingOptions/?organizerId=8f23e5fe-c699-44ee-8b40-59f33788077f&amp;tenantId=193daea9-73e0-467d-a9c8-2cf78c9485ba&amp;threadId=19_meeting_Y2Q2NDhlMmItZjdhNy00ODVlLTgzMDUtMzdmYmYyMzE0MWIw@thread.v2&amp;messageId=0&amp;language=en-US\"><span style=\"font-size:10.5pt; color:#5B5FC7\">Meeting\r\n options</span></a> </span></p>\r\n</div>\r\n<div style=\"margin-bottom:18.0pt; overflow:hidden\">\r\n<p class=\"MsoNormal\"><span style=\"font-family:&quot;Segoe UI&quot;,sans-serif; color:#242424\">________________________________________________________________________________</span></p>\r\n</div>\r\n</div>\r\n<p class=\"MsoNormal\">&nbsp;</p>\r\n</div>\r\n</body>\r\n</html>\r\n"
+    },
+    "start": {
+      "dateTime": "2025-05-26T13:00:00.0000000",
+      "timeZone": "UTC"
+    },
+    "end": {
+      "dateTime": "2025-05-26T14:00:00.0000000",
+      "timeZone": "UTC"
+    },
+    "location": {
+      "displayName": "Microsoft Teams Meeting",
+      "locationType": "default",
+      "uniqueId": "Microsoft Teams Meeting",
+      "uniqueIdType": "private"
+    },
+    "locations": [
+      {
+        "displayName": "Microsoft Teams Meeting",
+        "locationType": "default",
+        "uniqueId": "Microsoft Teams Meeting",
+        "uniqueIdType": "private"
+      }
+    ],
+    "recurrence": null,
+    "attendees": [
+      {
+        "type": "required",
+        "status": {
+          "response": "none",
+          "time": "0001-01-01T00:00:00Z"
+        },
+        "emailAddress": {
+          "name": "Modena Consulting Calendar",
+          "address": "Modenaconsultingcalendar@modena-aec.co.za"
+        }
+      },
+      {
+        "type": "required",
+        "status": {
+          "response": "none",
+          "time": "0001-01-01T00:00:00Z"
+        },
+        "emailAddress": {
+          "name": "Michael Bredenkamp",
+          "address": "michaelb@modena-aec.co.za"
+        }
+      },
+      {
+        "type": "required",
+        "status": {
+          "response": "none",
+          "time": "0001-01-01T00:00:00Z"
+        },
+        "emailAddress": {
+          "name": "Campbell McCurrach <campbell@teraco.co.za>",
+          "address": "campbell@teraco.co.za"
+        }
+      },
+      {
+        "type": "required",
+        "status": {
+          "response": "none",
+          "time": "0001-01-01T00:00:00Z"
+        },
+        "emailAddress": {
+          "name": "Machiel Odendaal",
+          "address": "machiel@modena-aec.co.za"
+        }
+      },
+      {
+        "type": "required",
+        "status": {
+          "response": "none",
+          "time": "0001-01-01T00:00:00Z"
+        },
+        "emailAddress": {
+          "name": "Thabelo Netshivhungululu",
+          "address": "thabelo@modena-aec.co.za"
+        }
+      },
+      {
+        "type": "required",
+        "status": {
+          "response": "none",
+          "time": "0001-01-01T00:00:00Z"
+        },
+        "emailAddress": {
+          "name": "Ahmed Cassim",
+          "address": "ahmed@modena-aec.co.za"
+        }
+      },
+      {
+        "type": "required",
+        "status": {
+          "response": "none",
+          "time": "0001-01-01T00:00:00Z"
+        },
+        "emailAddress": {
+          "name": "Nikayle Govender",
+          "address": "nikayle@modena-aec.co.za"
+        }
+      },
+      {
+        "type": "required",
+        "status": {
+          "response": "none",
+          "time": "0001-01-01T00:00:00Z"
+        },
+        "emailAddress": {
+          "name": "Lawrence Mokobi",
+          "address": "lawrence@teraco.co.za"
+        }
+      },
+      {
+        "type": "optional",
+        "status": {
+          "response": "none",
+          "time": "0001-01-01T00:00:00Z"
+        },
+        "emailAddress": {
+          "name": "Bruce Cherrington",
+          "address": "bruce.cherrington@outlook.com"
+        }
+      }
+    ],
+    "organizer": {
+      "emailAddress": {
+        "name": "Modena Consulting Calendar",
+        "address": "Modenaconsultingcalendar@modena-aec.co.za"
+      }
+    },
+    "onlineMeeting": {
+      "joinUrl": "https://teams.microsoft.com/l/meetup-join/19%3ameeting_Y2Q2NDhlMmItZjdhNy00ODVlLTgzMDUtMzdmYmYyMzE0MWIw%40thread.v2/0?context=%7b%22Tid%22%3a%22193daea9-73e0-467d-a9c8-2cf78c9485ba%22%2c%22Oid%22%3a%228f23e5fe-c699-44ee-8b40-59f33788077f%22%7d"
+    }
+  },
+  {
+    "@odata.etag": "W/\"sHKVScJ/9EOsKHgmr+i57gAIAqg2eQ==\"",
+    "id": "AQMkADAwATM3ZmYAZS05ZmQzLTljNjAtMDACLTAwCgFRAAgIAN2Yw5hwAAAARgAAApAi93KpvChLkT30n_7e_NwHALBylUnCf-RDrCh4Jq-oue4AAAIBDQAAALBylUnCf-RDrCh4Jq-oue4ACABK0HgAAAAQ",
+    "createdDateTime": "2025-05-22T07:05:09.1978888Z",
+    "lastModifiedDateTime": "2025-05-22T07:27:04.3807385Z",
+    "changeKey": "sHKVScJ/9EOsKHgmr+i57gAIAqg2eQ==",
+    "categories": [
+      "Non-billable - Modena"
+    ],
+    "transactionId": null,
+    "originalStartTimeZone": "South Africa Standard Time",
+    "originalEndTimeZone": "South Africa Standard Time",
+    "iCalUId": "040000008200E00074C5B7101A82E00807E90516A0B8BB8A77C5DB010000000000000000100000007F5699400AF2DB4EB49FB49BF37D1ADD",
+    "uid": "040000008200E00074C5B7101A82E00800000000A0B8BB8A77C5DB010000000000000000100000007F5699400AF2DB4EB49FB49BF37D1ADD",
+    "reminderMinutesBeforeStart": 15,
+    "isReminderOn": true,
+    "hasAttachments": false,
+    "subject": "Modena Development Team Process Improvement",
+    "bodyPreview": "________________________________________________________________________________\r\nMicrosoft Teams Need help?\r\nJoin the meeting now\r\nMeeting ID: 369 883 854 403 1\r\nPasscode: LZ75Ag7x\r\n________________________________\r\nFor organizers: Meeting options",
+    "importance": "normal",
+    "sensitivity": "normal",
+    "isAllDay": false,
+    "isCancelled": false,
+    "isOrganizer": false,
+    "responseRequested": true,
+    "seriesMasterId": "AQMkADAwATM3ZmYAZS05ZmQzLTljNjAtMDACLTAwCgBGAAADkCL3cqm8KEuRPfSf7t743AcAsHKVScJ-9EOsKHgmr_i57gAAAgENAAAAsHKVScJ-9EOsKHgmr_i57gAIAErQeAAAAA==",
+    "showAs": "busy",
+    "type": "exception",
+    "webLink": "https://outlook.live.com/owa/?itemid=AQMkADAwATM3ZmYAZS05ZmQzLTljNjAtMDACLTAwCgFRAAgIAN2Yw5hwAAAARgAAApAi93KpvChLkT30n%2B7e%2BNwHALBylUnCf%2FRDrCh4Jq%2Foue4AAAIBDQAAALBylUnCf%2FRDrCh4Jq%2Foue4ACABK0HgAAAAQ&exvsurl=1&path=/calendar/item",
+    "onlineMeetingUrl": null,
+    "isOnlineMeeting": true,
+    "onlineMeetingProvider": "teamsForBusiness",
+    "allowNewTimeProposals": true,
+    "occurrenceId": "OID.AQMkADAwATM3ZmYAZS05ZmQzLTljNjAtMDACLTAwCgBGAAADkCL3cqm8KEuRPfSf7t743AcAsHKVScJ-9EOsKHgmr_i57gAAAgENAAAAsHKVScJ-9EOsKHgmr_i57gAIAErQeAAAAA==.2025-05-22",
+    "isDraft": false,
+    "hideAttendees": false,
+    "responseStatus": {
+      "response": "accepted",
+      "time": "2025-05-22T07:27:04.1947073Z"
+    },
+    "body": {
+      "contentType": "html",
+      "content": "<html>\r\n<head>\r\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\r\n<meta name=\"Generator\" content=\"Microsoft Word 15 (filtered medium)\">\r\n<style>\r\n<!--\r\n@font-face\r\n\t{font-family:\"Cambria Math\"}\r\n@font-face\r\n\t{font-family:Aptos}\r\n@font-face\r\n\t{font-family:\"Segoe UI\"}\r\np.MsoNormal, li.MsoNormal, div.MsoNormal\r\n\t{margin:0cm;\r\n\tfont-size:11.0pt;\r\n\tfont-family:\"Aptos\",sans-serif}\r\na:link, span.MsoHyperlink\r\n\t{color:#467886;\r\n\ttext-decoration:underline}\r\nspan.me-email-text\r\n\t{}\r\nspan.me-email-text-secondary\r\n\t{}\r\nspan.EmailStyle21\r\n\t{}\r\n.MsoChpDefault\r\n\t{font-size:10.0pt}\r\n@page WordSection1\r\n\t{margin:72.0pt 72.0pt 72.0pt 72.0pt}\r\ndiv.WordSection1\r\n\t{}\r\n-->\r\n</style>\r\n</head>\r\n<body lang=\"EN-ZA\" link=\"#467886\" vlink=\"#96607D\" style=\"word-wrap:break-word\">\r\n<div class=\"WordSection1\">\r\n<p class=\"MsoNormal\">&nbsp;</p>\r\n<div>\r\n<div style=\"margin-bottom:18.0pt; overflow:hidden\">\r\n<p class=\"MsoNormal\"><span style=\"font-family:&quot;Segoe UI&quot;,sans-serif; color:#242424\">&nbsp;</span></p>\r\n</div>\r\n</div>\r\n<p class=\"MsoNormal\">&nbsp;</p>\r\n<div>\r\n<div>\r\n<div style=\"margin-bottom:18.0pt; overflow:hidden\">\r\n<p class=\"MsoNormal\"><span style=\"font-family:&quot;Segoe UI&quot;,sans-serif; color:#242424\">________________________________________________________________________________</span><span style=\"font-size:12.0pt; font-family:&quot;Segoe UI&quot;,sans-serif; color:#242424\"></span></p>\r\n</div>\r\n<div style=\"margin-bottom:9.0pt\">\r\n<p class=\"MsoNormal\"><span class=\"me-email-text\"><b><span style=\"font-size:18.0pt; font-family:&quot;Segoe UI&quot;,sans-serif; color:#242424\">Microsoft Teams</span></b></span><span style=\"font-family:&quot;Segoe UI&quot;,sans-serif; color:#242424\">\r\n<a href=\"https://emea01.safelinks.protection.outlook.com/?url=https%3A%2F%2Faka.ms%2FJoinTeamsMeeting%3Fomkt%3Den-US&amp;data=05%7C02%7C%7C3de4a4722a9342be6bcf08dd98fefb7a%7C84df9e7fe9f640afb435aaaaaaaaaaaa%7C1%7C0%7C638834943090660408%7CUnknown%7CTWFpbGZsb3d8eyJFbXB0eU1hcGkiOnRydWUsIlYiOiIwLjAuMDAwMCIsIlAiOiJXaW4zMiIsIkFOIjoiTWFpbCIsIldUIjoyfQ%3D%3D%7C0%7C%7C%7C&amp;sdata=fP8cr2gZ4QZ3k5pIe7Lw7Q0n5RpOuwmoqPdbxSwfFn8%3D&amp;reserved=0\" originalsrc=\"https://aka.ms/JoinTeamsMeeting?omkt=en-US\">\r\n<span style=\"font-size:10.5pt; color:#5B5FC7\">Need help?</span></a> </span></p>\r\n</div>\r\n<div style=\"margin-bottom:4.5pt\">\r\n<p class=\"MsoNormal\"><span style=\"font-family:&quot;Segoe UI&quot;,sans-serif; color:#242424\"><a href=\"https://emea01.safelinks.protection.outlook.com/ap/t-59584e83/?url=https%3A%2F%2Fteams.microsoft.com%2Fl%2Fmeetup-join%2F19%253ameeting_OGEwYmQwOGMtZTQ5YS00ZTcwLWFkMzItNmQ4ZDkzOTY1Nzk0%2540thread.v2%2F0%3Fcontext%3D%257b%2522Tid%2522%253a%2522193daea9-73e0-467d-a9c8-2cf78c9485ba%2522%252c%2522Oid%2522%253a%2522bbb3dc73-38f9-48e6-909f-d33d63cfc20b%2522%257d&amp;data=05%7C02%7C%7C3de4a4722a9342be6bcf08dd98fefb7a%7C84df9e7fe9f640afb435aaaaaaaaaaaa%7C1%7C0%7C638834943090685941%7CUnknown%7CTWFpbGZsb3d8eyJFbXB0eU1hcGkiOnRydWUsIlYiOiIwLjAuMDAwMCIsIlAiOiJXaW4zMiIsIkFOIjoiTWFpbCIsIldUIjoyfQ%3D%3D%7C0%7C%7C%7C&amp;sdata=r0Gxd9cSy8386SSy91DCqzfWZrJLWqhgG7nekjVACKw%3D&amp;reserved=0\" originalsrc=\"https://teams.microsoft.com/l/meetup-join/19%3ameeting_OGEwYmQwOGMtZTQ5YS00ZTcwLWFkMzItNmQ4ZDkzOTY1Nzk0%40thread.v2/0?context=%7b%22Tid%22%3a%22193daea9-73e0-467d-a9c8-2cf78c9485ba%22%2c%22Oid%22%3a%22bbb3dc73-38f9-48e6-909f-d33d63cfc20b%22%7d\" title=\"Meeting join link\"><b><span style=\"font-size:15.0pt; color:#5B5FC7\">Join\r\n the meeting now</span></b></a> </span></p>\r\n</div>\r\n<div style=\"margin-bottom:4.5pt\">\r\n<p class=\"MsoNormal\"><span class=\"me-email-text-secondary\"><span style=\"font-size:10.5pt; font-family:&quot;Segoe UI&quot;,sans-serif; color:#616161\">Meeting ID:\r\n</span></span><span class=\"me-email-text\"><span style=\"font-size:10.5pt; font-family:&quot;Segoe UI&quot;,sans-serif; color:#242424\">369 883 854 403 1</span></span><span style=\"font-family:&quot;Segoe UI&quot;,sans-serif; color:#242424\">\r\n</span></p>\r\n</div>\r\n<div style=\"margin-bottom:18.0pt\">\r\n<p class=\"MsoNormal\"><span class=\"me-email-text-secondary\"><span style=\"font-size:10.5pt; font-family:&quot;Segoe UI&quot;,sans-serif; color:#616161\">Passcode:\r\n</span></span><span class=\"me-email-text\"><span style=\"font-size:10.5pt; font-family:&quot;Segoe UI&quot;,sans-serif; color:#242424\">LZ75Ag7x</span></span><span style=\"font-family:&quot;Segoe UI&quot;,sans-serif; color:#242424\">\r\n</span></p>\r\n</div>\r\n<div style=\"margin-bottom:18.0pt\">\r\n<div class=\"MsoNormal\" align=\"center\" style=\"text-align:center\"><span style=\"font-family:&quot;Segoe UI&quot;,sans-serif; color:#242424\">\r\n<hr size=\"1\" width=\"100%\" align=\"center\">\r\n</span></div>\r\n</div>\r\n<div>\r\n<p class=\"MsoNormal\"><span class=\"me-email-text-secondary\"><span style=\"font-size:10.5pt; font-family:&quot;Segoe UI&quot;,sans-serif; color:#616161\">For organizers:\r\n</span></span><span style=\"font-family:&quot;Segoe UI&quot;,sans-serif; color:#242424\"><a href=\"https://emea01.safelinks.protection.outlook.com/?url=https%3A%2F%2Fteams.microsoft.com%2FmeetingOptions%2F%3ForganizerId%3Dbbb3dc73-38f9-48e6-909f-d33d63cfc20b%26tenantId%3D193daea9-73e0-467d-a9c8-2cf78c9485ba%26threadId%3D19_meeting_OGEwYmQwOGMtZTQ5YS00ZTcwLWFkMzItNmQ4ZDkzOTY1Nzk0%40thread.v2%26messageId%3D0%26language%3Den-US&amp;data=05%7C02%7C%7C3de4a4722a9342be6bcf08dd98fefb7a%7C84df9e7fe9f640afb435aaaaaaaaaaaa%7C1%7C0%7C638834943090705798%7CUnknown%7CTWFpbGZsb3d8eyJFbXB0eU1hcGkiOnRydWUsIlYiOiIwLjAuMDAwMCIsIlAiOiJXaW4zMiIsIkFOIjoiTWFpbCIsIldUIjoyfQ%3D%3D%7C0%7C%7C%7C&amp;sdata=OLI89Orpge02ZdpTYO1bqU0UfNbSoXlEmYfBQ%2BVje8g%3D&amp;reserved=0\" originalsrc=\"https://teams.microsoft.com/meetingOptions/?organizerId=bbb3dc73-38f9-48e6-909f-d33d63cfc20b&amp;tenantId=193daea9-73e0-467d-a9c8-2cf78c9485ba&amp;threadId=19_meeting_OGEwYmQwOGMtZTQ5YS00ZTcwLWFkMzItNmQ4ZDkzOTY1Nzk0@thread.v2&amp;messageId=0&amp;language=en-US\"><span style=\"font-size:10.5pt; color:#5B5FC7\">Meeting\r\n options</span></a> </span></p>\r\n</div>\r\n<div style=\"margin-bottom:18.0pt; overflow:hidden\">\r\n<p class=\"MsoNormal\"><span style=\"font-family:&quot;Segoe UI&quot;,sans-serif; color:#242424\">________________________________________________________________________________</span></p>\r\n</div>\r\n</div>\r\n</div>\r\n<p class=\"MsoNormal\">&nbsp;</p>\r\n</div>\r\n</body>\r\n</html>\r\n"
+    },
+    "start": {
+      "dateTime": "2025-05-22T08:30:00.0000000",
+      "timeZone": "UTC"
+    },
+    "end": {
+      "dateTime": "2025-05-22T10:00:00.0000000",
+      "timeZone": "UTC"
+    },
+    "location": {
+      "displayName": "Teams Meeting",
+      "locationType": "default",
+      "uniqueId": "Teams Meeting",
+      "uniqueIdType": "private"
+    },
+    "locations": [
+      {
+        "displayName": "Teams Meeting",
+        "locationType": "default",
+        "uniqueId": "Teams Meeting",
+        "uniqueIdType": "private"
+      }
+    ],
+    "recurrence": null,
+    "attendees": [
+      {
+        "type": "required",
+        "status": {
+          "response": "none",
+          "time": "0001-01-01T00:00:00Z"
+        },
+        "emailAddress": {
+          "name": "Chantel Haffejee",
+          "address": "chantel@modena-aec.co.za"
+        }
+      },
+      {
+        "type": "required",
+        "status": {
+          "response": "none",
+          "time": "0001-01-01T00:00:00Z"
+        },
+        "emailAddress": {
+          "name": "Bruce Cherrington",
+          "address": "bruce.cherrington@outlook.com"
+        }
+      },
+      {
+        "type": "required",
+        "status": {
+          "response": "none",
+          "time": "0001-01-01T00:00:00Z"
+        },
+        "emailAddress": {
+          "name": "Sibusiso Khanyile",
+          "address": "sibusiso@modena-aec.co.za"
+        }
+      },
+      {
+        "type": "resource",
+        "status": {
+          "response": "none",
+          "time": "0001-01-01T00:00:00Z"
+        },
+        "emailAddress": {
+          "name": "Boardroom 3 (First Floor Small)",
+          "address": "Boardroom3@modena-aec.co.za"
+        }
+      }
+    ],
+    "organizer": {
+      "emailAddress": {
+        "name": "Chantel Haffejee",
+        "address": "chantel@modena-aec.co.za"
+      }
+    },
+    "onlineMeeting": {
+      "joinUrl": "https://teams.microsoft.com/l/meetup-join/19%3ameeting_OGEwYmQwOGMtZTQ5YS00ZTcwLWFkMzItNmQ4ZDkzOTY1Nzk0%40thread.v2/0?context=%7b%22Tid%22%3a%22193daea9-73e0-467d-a9c8-2cf78c9485ba%22%2c%22Oid%22%3a%22bbb3dc73-38f9-48e6-909f-d33d63cfc20b%22%7d"
+    }
+  },
+  {
+    "@odata.etag": "W/\"sHKVScJ/9EOsKHgmr+i57gAIAqg2fw==\"",
+    "id": "AQMkADAwATM3ZmYAZS05ZmQzLTljNjAtMDACLTAwCgFRAAgIAN2csWyAwABGAAACkCL3cqm8KEuRPfSf7t743AcAsHKVScJ-9EOsKHgmr_i57gAAAgENAAAAsHKVScJ-9EOsKHgmr_i57gAH-k-qGgAAABA=",
+    "createdDateTime": "2025-05-13T11:39:30.8452009Z",
+    "lastModifiedDateTime": "2025-05-22T20:34:49.3997858Z",
+    "changeKey": "sHKVScJ/9EOsKHgmr+i57gAIAqg2fw==",
+    "categories": [
+      "Billable - Modena"
+    ],
+    "transactionId": null,
+    "originalStartTimeZone": "South Africa Standard Time",
+    "originalEndTimeZone": "South Africa Standard Time",
+    "iCalUId": "040000008200E00074C5B7101A82E00807E9051B0027714B0CC4DB01000000000000000010000000EFB9561B7C16AD429A22E82E28CEC6FD",
+    "uid": "040000008200E00074C5B7101A82E008000000000027714B0CC4DB01000000000000000010000000EFB9561B7C16AD429A22E82E28CEC6FD",
+    "reminderMinutesBeforeStart": 15,
+    "isReminderOn": true,
+    "hasAttachments": false,
+    "subject": "Bruce & Thabelo - Check In ",
+    "bodyPreview": "________________________________________________________________________________\r\nMicrosoft Teams Need help?\r\nJoin the meeting now\r\nMeeting ID: 383 080 573 758 4\r\nPasscode: RF3rP2Ce\r\n________________________________\r\nFor organizers: Meeting options\r\n___",
+    "importance": "normal",
+    "sensitivity": "normal",
+    "isAllDay": false,
+    "isCancelled": false,
+    "isOrganizer": false,
+    "responseRequested": true,
+    "seriesMasterId": "AQMkADAwATM3ZmYAZS05ZmQzLTljNjAtMDACLTAwCgBGAAADkCL3cqm8KEuRPfSf7t743AcAsHKVScJ-9EOsKHgmr_i57gAAAgENAAAAsHKVScJ-9EOsKHgmr_i57gAH-k-qGgAAAA==",
+    "showAs": "busy",
+    "type": "occurrence",
+    "webLink": "https://outlook.live.com/owa/?itemid=AQMkADAwATM3ZmYAZS05ZmQzLTljNjAtMDACLTAwCgFRAAgIAN2csWyAwABGAAACkCL3cqm8KEuRPfSf7t743AcAsHKVScJ%2F9EOsKHgmr%2Bi57gAAAgENAAAAsHKVScJ%2F9EOsKHgmr%2Bi57gAH%2Fk%2FqGgAAABA%3D&exvsurl=1&path=/calendar/item",
+    "onlineMeetingUrl": null,
+    "isOnlineMeeting": true,
+    "onlineMeetingProvider": "teamsForBusiness",
+    "allowNewTimeProposals": true,
+    "occurrenceId": "OID.AQMkADAwATM3ZmYAZS05ZmQzLTljNjAtMDACLTAwCgBGAAADkCL3cqm8KEuRPfSf7t743AcAsHKVScJ-9EOsKHgmr_i57gAAAgENAAAAsHKVScJ-9EOsKHgmr_i57gAH-k-qGgAAAA==.2025-05-27",
+    "isDraft": false,
+    "hideAttendees": false,
+    "responseStatus": {
+      "response": "accepted",
+      "time": "2025-05-13T12:20:09.6933027Z"
+    },
+    "body": {
+      "contentType": "html",
+      "content": "<html>\r\n<head>\r\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\r\n<meta name=\"Generator\" content=\"Microsoft Word 15 (filtered medium)\">\r\n<style>\r\n<!--\r\n@font-face\r\n\t{font-family:\"Cambria Math\"}\r\n@font-face\r\n\t{font-family:Aptos}\r\n@font-face\r\n\t{font-family:\"Segoe UI\"}\r\np.MsoNormal, li.MsoNormal, div.MsoNormal\r\n\t{margin:0cm;\r\n\tfont-size:11.0pt;\r\n\tfont-family:\"Aptos\",sans-serif}\r\na:link, span.MsoHyperlink\r\n\t{color:#467886;\r\n\ttext-decoration:underline}\r\nspan.me-email-text\r\n\t{}\r\nspan.me-email-text-secondary\r\n\t{}\r\nspan.EmailStyle20\r\n\t{}\r\n.MsoChpDefault\r\n\t{font-size:10.0pt}\r\n@page WordSection1\r\n\t{margin:72.0pt 72.0pt 72.0pt 72.0pt}\r\ndiv.WordSection1\r\n\t{}\r\n-->\r\n</style>\r\n</head>\r\n<body lang=\"EN-ZA\" link=\"#467886\" vlink=\"#96607D\" style=\"word-wrap:break-word\">\r\n<div class=\"WordSection1\">\r\n<p class=\"MsoNormal\">&nbsp;</p>\r\n<div>\r\n<div style=\"margin-bottom:18.0pt; overflow:hidden\">\r\n<p class=\"MsoNormal\"><span style=\"font-family:&quot;Segoe UI&quot;,sans-serif; color:#242424\">________________________________________________________________________________</span><span style=\"font-size:12.0pt; font-family:&quot;Segoe UI&quot;,sans-serif; color:#242424\"></span></p>\r\n</div>\r\n<div style=\"margin-bottom:9.0pt\">\r\n<p class=\"MsoNormal\"><span class=\"me-email-text\"><b><span style=\"font-size:18.0pt; font-family:&quot;Segoe UI&quot;,sans-serif; color:#242424\">Microsoft Teams</span></b></span><span style=\"font-family:&quot;Segoe UI&quot;,sans-serif; color:#242424\">\r\n<a href=\"https://emea01.safelinks.protection.outlook.com/?url=https%3A%2F%2Faka.ms%2FJoinTeamsMeeting%3Fomkt%3Den-US&amp;data=05%7C02%7C%7C6e8bb3a1d1164dc23ba208dd9212d108%7C84df9e7fe9f640afb435aaaaaaaaaaaa%7C1%7C0%7C638827331707276190%7CUnknown%7CTWFpbGZsb3d8eyJFbXB0eU1hcGkiOnRydWUsIlYiOiIwLjAuMDAwMCIsIlAiOiJXaW4zMiIsIkFOIjoiTWFpbCIsIldUIjoyfQ%3D%3D%7C0%7C%7C%7C&amp;sdata=ZBGS47iEzXwyrbb%2BHYPdDKs21m1%2BwIIRggStPm3GjUc%3D&amp;reserved=0\" originalsrc=\"https://aka.ms/JoinTeamsMeeting?omkt=en-US\">\r\n<span style=\"font-size:10.5pt; color:#5B5FC7\">Need help?</span></a> </span></p>\r\n</div>\r\n<div style=\"margin-bottom:4.5pt\">\r\n<p class=\"MsoNormal\"><span style=\"font-family:&quot;Segoe UI&quot;,sans-serif; color:#242424\"><a href=\"https://emea01.safelinks.protection.outlook.com/ap/t-59584e83/?url=https%3A%2F%2Fteams.microsoft.com%2Fl%2Fmeetup-join%2F19%253ameeting_OWRiNjI2NjMtYTcyZC00ZjYzLThkMTItMzQ3ZWQ5ZmI4ZGEw%2540thread.v2%2F0%3Fcontext%3D%257b%2522Tid%2522%253a%2522193daea9-73e0-467d-a9c8-2cf78c9485ba%2522%252c%2522Oid%2522%253a%25228f23e5fe-c699-44ee-8b40-59f33788077f%2522%257d&amp;data=05%7C02%7C%7C6e8bb3a1d1164dc23ba208dd9212d108%7C84df9e7fe9f640afb435aaaaaaaaaaaa%7C1%7C0%7C638827331707335779%7CUnknown%7CTWFpbGZsb3d8eyJFbXB0eU1hcGkiOnRydWUsIlYiOiIwLjAuMDAwMCIsIlAiOiJXaW4zMiIsIkFOIjoiTWFpbCIsIldUIjoyfQ%3D%3D%7C0%7C%7C%7C&amp;sdata=P4karjD7nCGcIpqLGGEMzduVNIWfv2%2FooohUYyXnAAw%3D&amp;reserved=0\" originalsrc=\"https://teams.microsoft.com/l/meetup-join/19%3ameeting_OWRiNjI2NjMtYTcyZC00ZjYzLThkMTItMzQ3ZWQ5ZmI4ZGEw%40thread.v2/0?context=%7b%22Tid%22%3a%22193daea9-73e0-467d-a9c8-2cf78c9485ba%22%2c%22Oid%22%3a%228f23e5fe-c699-44ee-8b40-59f33788077f%22%7d\" title=\"Meeting join link\"><b><span style=\"font-size:15.0pt; color:#5B5FC7\">Join\r\n the meeting now</span></b></a> </span></p>\r\n</div>\r\n<div style=\"margin-bottom:4.5pt\">\r\n<p class=\"MsoNormal\"><span class=\"me-email-text-secondary\"><span style=\"font-size:10.5pt; font-family:&quot;Segoe UI&quot;,sans-serif; color:#616161\">Meeting ID:\r\n</span></span><span class=\"me-email-text\"><span style=\"font-size:10.5pt; font-family:&quot;Segoe UI&quot;,sans-serif; color:#242424\">383 080 573 758 4</span></span><span style=\"font-family:&quot;Segoe UI&quot;,sans-serif; color:#242424\">\r\n</span></p>\r\n</div>\r\n<div style=\"margin-bottom:18.0pt\">\r\n<p class=\"MsoNormal\"><span class=\"me-email-text-secondary\"><span style=\"font-size:10.5pt; font-family:&quot;Segoe UI&quot;,sans-serif; color:#616161\">Passcode:\r\n</span></span><span class=\"me-email-text\"><span style=\"font-size:10.5pt; font-family:&quot;Segoe UI&quot;,sans-serif; color:#242424\">RF3rP2Ce</span></span><span style=\"font-family:&quot;Segoe UI&quot;,sans-serif; color:#242424\">\r\n</span></p>\r\n</div>\r\n<div style=\"margin-bottom:18.0pt\">\r\n<div class=\"MsoNormal\" align=\"center\" style=\"text-align:center\"><span style=\"font-family:&quot;Segoe UI&quot;,sans-serif; color:#242424\">\r\n<hr size=\"1\" width=\"100%\" align=\"center\">\r\n</span></div>\r\n</div>\r\n<div>\r\n<p class=\"MsoNormal\"><span class=\"me-email-text-secondary\"><span style=\"font-size:10.5pt; font-family:&quot;Segoe UI&quot;,sans-serif; color:#616161\">For organizers:\r\n</span></span><span style=\"font-family:&quot;Segoe UI&quot;,sans-serif; color:#242424\"><a href=\"https://emea01.safelinks.protection.outlook.com/?url=https%3A%2F%2Fteams.microsoft.com%2FmeetingOptions%2F%3ForganizerId%3D8f23e5fe-c699-44ee-8b40-59f33788077f%26tenantId%3D193daea9-73e0-467d-a9c8-2cf78c9485ba%26threadId%3D19_meeting_OWRiNjI2NjMtYTcyZC00ZjYzLThkMTItMzQ3ZWQ5ZmI4ZGEw%40thread.v2%26messageId%3D0%26language%3Den-US&amp;data=05%7C02%7C%7C6e8bb3a1d1164dc23ba208dd9212d108%7C84df9e7fe9f640afb435aaaaaaaaaaaa%7C1%7C0%7C638827331707384013%7CUnknown%7CTWFpbGZsb3d8eyJFbXB0eU1hcGkiOnRydWUsIlYiOiIwLjAuMDAwMCIsIlAiOiJXaW4zMiIsIkFOIjoiTWFpbCIsIldUIjoyfQ%3D%3D%7C0%7C%7C%7C&amp;sdata=Ktuumyob1t9Q%2B7jrahQOV6D5B%2Fupu9gE1xcf%2FBmHWDE%3D&amp;reserved=0\" originalsrc=\"https://teams.microsoft.com/meetingOptions/?organizerId=8f23e5fe-c699-44ee-8b40-59f33788077f&amp;tenantId=193daea9-73e0-467d-a9c8-2cf78c9485ba&amp;threadId=19_meeting_OWRiNjI2NjMtYTcyZC00ZjYzLThkMTItMzQ3ZWQ5ZmI4ZGEw@thread.v2&amp;messageId=0&amp;language=en-US\"><span style=\"font-size:10.5pt; color:#5B5FC7\">Meeting\r\n options</span></a> </span></p>\r\n</div>\r\n<div style=\"margin-bottom:18.0pt; overflow:hidden\">\r\n<p class=\"MsoNormal\"><span style=\"font-family:&quot;Segoe UI&quot;,sans-serif; color:#242424\">________________________________________________________________________________</span></p>\r\n</div>\r\n</div>\r\n<p class=\"MsoNormal\">&nbsp;</p>\r\n</div>\r\n</body>\r\n</html>\r\n"
+    },
+    "start": {
+      "dateTime": "2025-05-27T08:00:00.0000000",
+      "timeZone": "UTC"
+    },
+    "end": {
+      "dateTime": "2025-05-27T08:30:00.0000000",
+      "timeZone": "UTC"
+    },
+    "location": {
+      "displayName": "Microsoft Teams Meeting; / In person",
+      "locationType": "default",
+      "uniqueId": "Microsoft Teams Meeting; / In person",
+      "uniqueIdType": "private"
+    },
+    "locations": [
+      {
+        "displayName": "Microsoft Teams Meeting",
+        "locationType": "default",
+        "uniqueId": "Microsoft Teams Meeting",
+        "uniqueIdType": "private"
+      },
+      {
+        "displayName": "/ In person",
+        "locationType": "default",
+        "uniqueId": "/ In person",
+        "uniqueIdType": "private"
+      }
+    ],
+    "recurrence": null,
+    "attendees": [
+      {
+        "type": "required",
+        "status": {
+          "response": "none",
+          "time": "0001-01-01T00:00:00Z"
+        },
+        "emailAddress": {
+          "name": "Modena Consulting Calendar",
+          "address": "Modenaconsultingcalendar@modena-aec.co.za"
+        }
+      },
+      {
+        "type": "required",
+        "status": {
+          "response": "none",
+          "time": "0001-01-01T00:00:00Z"
+        },
+        "emailAddress": {
+          "name": "Bruce Cherrington",
+          "address": "bruce.cherrington@outlook.com"
+        }
+      },
+      {
+        "type": "required",
+        "status": {
+          "response": "none",
+          "time": "0001-01-01T00:00:00Z"
+        },
+        "emailAddress": {
+          "name": "Thabelo Netshivhungululu",
+          "address": "thabelo@modena-aec.co.za"
+        }
+      }
+    ],
+    "organizer": {
+      "emailAddress": {
+        "name": "Modena Consulting Calendar",
+        "address": "Modenaconsultingcalendar@modena-aec.co.za"
+      }
+    },
+    "onlineMeeting": {
+      "joinUrl": "https://teams.microsoft.com/l/meetup-join/19%3ameeting_OWRiNjI2NjMtYTcyZC00ZjYzLThkMTItMzQ3ZWQ5ZmI4ZGEw%40thread.v2/0?context=%7b%22Tid%22%3a%22193daea9-73e0-467d-a9c8-2cf78c9485ba%22%2c%22Oid%22%3a%228f23e5fe-c699-44ee-8b40-59f33788077f%22%7d"
+    }
+  },
+  {
+    "@odata.etag": "W/\"sHKVScJ/9EOsKHgmr+i57gAIAqg2WQ==\"",
+    "id": "AQMkADAwATM3ZmYAZS05ZmQzLTljNjAtMDACLTAwCgFRAAgIAN2X_m4GQABGAAACkCL3cqm8KEuRPfSf7t743AcAsHKVScJ-9EOsKHgmr_i57gAAAgENAAAAsHKVScJ-9EOsKHgmr_i57gAHyk47MQAAABA=",
+    "createdDateTime": "2025-03-07T11:23:08.1747839Z",
+    "lastModifiedDateTime": "2025-05-22T20:34:31.8572263Z",
+    "changeKey": "sHKVScJ/9EOsKHgmr+i57gAIAqg2WQ==",
+    "categories": [
+      "Billable - Cofoundry"
+    ],
+    "transactionId": null,
+    "originalStartTimeZone": "Africa/Johannesburg",
+    "originalEndTimeZone": "Africa/Johannesburg",
+    "iCalUId": "040000008200E00074C5B7101A82E00807E9051500000000000000000000000000000000320000007643616C2D5569640100000033616F38626C766176656C70746E6E316B3461646C666673656940676F6F676C652E636F6D00",
+    "uid": "3ao8blvavelptnn1k4adlffsei@google.com",
+    "reminderMinutesBeforeStart": 10,
+    "isReminderOn": true,
+    "hasAttachments": true,
+    "subject": "Bruce/Qudsiyah Weekly Meetings",
+    "bodyPreview": "Bruce/Qudsiyah Weekly Meetings\r\nJoin with Google Meet \u2013 You have been invited by Qudsiyah Jaffer to attend an event named Bruce/Qudsiyah Weekly Meetings on Weekly from 10am to 11am on Wednesday (South Africa Standard Time).\r\n\r\nJoin with Google Meet\r\nMeeti",
+    "importance": "normal",
+    "sensitivity": "normal",
+    "isAllDay": false,
+    "isCancelled": false,
+    "isOrganizer": false,
+    "responseRequested": true,
+    "seriesMasterId": "AQMkADAwATM3ZmYAZS05ZmQzLTljNjAtMDACLTAwCgBGAAADkCL3cqm8KEuRPfSf7t743AcAsHKVScJ-9EOsKHgmr_i57gAAAgENAAAAsHKVScJ-9EOsKHgmr_i57gAHyk47MQAAAA==",
+    "showAs": "busy",
+    "type": "occurrence",
+    "webLink": "https://outlook.live.com/owa/?itemid=AQMkADAwATM3ZmYAZS05ZmQzLTljNjAtMDACLTAwCgFRAAgIAN2X%2Bm4GQABGAAACkCL3cqm8KEuRPfSf7t743AcAsHKVScJ%2F9EOsKHgmr%2Bi57gAAAgENAAAAsHKVScJ%2F9EOsKHgmr%2Bi57gAHyk47MQAAABA%3D&exvsurl=1&path=/calendar/item",
+    "onlineMeetingUrl": null,
+    "isOnlineMeeting": false,
+    "onlineMeetingProvider": "unknown",
+    "allowNewTimeProposals": true,
+    "occurrenceId": "OID.AQMkADAwATM3ZmYAZS05ZmQzLTljNjAtMDACLTAwCgBGAAADkCL3cqm8KEuRPfSf7t743AcAsHKVScJ-9EOsKHgmr_i57gAAAgENAAAAsHKVScJ-9EOsKHgmr_i57gAHyk47MQAAAA==.2025-05-21",
+    "isDraft": false,
+    "hideAttendees": false,
+    "responseStatus": {
+      "response": "accepted",
+      "time": "2025-03-07T11:22:00Z"
+    },
+    "body": {
+      "contentType": "html",
+      "content": "<html>\r\n<head>\r\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\r\n<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\r\n<meta name=\"color-scheme\" content=\"light dark\">\r\n<meta name=\"supported-color-schemes\" content=\"light dark\">\r\n<style>\r\n<!--\r\nbody, html\r\n\t{font-family:Roboto,Helvetica,Arial,sans-serif}\r\nbody\r\n\t{margin:0;\r\n\tpadding:0}\r\n#outlook a\r\n\t{padding:0}\r\n.ReadMsgBody\r\n\t{width:100%}\r\n.ExternalClass\r\n\t{width:100%}\r\n.ExternalClass *\r\n\t{line-height:100%}\r\ntable, td\r\n\t{}\r\nimg\r\n\t{border:0;\r\n\theight:auto;\r\n\tline-height:100%;\r\n\toutline:none;\r\n\ttext-decoration:none}\r\np\r\n\t{display:block;\r\n\tmargin:13px 0}\r\n-->\r\n</style><style>\r\n<!--\r\n@media only screen and (max-width:580px) {\r\n\r\n\t}\r\n-->\r\n</style><style>\r\n<!--\r\nbody, html\r\n\t{font-family:Roboto,Helvetica,Arial,sans-serif}\r\n@font-face\r\n\t{font-family:'Roboto';\r\n\tfont-style:normal;\r\n\tfont-weight:400}\r\n@font-face\r\n\t{font-family:'Roboto';\r\n\tfont-style:normal;\r\n\tfont-weight:500}\r\n@font-face\r\n\t{font-family:'Roboto';\r\n\tfont-style:normal;\r\n\tfont-weight:700}\r\n@font-face\r\n\t{font-family:'Material Icons Extended';\r\n\tfont-style:normal;\r\n\tfont-weight:400}\r\n@font-face\r\n\t{font-family:'Google Material Icons';\r\n\tfont-style:normal;\r\n\tfont-weight:400}\r\n.google-material-icons\r\n\t{font-family:'Google Material Icons';\r\n\tfont-weight:normal;\r\n\tfont-style:normal;\r\n\tfont-size:24px;\r\n\tline-height:1;\r\n\tletter-spacing:normal;\r\n\ttext-transform:none;\r\n\tdisplay:inline-block;\r\n\twhite-space:nowrap;\r\n\tword-wrap:normal;\r\n\tdirection:ltr}\r\n@font-face\r\n\t{font-family:'Google Material Icons Filled';\r\n\tfont-style:normal;\r\n\tfont-weight:400}\r\n.google-material-icons-filled\r\n\t{font-family:'Google Material Icons Filled';\r\n\tfont-weight:normal;\r\n\tfont-style:normal;\r\n\tfont-size:24px;\r\n\tline-height:1;\r\n\tletter-spacing:normal;\r\n\ttext-transform:none;\r\n\tdisplay:inline-block;\r\n\twhite-space:nowrap;\r\n\tword-wrap:normal;\r\n\tdirection:ltr}\r\n@font-face\r\n\t{font-family:'Google Sans';\r\n\tfont-style:normal;\r\n\tfont-weight:400}\r\n@font-face\r\n\t{font-family:'Google Sans';\r\n\tfont-style:normal;\r\n\tfont-weight:500}\r\n@font-face\r\n\t{font-family:'Google Sans';\r\n\tfont-style:normal;\r\n\tfont-weight:700}\r\n-->\r\n</style><style>\r\n<!--\r\n.body-container\r\n\t{padding-left:16px;\r\n\tpadding-right:16px}\r\n-->\r\n</style><style>\r\n<!--\r\nu + .body .body-container, body[data-outlook-cycle] .body-container, #MessageViewBody .body-container\r\n\t{padding-left:0;\r\n\tpadding-right:0}\r\n-->\r\n</style><style>\r\n<!--\r\n@media only screen and (min-width:580px) {\r\n.column-per-37\r\n\t{width:37%!important;\r\n\tmax-width:37%}\r\n.column-per-63\r\n\t{width:63%!important;\r\n\tmax-width:63%}\r\n\r\n\t}\r\n-->\r\n</style><style>\r\n<!--\r\n.appointment-buttons th\r\n\t{display:block;\r\n\tclear:both;\r\n\tfloat:left;\r\n\tmargin-top:12px}\r\n.appointment-buttons th a\r\n\t{float:left}\r\n#MessageViewBody .appointment-buttons th\r\n\t{margin-top:24px}\r\n-->\r\n</style><style>\r\n<!--\r\n@media only screen and (max-width:580px) {\r\ntable.full-width-mobile\r\n\t{width:100%!important}\r\ntd.full-width-mobile\r\n\t{width:auto!important}\r\n\r\n\t}\r\n-->\r\n</style><style>\r\n<!--\r\n.main-container-inner, .info-bar-inner\r\n\t{padding:12px 16px!important}\r\n.main-column-table-ltr\r\n\t{padding-right:0!important}\r\n.main-column-table-rtl\r\n\t{padding-left:0!important}\r\n@media only screen and (min-width:580px) {\r\n.main-container-inner\r\n\t{padding:24px 32px!important}\r\n.info-bar-inner\r\n\t{padding:12px 32px!important}\r\n.main-column-table-ltr\r\n\t{padding-right:32px!important}\r\n.main-column-table-rtl\r\n\t{padding-left:32px!important}\r\n.appointment-buttons th\r\n\t{display:table-cell;\r\n\tclear:none}\r\n\r\n\t}\r\n.primary-text\r\n\t{color:#3c4043!important}\r\n.secondary-text, .phone-number a\r\n\t{color:#70757a!important}\r\n.accent-text\r\n\t{color:#1a73e8!important}\r\n.accent-text-dark\r\n\t{color:#185abc!important}\r\n.grey-button-text, .attachment-chip a\r\n\t{color:#5f6368!important}\r\n.primary-button\r\n\t{background-color:#1a73e8!important}\r\n.primary-button-text\r\n\t{color:#fff!important}\r\n.grey-infobar-text\r\n\t{color:#202124!important}\r\n@media (prefers-color-scheme: dark) {\r\n\r\n\t}\r\n-->\r\n</style><style>\r\n<!--\r\n@media (prefers-color-scheme: dark) {\r\n\r\n\t}\r\n-->\r\n</style><style>\r\n<!--\r\n.prevent-link a\r\n\t{color:inherit!important;\r\n\ttext-decoration:none!important;\r\n\tfont-size:inherit!important;\r\n\tfont-family:inherit!important;\r\n\tfont-weight:inherit!important;\r\n\tline-height:inherit!important}\r\n-->\r\n</style>\r\n</head>\r\n<body class=\"body\">\r\n<span itemscope=\"\" itemtype=\"http://schema.org/InformAction\"><span itemprop=\"about\" itemscope=\"\" itemtype=\"http://schema.org/Person\" style=\"display:none\">\r\n<meta itemprop=\"description\" content=\"Invitation from Qudsiyah Jaffer\">\r\n</span><span itemprop=\"object\" itemscope=\"\" itemtype=\"http://schema.org/Event\">\r\n<meta itemprop=\"eventStatus\" content=\"http://schema.org/EventScheduled\">\r\n<span itemprop=\"publisher\" itemscope=\"\" itemtype=\"http://schema.org/Organization\">\r\n<meta itemprop=\"name\" content=\"Google Calendar\">\r\n</span>\r\n<meta itemprop=\"eventId/googleCalendar\" content=\"3ao8blvavelptnn1k4adlffsei\">\r\n<span itemprop=\"name\" style=\"display:none; font-size:1px; color:#fff; line-height:1px; height:0; max-height:0; width:0; max-width:0; opacity:0; overflow:hidden\">Bruce/Qudsiyah Weekly Meetings</span>\r\n<meta itemprop=\"url\" content=\"https://calendar.google.com/calendar/event?action=VIEW&amp;eid=M2FvOGJsdmF2ZWxwdG5uMWs0YWRsZmZzZWkgYnJ1Y2UuY2hlcnJpbmd0b25Ab3V0bG9vay5jb20&amp;tok=MzIjcXVkc2l5YWguamFmZmVyQGNvLWZvdW5kcnkuY28uemE4Y2M3NThiMmRlOGJkNGMyZTJhMTgwMjUwMmU2NjljNGJjMTM5MTkz&amp;ctz=Africa%2FJohannesburg&amp;hl=en&amp;es=0\">\r\n<span aria-hidden=\"true\"><time itemprop=\"startDate\" datetime=\"20250312T080000Z\"></time><time itemprop=\"endDate\" datetime=\"20250312T090000Z\"></time></span>\r\n<div style=\"display:none; font-size:1px; color:#fff; line-height:1px; height:0; max-height:0; width:0; max-width:0; opacity:0; overflow:hidden\">\r\nJoin with Google Meet \u2013 You have been invited by Qudsiyah Jaffer to attend an event named Bruce/Qudsiyah Weekly Meetings on Weekly from 10am to 11am on Wednesday (South Africa Standard Time).</div>\r\n<table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" role=\"presentation\" align=\"center\" class=\"body-container\" style=\"width:100%\">\r\n<tbody>\r\n<tr>\r\n<td class=\"\" align=\"left\" style=\"\">\r\n<div aria-hidden=\"true\" style=\"height:16px\">&nbsp; </div>\r\n<table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" role=\"presentation\" align=\"center\" class=\"\" style=\"width:100%\">\r\n<tbody>\r\n<tr>\r\n<td class=\"main-container-inner\" style=\"border:solid 1px #dadce0; border-radius:8px; direction:rtl; font-size:0; padding:24px 32px; text-align:left; vertical-align:top\">\r\n<div class=\"column-per-37 outlook-group-fix\" style=\"font-size:13px; text-align:left; direction:ltr; display:inline-block; vertical-align:top; width:100%; overflow:hidden; word-wrap:break-word\">\r\n<table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" role=\"presentation\" width=\"100%\">\r\n<tbody>\r\n<tr>\r\n<td style=\"vertical-align:top; padding:0\">\r\n<table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" role=\"presentation\" width=\"100%\">\r\n<tbody>\r\n<tr>\r\n<td style=\"font-size:0; padding:0; text-align:left; word-break:break-word; padding-bottom:28px\">\r\n<a href=\"https://emea01.safelinks.protection.outlook.com/?url=https%3A%2F%2Fmeet.google.com%2Fsqu-iamk-dtk%3Fhs%3D224&amp;data=05%7C02%7C%7Cee4f95f4383642c4f84e08dd5d611913%7C84df9e7fe9f640afb435aaaaaaaaaaaa%7C1%7C0%7C638769393792450593%7CUnknown%7CTWFpbGZsb3d8eyJFbXB0eU1hcGkiOnRydWUsIlYiOiIwLjAuMDAwMCIsIlAiOiJXaW4zMiIsIkFOIjoiTWFpbCIsIldUIjoyfQ%3D%3D%7C0%7C%7C%7C&amp;sdata=gumDQs2UXLfePU238SA9sCQAQNvGiJGO1dJeyLb75YA%3D&amp;reserved=0\" originalsrc=\"https://meet.google.com/squ-iamk-dtk?hs=224\" class=\"primary-button-text\" style=\"display:inline-block; font-family:'Google Sans',Roboto,sans-serif; font-size:14px; letter-spacing:0.25px; line-height:20px; text-decoration:none; text-transform:none; word-wrap:break-word; white-space:nowrap; color:#fff; font-weight:700; white-space:normal\">\r\n<table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" role=\"presentation\" style=\"display:inline-block\">\r\n<tbody>\r\n<tr>\r\n<td align=\"center\" role=\"presentation\" valign=\"middle\" class=\"primary-button\" style=\"background-color:#1a73e8; padding:10px 25px; border:none; border-radius:4px; margin:0\">\r\n<span class=\"primary-button-text\" style=\"font-family:'Google Sans',Roboto,sans-serif; font-size:14px; letter-spacing:0.25px; line-height:20px; text-decoration:none; text-transform:none; word-wrap:break-word; white-space:nowrap; color:#fff; font-weight:700; white-space:normal\">Join\r\n with Google Meet</span></td>\r\n</tr>\r\n</tbody>\r\n</table>\r\n</a></td>\r\n</tr>\r\n<tr>\r\n<td style=\"font-size:0; padding:0; text-align:left; word-break:break-word; padding-bottom:24px\">\r\n<div style=\"font-family:Roboto,sans-serif; font-size:14px; line-height:20px; text-align:left\">\r\n<table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" role=\"presentation\" style=\"padding-bottom:4px\">\r\n<tbody>\r\n<tr>\r\n<td>\r\n<h2 class=\"primary-text\" style=\"font-size:14px; color:#3c4043; text-decoration:none; font-weight:700; margin:0; padding:0\">\r\nMeeting link</h2>\r\n</td>\r\n</tr>\r\n</tbody>\r\n</table>\r\n<div><a href=\"https://emea01.safelinks.protection.outlook.com/?url=https%3A%2F%2Fmeet.google.com%2Fsqu-iamk-dtk%3Fhs%3D224&amp;data=05%7C02%7C%7Cee4f95f4383642c4f84e08dd5d611913%7C84df9e7fe9f640afb435aaaaaaaaaaaa%7C1%7C0%7C638769393792489278%7CUnknown%7CTWFpbGZsb3d8eyJFbXB0eU1hcGkiOnRydWUsIlYiOiIwLjAuMDAwMCIsIlAiOiJXaW4zMiIsIkFOIjoiTWFpbCIsIldUIjoyfQ%3D%3D%7C0%7C%7C%7C&amp;sdata=PwhwEVMCqBSkvYVNuWd1DKFp2%2FiEWy82zFHzWl7LrFM%3D&amp;reserved=0\" class=\"secondary-text underline-on-hover\" originalsrc=\"https://meet.google.com/squ-iamk-dtk?hs=224\" style=\"display:inline-block; color:#70757a; text-decoration:none\">meet.google.com/squ-iamk-dtk</a></div>\r\n</div>\r\n</td>\r\n</tr>\r\n<tr>\r\n<td style=\"font-size:0; padding:0; text-align:left; word-break:break-word; padding-bottom:24px\">\r\n<div style=\"font-family:Roboto,sans-serif; font-size:14px; line-height:20px; text-align:left\">\r\n<table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" role=\"presentation\" style=\"padding-bottom:4px\">\r\n<tbody>\r\n<tr>\r\n<td>\r\n<h2 class=\"primary-text\" style=\"font-size:14px; color:#3c4043; text-decoration:none; font-weight:700; margin:0; padding:0\">\r\nJoin by phone</h2>\r\n</td>\r\n</tr>\r\n</tbody>\r\n</table>\r\n<span class=\"secondary-text\" style=\"color:#70757a; text-decoration:none\">(ZA) </span>\r\n<a href=\"tel:+27-10-823-0713%3B126737197%23\" class=\"accent-text underline-on-hover\" style=\"display:inline-block; color:#1a73e8; text-decoration:none\">+27 10 823 0713</a>\r\n<br>\r\n<span class=\"secondary-text\" style=\"color:#70757a; text-decoration:none\">PIN: 126737197</span><br>\r\n<br>\r\n<a href=\"https://emea01.safelinks.protection.outlook.com/?url=https%3A%2F%2Ftel.meet%2Fsqu-iamk-dtk%3Fpin%3D6145619690246%26hs%3D0&amp;data=05%7C02%7C%7Cee4f95f4383642c4f84e08dd5d611913%7C84df9e7fe9f640afb435aaaaaaaaaaaa%7C1%7C0%7C638769393792502038%7CUnknown%7CTWFpbGZsb3d8eyJFbXB0eU1hcGkiOnRydWUsIlYiOiIwLjAuMDAwMCIsIlAiOiJXaW4zMiIsIkFOIjoiTWFpbCIsIldUIjoyfQ%3D%3D%7C0%7C%7C%7C&amp;sdata=FRXmZgv8K4T6EIzsZwrv98yaccvjdUSfSPS0OOc2wPU%3D&amp;reserved=0\" originalsrc=\"https://tel.meet/squ-iamk-dtk?pin=6145619690246&amp;hs=0\" class=\"accent-text underline-on-hover\" style=\"display:inline-block; color:#1a73e8; text-decoration:none\">More\r\n phone numbers</a><br>\r\n</div>\r\n</td>\r\n</tr>\r\n</tbody>\r\n</table>\r\n</td>\r\n</tr>\r\n</tbody>\r\n</table>\r\n</div>\r\n<div class=\"column-per-63 outlook-group-fix\" style=\"font-size:13px; text-align:left; direction:ltr; display:inline-block; vertical-align:top; width:100%; overflow:hidden; word-wrap:break-word\">\r\n<table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" role=\"presentation\" width=\"100%\" class=\"main-column-table-ltr\" style=\"padding-right:32px; padding-left:0; table-layout:fixed\">\r\n<tbody>\r\n<tr>\r\n<td class=\"main-column-td\" style=\"padding:0; vertical-align:top\">\r\n<table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" role=\"presentation\" width=\"100%\" style=\"table-layout:fixed\">\r\n<tbody>\r\n<tr>\r\n<td style=\"font-size:0; padding:0; text-align:left; word-break:break-word; padding-bottom:24px\">\r\n<div class=\"primary-text\" role=\"presentation\" style=\"font-family:Roboto,sans-serif; font-style:normal; font-weight:400; font-size:14px; line-height:20px; letter-spacing:0.2px; color:#3c4043; text-decoration:none\">\r\n<span aria-hidden=\"true\"><time itemprop=\"startDate\" datetime=\"20250312T080000Z\"></time><time itemprop=\"endDate\" datetime=\"20250312T090000Z\"></time></span>\r\n<table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" role=\"presentation\" style=\"padding-bottom:4px\">\r\n<tbody>\r\n<tr>\r\n<td>\r\n<h2 class=\"primary-text\" style=\"font-size:14px; color:#3c4043; text-decoration:none; font-weight:700; margin:0; padding:0\">\r\nWhen</h2>\r\n</td>\r\n</tr>\r\n</tbody>\r\n</table>\r\n<span>Weekly from 10am to 11am on Wednesday (South Africa Standard Time)</span></div>\r\n</td>\r\n</tr>\r\n<tr>\r\n<td style=\"font-size:0; padding:0; text-align:left; word-break:break-word; padding-bottom:24px\">\r\n<div class=\"primary-text\" role=\"presentation\" style=\"font-family:Roboto,sans-serif; font-style:normal; font-weight:400; font-size:14px; line-height:20px; letter-spacing:0.2px; color:#3c4043; text-decoration:none\">\r\n<table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" role=\"presentation\" style=\"padding-bottom:4px\">\r\n<tbody>\r\n<tr>\r\n<td>\r\n<h2 class=\"primary-text\" style=\"font-size:14px; color:#3c4043; text-decoration:none; font-weight:700; margin:0; padding:0\">\r\nGuests</h2>\r\n</td>\r\n</tr>\r\n</tbody>\r\n</table>\r\n<div style=\"padding-bottom:4px; text-align:left; color:#3c4042\">\r\n<div><span itemprop=\"attendee\" itemscope=\"\" itemtype=\"http://schema.org/Person\"><span itemprop=\"name\" class=\"notranslate\"><a href=\"mailto:qudsiyah.jaffer@co-foundry.co.za\" class=\"primary-text underline-on-hover\" style=\"display:inline-block; color:#3c4043; text-decoration:none\">Qudsiyah\r\n Jaffer</a></span>\r\n<meta itemprop=\"email\" content=\"qudsiyah.jaffer@co-foundry.co.za\">\r\n</span><span itemprop=\"organizer\" itemscope=\"\" itemtype=\"http://schema.org/Person\">\r\n<meta itemprop=\"name\" content=\"Qudsiyah Jaffer\">\r\n<meta itemprop=\"email\" content=\"qudsiyah.jaffer@co-foundry.co.za\">\r\n</span><span class=\"secondary-text\" style=\"color:#70757a; text-decoration:none\"> - organizer</span></div>\r\n<div><span itemprop=\"attendee\" itemscope=\"\" itemtype=\"http://schema.org/Person\"><span itemprop=\"name\" class=\"notranslate\"><a href=\"mailto:bruce.cherrington@outlook.com\" class=\"primary-text underline-on-hover\" style=\"display:inline-block; color:#3c4043; text-decoration:none\">bruce.cherrington@outlook.com</a></span>\r\n<meta itemprop=\"email\" content=\"bruce.cherrington@outlook.com\">\r\n</span><span class=\"secondary-text\" style=\"color:#70757a; text-decoration:none\"></span></div>\r\n</div>\r\n<a href=\"https://emea01.safelinks.protection.outlook.com/?url=https%3A%2F%2Fcalendar.google.com%2Fcalendar%2Fevent%3Faction%3DVIEW%26eid%3DM2FvOGJsdmF2ZWxwdG5uMWs0YWRsZmZzZWkgYnJ1Y2UuY2hlcnJpbmd0b25Ab3V0bG9vay5jb20%26tok%3DMzIjcXVkc2l5YWguamFmZmVyQGNvLWZvdW5kcnkuY28uemE4Y2M3NThiMmRlOGJkNGMyZTJhMTgwMjUwMmU2NjljNGJjMTM5MTkz%26ctz%3DAfrica%252FJohannesburg%26hl%3Den%26es%3D0&amp;data=05%7C02%7C%7Cee4f95f4383642c4f84e08dd5d611913%7C84df9e7fe9f640afb435aaaaaaaaaaaa%7C1%7C0%7C638769393792513673%7CUnknown%7CTWFpbGZsb3d8eyJFbXB0eU1hcGkiOnRydWUsIlYiOiIwLjAuMDAwMCIsIlAiOiJXaW4zMiIsIkFOIjoiTWFpbCIsIldUIjoyfQ%3D%3D%7C0%7C%7C%7C&amp;sdata=%2BMOzlbxx9NNepuNXpyQuZ7lSlPK0NHvoLDSFz5QGRUk%3D&amp;reserved=0\" originalsrc=\"https://calendar.google.com/calendar/event?action=VIEW&amp;eid=M2FvOGJsdmF2ZWxwdG5uMWs0YWRsZmZzZWkgYnJ1Y2UuY2hlcnJpbmd0b25Ab3V0bG9vay5jb20&amp;tok=MzIjcXVkc2l5YWguamFmZmVyQGNvLWZvdW5kcnkuY28uemE4Y2M3NThiMmRlOGJkNGMyZTJhMTgwMjUwMmU2NjljNGJjMTM5MTkz&amp;ctz=Africa%2FJohannesburg&amp;hl=en&amp;es=0\" class=\"accent-text underline-on-hover\" style=\"display:inline-block; color:#1a73e8; text-decoration:none; font-weight:700\">View\r\n all guest info</a></div>\r\n</td>\r\n</tr>\r\n<tr>\r\n<td style=\"font-size:0; padding:0; text-align:left; word-break:break-word; padding-bottom:0px\">\r\n<div class=\"primary-text\" style=\"color:#3c4043; text-decoration:none; font-family:Roboto,sans-serif; font-size:14px; line-height:20px; text-align:left\">\r\n<div><span style=\"font-weight:700\">RSVP</span><span class=\"secondary-text\" style=\"color:#70757a; text-decoration:none\"> for\r\n<a href=\"mailto:bruce.cherrington@outlook.com\" class=\"secondary-text underline-on-hover\" style=\"display:inline-block; color:#70757a; text-decoration:none\">\r\nbruce.cherrington@outlook.com</a> for all events in this series</span></div>\r\n</div>\r\n</td>\r\n</tr>\r\n<tr>\r\n<td style=\"font-size:0; padding:0; text-align:left; word-break:break-word; padding-bottom:16px\">\r\n<div style=\"font-family:Roboto,sans-serif; font-size:14px; line-height:20px; text-align:left\">\r\n<table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" role=\"presentation\" style=\"border-collapse:separate\">\r\n<tbody>\r\n<tr>\r\n<td style=\"padding-top:8px; padding-left:0; padding-right:12px\">\r\n<table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" role=\"presentation\" style=\"border:solid 1px #dadce0; border-radius:16px; border-collapse:separate; font-family:'Google Sans',Roboto,sans-serif; display:inline-block; margin-right:12px; margin-left:0\">\r\n<tbody>\r\n<tr>\r\n<td align=\"center\" role=\"presentation\"><span itemprop=\"potentialaction\" itemscope=\"\" itemtype=\"http://schema.org/RsvpAction\">\r\n<meta itemprop=\"attendance\" content=\"http://schema.org/RsvpAttendance/Yes\">\r\n<span itemprop=\"handler\" itemscope=\"\" itemtype=\"http://schema.org/HttpActionHandler\"><link itemprop=\"method\" href=\"http://schema.org/HttpRequestMethod/GET\"><span style=\"color:#5f6367\"><a href=\"https://emea01.safelinks.protection.outlook.com/?url=https%3A%2F%2Fcalendar.google.com%2Fcalendar%2Fevent%3Faction%3DRESPOND%26eid%3DM2FvOGJsdmF2ZWxwdG5uMWs0YWRsZmZzZWkgYnJ1Y2UuY2hlcnJpbmd0b25Ab3V0bG9vay5jb20%26rst%3D1%26tok%3DMzIjcXVkc2l5YWguamFmZmVyQGNvLWZvdW5kcnkuY28uemE4Y2M3NThiMmRlOGJkNGMyZTJhMTgwMjUwMmU2NjljNGJjMTM5MTkz%26ctz%3DAfrica%252FJohannesburg%26hl%3Den%26es%3D0&amp;data=05%7C02%7C%7Cee4f95f4383642c4f84e08dd5d611913%7C84df9e7fe9f640afb435aaaaaaaaaaaa%7C1%7C0%7C638769393792525805%7CUnknown%7CTWFpbGZsb3d8eyJFbXB0eU1hcGkiOnRydWUsIlYiOiIwLjAuMDAwMCIsIlAiOiJXaW4zMiIsIkFOIjoiTWFpbCIsIldUIjoyfQ%3D%3D%7C0%7C%7C%7C&amp;sdata=C2eXTuWVT0iJgMazvEE4rqARkvarYt5K73bQYb0hfvI%3D&amp;reserved=0\" originalsrc=\"https://calendar.google.com/calendar/event?action=RESPOND&amp;eid=M2FvOGJsdmF2ZWxwdG5uMWs0YWRsZmZzZWkgYnJ1Y2UuY2hlcnJpbmd0b25Ab3V0bG9vay5jb20&amp;rst=1&amp;tok=MzIjcXVkc2l5YWguamFmZmVyQGNvLWZvdW5kcnkuY28uemE4Y2M3NThiMmRlOGJkNGMyZTJhMTgwMjUwMmU2NjljNGJjMTM5MTkz&amp;ctz=Africa%2FJohannesburg&amp;hl=en&amp;es=0\" class=\"grey-button-text\" itemprop=\"url\" style=\"font-weight:400; font-family:'Google Sans',Roboto,sans-serif; color:#5f6368; font-size:14px; line-height:120%; margin:0; text-decoration:none; text-transform:none\">\r\n<table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" role=\"presentation\">\r\n<tbody>\r\n<tr>\r\n<td align=\"center\" role=\"presentation\" valign=\"middle\" style=\"padding:6px 0; padding-left:16px; padding-right:12px; white-space:nowrap\">\r\n<span class=\"grey-button-text\" style=\"font-weight:400; font-family:'Google Sans',Roboto,sans-serif; color:#5f6368; font-size:14px; line-height:120%; margin:0; text-decoration:none; text-transform:none\">Yes</span></td>\r\n</tr>\r\n</tbody>\r\n</table>\r\n</a></span></span></span></td>\r\n<td align=\"center\" role=\"presentation\" style=\"border-left:solid 1px #dadce0; border-right:solid 1px #dadce0\">\r\n<span itemprop=\"potentialaction\" itemscope=\"\" itemtype=\"http://schema.org/RsvpAction\">\r\n<meta itemprop=\"attendance\" content=\"http://schema.org/RsvpAttendance/No\">\r\n<span itemprop=\"handler\" itemscope=\"\" itemtype=\"http://schema.org/HttpActionHandler\"><link itemprop=\"method\" href=\"http://schema.org/HttpRequestMethod/GET\"><span style=\"color:#5f6367\"><a href=\"https://emea01.safelinks.protection.outlook.com/?url=https%3A%2F%2Fcalendar.google.com%2Fcalendar%2Fevent%3Faction%3DRESPOND%26eid%3DM2FvOGJsdmF2ZWxwdG5uMWs0YWRsZmZzZWkgYnJ1Y2UuY2hlcnJpbmd0b25Ab3V0bG9vay5jb20%26rst%3D2%26tok%3DMzIjcXVkc2l5YWguamFmZmVyQGNvLWZvdW5kcnkuY28uemE4Y2M3NThiMmRlOGJkNGMyZTJhMTgwMjUwMmU2NjljNGJjMTM5MTkz%26ctz%3DAfrica%252FJohannesburg%26hl%3Den%26es%3D0&amp;data=05%7C02%7C%7Cee4f95f4383642c4f84e08dd5d611913%7C84df9e7fe9f640afb435aaaaaaaaaaaa%7C1%7C0%7C638769393792550329%7CUnknown%7CTWFpbGZsb3d8eyJFbXB0eU1hcGkiOnRydWUsIlYiOiIwLjAuMDAwMCIsIlAiOiJXaW4zMiIsIkFOIjoiTWFpbCIsIldUIjoyfQ%3D%3D%7C0%7C%7C%7C&amp;sdata=%2B9NW4W4VzqMk0GA%2Bykb6nIewL0nhf0VV6j12xv19HeU%3D&amp;reserved=0\" originalsrc=\"https://calendar.google.com/calendar/event?action=RESPOND&amp;eid=M2FvOGJsdmF2ZWxwdG5uMWs0YWRsZmZzZWkgYnJ1Y2UuY2hlcnJpbmd0b25Ab3V0bG9vay5jb20&amp;rst=2&amp;tok=MzIjcXVkc2l5YWguamFmZmVyQGNvLWZvdW5kcnkuY28uemE4Y2M3NThiMmRlOGJkNGMyZTJhMTgwMjUwMmU2NjljNGJjMTM5MTkz&amp;ctz=Africa%2FJohannesburg&amp;hl=en&amp;es=0\" class=\"grey-button-text\" itemprop=\"url\" style=\"font-weight:400; font-family:'Google Sans',Roboto,sans-serif; color:#5f6368; font-size:14px; line-height:120%; margin:0; text-decoration:none; text-transform:none\">\r\n<table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" role=\"presentation\">\r\n<tbody>\r\n<tr>\r\n<td align=\"center\" role=\"presentation\" valign=\"middle\" style=\"padding:6px 12px; white-space:nowrap\">\r\n<span class=\"grey-button-text\" style=\"font-weight:400; font-family:'Google Sans',Roboto,sans-serif; color:#5f6368; font-size:14px; line-height:120%; margin:0; text-decoration:none; text-transform:none\">No</span></td>\r\n</tr>\r\n</tbody>\r\n</table>\r\n</a></span></span></span></td>\r\n<td align=\"center\" role=\"presentation\"><span itemprop=\"potentialaction\" itemscope=\"\" itemtype=\"http://schema.org/RsvpAction\">\r\n<meta itemprop=\"attendance\" content=\"http://schema.org/RsvpAttendance/Maybe\">\r\n<span itemprop=\"handler\" itemscope=\"\" itemtype=\"http://schema.org/HttpActionHandler\"><link itemprop=\"method\" href=\"http://schema.org/HttpRequestMethod/GET\"><span style=\"color:#5f6367\"><a href=\"https://emea01.safelinks.protection.outlook.com/?url=https%3A%2F%2Fcalendar.google.com%2Fcalendar%2Fevent%3Faction%3DRESPOND%26eid%3DM2FvOGJsdmF2ZWxwdG5uMWs0YWRsZmZzZWkgYnJ1Y2UuY2hlcnJpbmd0b25Ab3V0bG9vay5jb20%26rst%3D3%26tok%3DMzIjcXVkc2l5YWguamFmZmVyQGNvLWZvdW5kcnkuY28uemE4Y2M3NThiMmRlOGJkNGMyZTJhMTgwMjUwMmU2NjljNGJjMTM5MTkz%26ctz%3DAfrica%252FJohannesburg%26hl%3Den%26es%3D0&amp;data=05%7C02%7C%7Cee4f95f4383642c4f84e08dd5d611913%7C84df9e7fe9f640afb435aaaaaaaaaaaa%7C1%7C0%7C638769393792575097%7CUnknown%7CTWFpbGZsb3d8eyJFbXB0eU1hcGkiOnRydWUsIlYiOiIwLjAuMDAwMCIsIlAiOiJXaW4zMiIsIkFOIjoiTWFpbCIsIldUIjoyfQ%3D%3D%7C0%7C%7C%7C&amp;sdata=WNQsxnsC8uO1aQg3OH9I3ZIV6NMDjtj11ITWG%2BRXWJ8%3D&amp;reserved=0\" originalsrc=\"https://calendar.google.com/calendar/event?action=RESPOND&amp;eid=M2FvOGJsdmF2ZWxwdG5uMWs0YWRsZmZzZWkgYnJ1Y2UuY2hlcnJpbmd0b25Ab3V0bG9vay5jb20&amp;rst=3&amp;tok=MzIjcXVkc2l5YWguamFmZmVyQGNvLWZvdW5kcnkuY28uemE4Y2M3NThiMmRlOGJkNGMyZTJhMTgwMjUwMmU2NjljNGJjMTM5MTkz&amp;ctz=Africa%2FJohannesburg&amp;hl=en&amp;es=0\" class=\"grey-button-text\" itemprop=\"url\" style=\"font-weight:400; font-family:'Google Sans',Roboto,sans-serif; color:#5f6368; font-size:14px; line-height:120%; margin:0; text-decoration:none; text-transform:none\">\r\n<table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" role=\"presentation\">\r\n<tbody>\r\n<tr>\r\n<td align=\"center\" role=\"presentation\" valign=\"middle\" style=\"padding:6px 0; padding-left:12px; padding-right:16px; white-space:nowrap\">\r\n<span class=\"grey-button-text\" style=\"font-weight:400; font-family:'Google Sans',Roboto,sans-serif; color:#5f6368; font-size:14px; line-height:120%; margin:0; text-decoration:none; text-transform:none\">Maybe</span></td>\r\n</tr>\r\n</tbody>\r\n</table>\r\n</a></span></span></span></td>\r\n</tr>\r\n</tbody>\r\n</table>\r\n<a href=\"https://emea01.safelinks.protection.outlook.com/?url=https%3A%2F%2Fcalendar.google.com%2Fcalendar%2Fevent%3Faction%3DVIEW%26eid%3DM2FvOGJsdmF2ZWxwdG5uMWs0YWRsZmZzZWkgYnJ1Y2UuY2hlcnJpbmd0b25Ab3V0bG9vay5jb20%26tok%3DMzIjcXVkc2l5YWguamFmZmVyQGNvLWZvdW5kcnkuY28uemE4Y2M3NThiMmRlOGJkNGMyZTJhMTgwMjUwMmU2NjljNGJjMTM5MTkz%26ctz%3DAfrica%252FJohannesburg%26hl%3Den%26es%3D0&amp;data=05%7C02%7C%7Cee4f95f4383642c4f84e08dd5d611913%7C84df9e7fe9f640afb435aaaaaaaaaaaa%7C1%7C0%7C638769393792600370%7CUnknown%7CTWFpbGZsb3d8eyJFbXB0eU1hcGkiOnRydWUsIlYiOiIwLjAuMDAwMCIsIlAiOiJXaW4zMiIsIkFOIjoiTWFpbCIsIldUIjoyfQ%3D%3D%7C0%7C%7C%7C&amp;sdata=DRaiv9rYiWDDC95%2BK3vlDOYPQzWYJFC8YI0aeBExnss%3D&amp;reserved=0\" originalsrc=\"https://calendar.google.com/calendar/event?action=VIEW&amp;eid=M2FvOGJsdmF2ZWxwdG5uMWs0YWRsZmZzZWkgYnJ1Y2UuY2hlcnJpbmd0b25Ab3V0bG9vay5jb20&amp;tok=MzIjcXVkc2l5YWguamFmZmVyQGNvLWZvdW5kcnkuY28uemE4Y2M3NThiMmRlOGJkNGMyZTJhMTgwMjUwMmU2NjljNGJjMTM5MTkz&amp;ctz=Africa%2FJohannesburg&amp;hl=en&amp;es=0\" class=\"grey-button-text\" style=\"display:inline-block; font-weight:400; font-family:'Google Sans',Roboto,sans-serif; color:#5f6368; font-size:14px; line-height:120%; margin:0; text-decoration:none; text-transform:none\">\r\n<table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" role=\"presentation\" style=\"border:solid 1px #dadce0; border-radius:16px; border-collapse:separate; font-family:'Google Sans',Roboto,sans-serif\">\r\n<tbody>\r\n<tr>\r\n<td align=\"center\" role=\"presentation\" style=\"padding:6px 0; padding-left:16px; padding-right:12px; white-space:nowrap; color:#5f6367\">\r\n<span class=\"grey-button-text\" style=\"font-weight:400; font-family:'Google Sans',Roboto,sans-serif; color:#5f6368; font-size:14px; line-height:120%; margin:0; text-decoration:none; text-transform:none\">More options</span></td>\r\n</tr>\r\n</tbody>\r\n</table>\r\n</a></td>\r\n</tr>\r\n</tbody>\r\n</table>\r\n</div>\r\n</td>\r\n</tr>\r\n</tbody>\r\n</table>\r\n</td>\r\n</tr>\r\n</tbody>\r\n</table>\r\n</div>\r\n</td>\r\n</tr>\r\n</tbody>\r\n</table>\r\n<table border=\"0\" cellpadding=\"0\" cellspacing=\"0\" role=\"presentation\" align=\"center\" class=\"\" style=\"width:100%\">\r\n<tbody>\r\n<tr>\r\n<td class=\"\" align=\"left\" style=\"font-size:0; padding:0; text-align:left; word-break:break-word; padding:4px 12px\">\r\n<div class=\"secondary-text\" style=\"color:#70757a; text-decoration:none; font-family:Roboto,sans-serif; font-size:12px; line-height:16px; text-align:left\">\r\n<p>Invitation from <a href=\"https://emea01.safelinks.protection.outlook.com/?url=https%3A%2F%2Fcalendar.google.com%2Fcalendar%2F&amp;data=05%7C02%7C%7Cee4f95f4383642c4f84e08dd5d611913%7C84df9e7fe9f640afb435aaaaaaaaaaaa%7C1%7C0%7C638769393792629103%7CUnknown%7CTWFpbGZsb3d8eyJFbXB0eU1hcGkiOnRydWUsIlYiOiIwLjAuMDAwMCIsIlAiOiJXaW4zMiIsIkFOIjoiTWFpbCIsIldUIjoyfQ%3D%3D%7C0%7C%7C%7C&amp;sdata=OtJu7maXtROlD1wAwVviwjSRP5UM%2B%2B9UCXAqc4WJ2t4%3D&amp;reserved=0\" originalsrc=\"https://calendar.google.com/calendar/\" class=\"accent-text underline-on-hover\" style=\"font-family:Roboto,sans-serif; font-size:12px; line-height:16px; color:#1a73e8; text-decoration:none\">\r\nGoogle Calendar</a></p>\r\n<p>You are receiving this email because you are an attendee on the event.</p>\r\n<p>Forwarding this invitation could allow any recipient to send a response to the organizer, be added to the guest list, invite others regardless of their own invitation status, or modify your RSVP.\r\n<a href=\"https://emea01.safelinks.protection.outlook.com/?url=https%3A%2F%2Fsupport.google.com%2Fcalendar%2Fanswer%2F37135%23forwarding&amp;data=05%7C02%7C%7Cee4f95f4383642c4f84e08dd5d611913%7C84df9e7fe9f640afb435aaaaaaaaaaaa%7C1%7C0%7C638769393792640820%7CUnknown%7CTWFpbGZsb3d8eyJFbXB0eU1hcGkiOnRydWUsIlYiOiIwLjAuMDAwMCIsIlAiOiJXaW4zMiIsIkFOIjoiTWFpbCIsIldUIjoyfQ%3D%3D%7C0%7C%7C%7C&amp;sdata=aA%2FwGTj3FTreJAoO0HaEYqLDg8ZK4AfspzhpJAZQW8E%3D&amp;reserved=0\" class=\"accent-text underline-on-hover\" originalsrc=\"https://support.google.com/calendar/answer/37135#forwarding\" style=\"font-family:Roboto,sans-serif; font-size:12px; line-height:16px; color:#1a73e8; text-decoration:none\">\r\nLearn more</a></p>\r\n</div>\r\n</td>\r\n</tr>\r\n</tbody>\r\n</table>\r\n</td>\r\n</tr>\r\n</tbody>\r\n</table>\r\n</span></span>\r\n</body>\r\n</html>\r\n"
+    },
+    "start": {
+      "dateTime": "2025-05-21T08:00:00.0000000",
+      "timeZone": "UTC"
+    },
+    "end": {
+      "dateTime": "2025-05-21T09:00:00.0000000",
+      "timeZone": "UTC"
+    },
+    "location": {
+      "displayName": "",
+      "locationType": "default",
+      "uniqueIdType": "unknown",
+      "address": {},
+      "coordinates": {}
+    },
+    "locations": [],
+    "recurrence": null,
+    "attendees": [
+      {
+        "type": "required",
+        "status": {
+          "response": "none",
+          "time": "0001-01-01T00:00:00Z"
+        },
+        "emailAddress": {
+          "name": "Qudsiyah Jaffer",
+          "address": "qudsiyah.jaffer@co-foundry.co.za"
+        }
+      },
+      {
+        "type": "required",
+        "status": {
+          "response": "none",
+          "time": "0001-01-01T00:00:00Z"
+        },
+        "emailAddress": {
+          "name": "bruce.cherrington@outlook.com",
+          "address": "bruce.cherrington@outlook.com"
+        }
+      }
+    ],
+    "organizer": {
+      "emailAddress": {
+        "name": "Qudsiyah Jaffer",
+        "address": "qudsiyah.jaffer@co-foundry.co.za"
+      }
+    },
+    "onlineMeeting": null
+  },
+  {
+    "@odata.etag": "W/\"sHKVScJ/9EOsKHgmr+i57gAIAqg2Ww==\"",
+    "id": "AQMkADAwATM3ZmYAZS05ZmQzLTljNjAtMDACLTAwCgFRAAgIAN2Yw5hwAAAARgAAApAi93KpvChLkT30n_7e_NwHALBylUnCf-RDrCh4Jq-oue4AAAIBDQAAALBylUnCf-RDrCh4Jq-oue4AB8pOOzQAAAAQ",
+    "createdDateTime": "2025-03-07T11:25:34.3974177Z",
+    "lastModifiedDateTime": "2025-05-22T20:34:33.1145769Z",
+    "changeKey": "sHKVScJ/9EOsKHgmr+i57gAIAqg2Ww==",
+    "categories": [
+      "Billable - Modena"
+    ],
+    "transactionId": null,
+    "originalStartTimeZone": "South Africa Standard Time",
+    "originalEndTimeZone": "South Africa Standard Time",
+    "iCalUId": "040000008200E00074C5B7101A82E00807E90516300FA10D928EDB01000000000000000010000000C67907CA6ACFAC4FAFDEA4A09A208056",
+    "uid": "040000008200E00074C5B7101A82E00800000000300FA10D928EDB01000000000000000010000000C67907CA6ACFAC4FAFDEA4A09A208056",
+    "reminderMinutesBeforeStart": 15,
+    "isReminderOn": true,
+    "hasAttachments": false,
+    "subject": "Bruce & Gabbi - Resource Management ",
+    "bodyPreview": "",
+    "importance": "normal",
+    "sensitivity": "normal",
+    "isAllDay": false,
+    "isCancelled": false,
+    "isOrganizer": false,
+    "responseRequested": true,
+    "seriesMasterId": "AQMkADAwATM3ZmYAZS05ZmQzLTljNjAtMDACLTAwCgBGAAADkCL3cqm8KEuRPfSf7t743AcAsHKVScJ-9EOsKHgmr_i57gAAAgENAAAAsHKVScJ-9EOsKHgmr_i57gAHyk47NAAAAA==",
+    "showAs": "busy",
+    "type": "occurrence",
+    "webLink": "https://outlook.live.com/owa/?itemid=AQMkADAwATM3ZmYAZS05ZmQzLTljNjAtMDACLTAwCgFRAAgIAN2Yw5hwAAAARgAAApAi93KpvChLkT30n%2B7e%2BNwHALBylUnCf%2FRDrCh4Jq%2Foue4AAAIBDQAAALBylUnCf%2FRDrCh4Jq%2Foue4AB8pOOzQAAAAQ&exvsurl=1&path=/calendar/item",
+    "onlineMeetingUrl": null,
+    "isOnlineMeeting": false,
+    "onlineMeetingProvider": "unknown",
+    "allowNewTimeProposals": true,
+    "occurrenceId": "OID.AQMkADAwATM3ZmYAZS05ZmQzLTljNjAtMDACLTAwCgBGAAADkCL3cqm8KEuRPfSf7t743AcAsHKVScJ-9EOsKHgmr_i57gAAAgENAAAAsHKVScJ-9EOsKHgmr_i57gAHyk47NAAAAA==.2025-05-22",
+    "isDraft": false,
+    "hideAttendees": false,
+    "responseStatus": {
+      "response": "accepted",
+      "time": "2025-05-08T10:00:31.4944213Z"
+    },
+    "body": {
+      "contentType": "html",
+      "content": "<html>\r\n<head>\r\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">\r\n<meta name=\"Generator\" content=\"Microsoft Word 15 (filtered medium)\">\r\n<style>\r\n<!--\r\n@font-face\r\n\t{font-family:\"Cambria Math\"}\r\n@font-face\r\n\t{font-family:Aptos}\r\n@font-face\r\n\t{font-family:\"Segoe UI\"}\r\np.MsoNormal, li.MsoNormal, div.MsoNormal\r\n\t{margin:0cm;\r\n\tfont-size:11.0pt;\r\n\tfont-family:\"Aptos\",sans-serif}\r\n.MsoChpDefault\r\n\t{font-size:10.0pt}\r\n@page WordSection1\r\n\t{margin:72.0pt 72.0pt 72.0pt 72.0pt}\r\n-->\r\n</style>\r\n</head>\r\n<body lang=\"EN-ZA\" link=\"#467886\" vlink=\"#96607D\" style=\"word-wrap:break-word\">\r\n<div class=\"WordSection1\">\r\n<p class=\"MsoNormal\">&nbsp;</p>\r\n<div>\r\n<div style=\"margin-bottom:18.0pt; overflow:hidden\">\r\n<p class=\"MsoNormal\"><span style=\"font-family:&quot;Segoe UI&quot;,sans-serif; color:#242424\">&nbsp;</span></p>\r\n</div>\r\n</div>\r\n<p class=\"MsoNormal\">&nbsp;</p>\r\n</div>\r\n</body>\r\n</html>\r\n"
+    },
+    "start": {
+      "dateTime": "2025-05-22T10:30:00.0000000",
+      "timeZone": "UTC"
+    },
+    "end": {
+      "dateTime": "2025-05-22T11:30:00.0000000",
+      "timeZone": "UTC"
+    },
+    "location": {
+      "displayName": "Boardroom 3 (First Floor Small)",
+      "locationType": "default",
+      "uniqueId": "Boardroom 3 (First Floor Small)",
+      "uniqueIdType": "private"
+    },
+    "locations": [
+      {
+        "displayName": "Boardroom 3 (First Floor Small)",
+        "locationType": "default",
+        "uniqueId": "Boardroom 3 (First Floor Small)",
+        "uniqueIdType": "private"
+      }
+    ],
+    "recurrence": null,
+    "attendees": [
+      {
+        "type": "required",
+        "status": {
+          "response": "none",
+          "time": "0001-01-01T00:00:00Z"
+        },
+        "emailAddress": {
+          "name": "Modena Consulting Calendar",
+          "address": "Modenaconsultingcalendar@modena-aec.co.za"
+        }
+      },
+      {
+        "type": "required",
+        "status": {
+          "response": "none",
+          "time": "0001-01-01T00:00:00Z"
+        },
+        "emailAddress": {
+          "name": "Bruce Cherrington",
+          "address": "bruce.cherrington@outlook.com"
+        }
+      },
+      {
+        "type": "required",
+        "status": {
+          "response": "none",
+          "time": "0001-01-01T00:00:00Z"
+        },
+        "emailAddress": {
+          "name": "Gabbi Hayward",
+          "address": "gabbi@modena-aec.co.za"
+        }
+      },
+      {
+        "type": "resource",
+        "status": {
+          "response": "none",
+          "time": "0001-01-01T00:00:00Z"
+        },
+        "emailAddress": {
+          "name": "Boardroom 3 (First Floor Small)",
+          "address": "Boardroom3@modena-aec.co.za"
+        }
+      }
+    ],
+    "organizer": {
+      "emailAddress": {
+        "name": "Modena Consulting Calendar",
+        "address": "Modenaconsultingcalendar@modena-aec.co.za"
+      }
+    },
+    "onlineMeeting": null
+  },
+  {
+    "@odata.etag": "W/\"sHKVScJ/9EOsKHgmr+i57gAH0KwEuQ==\"",
+    "id": "AQMkADAwATM3ZmYAZS05ZmQzLTljNjAtMDACLTAwCgFRAAgIAN2Yw5hwAAAARgAAApAi93KpvChLkT30n_7e_NwHALBylUnCf-RDrCh4Jq-oue4AAAIBDQAAALBylUnCf-RDrCh4Jq-oue4AB8pPQO8AAAAQ",
+    "createdDateTime": "2025-02-25T15:34:36.6743786Z",
+    "lastModifiedDateTime": "2025-03-06T05:40:31.5049671Z",
+    "changeKey": "sHKVScJ/9EOsKHgmr+i57gAH0KwEuQ==",
+    "categories": [],
+    "transactionId": "localevent:40544e2f-bb1d-eace-8477-bdf710640fdd",
+    "originalStartTimeZone": "South Africa Standard Time",
+    "originalEndTimeZone": "South Africa Standard Time",
+    "iCalUId": "040000008200E00074C5B7101A82E00807E9051672B5BEC69A87DB0100000000000000001000000017BECA76B98FF6479830DAB65BBAB8A5",
+    "uid": "040000008200E00074C5B7101A82E0080000000072B5BEC69A87DB0100000000000000001000000017BECA76B98FF6479830DAB65BBAB8A5",
+    "reminderMinutesBeforeStart": 15,
+    "isReminderOn": false,
+    "hasAttachments": false,
+    "subject": "Travel",
+    "bodyPreview": "",
+    "importance": "normal",
+    "sensitivity": "private",
+    "isAllDay": false,
+    "isCancelled": false,
+    "isOrganizer": true,
+    "responseRequested": true,
+    "seriesMasterId": "AQMkADAwATM3ZmYAZS05ZmQzLTljNjAtMDACLTAwCgBGAAADkCL3cqm8KEuRPfSf7t743AcAsHKVScJ-9EOsKHgmr_i57gAAAgENAAAAsHKVScJ-9EOsKHgmr_i57gAHyk9A7wAAAA==",
+    "showAs": "busy",
+    "type": "occurrence",
+    "webLink": "https://outlook.live.com/owa/?itemid=AQMkADAwATM3ZmYAZS05ZmQzLTljNjAtMDACLTAwCgFRAAgIAN2Yw5hwAAAARgAAApAi93KpvChLkT30n%2B7e%2BNwHALBylUnCf%2FRDrCh4Jq%2Foue4AAAIBDQAAALBylUnCf%2FRDrCh4Jq%2Foue4AB8pPQO8AAAAQ&exvsurl=1&path=/calendar/item",
+    "onlineMeetingUrl": null,
+    "isOnlineMeeting": false,
+    "onlineMeetingProvider": "unknown",
+    "allowNewTimeProposals": true,
+    "occurrenceId": "OID.AQMkADAwATM3ZmYAZS05ZmQzLTljNjAtMDACLTAwCgBGAAADkCL3cqm8KEuRPfSf7t743AcAsHKVScJ-9EOsKHgmr_i57gAAAgENAAAAsHKVScJ-9EOsKHgmr_i57gAHyk9A7wAAAA==.2025-05-22",
+    "isDraft": false,
+    "hideAttendees": false,
+    "responseStatus": {
+      "response": "organizer",
+      "time": "0001-01-01T00:00:00Z"
+    },
+    "body": {
+      "contentType": "html",
+      "content": ""
+    },
+    "start": {
+      "dateTime": "2025-05-22T16:00:00.0000000",
+      "timeZone": "UTC"
+    },
+    "end": {
+      "dateTime": "2025-05-22T16:15:00.0000000",
+      "timeZone": "UTC"
+    },
+    "location": {
+      "displayName": "",
+      "locationType": "default",
+      "uniqueIdType": "unknown",
+      "address": {},
+      "coordinates": {}
+    },
+    "locations": [],
+    "recurrence": null,
+    "attendees": [
+      {
+        "type": "required",
+        "status": {
+          "response": "none",
+          "time": "0001-01-01T00:00:00Z"
+        },
+        "emailAddress": {
+          "name": "Bruce Cherrington",
+          "address": "bruce.cherrington@outlook.com"
+        }
+      }
+    ],
+    "organizer": {
+      "emailAddress": {
+        "name": "Bruce Cherrington",
+        "address": "bruce.cherrington@outlook.com"
+      }
+    },
+    "onlineMeeting": null
+  },
+  {
+    "@odata.etag": "W/\"3h5T2S3RdkWdFfGnOrPnBAAB6Co=\"",
+    "id": "AQMkADAwATM3ZmYAZS05ZmQzLTljNjAtMDACLTAwCgFRAAgIAN2Yw5hwAAAARgAAApAi93KpvChLkT30n_7e_NwHALBylUnCf-RDrCh4Jq-oue4AAAIBDQAAALBylUnCf-RDrCh4Jq-oue4AB8pPQO4AAAAQ",
+    "createdDateTime": "2025-02-25T15:34:31.020217Z",
+    "lastModifiedDateTime": "2025-03-20T10:39:01.977Z",
+    "changeKey": "3h5T2S3RdkWdFfGnOrPnBAAB6Co=",
+    "categories": [],
+    "transactionId": "localevent:ec4ccf56-85b7-d437-ee1f-43ac8b1717f5",
+    "originalStartTimeZone": "South Africa Standard Time",
+    "originalEndTimeZone": "South Africa Standard Time",
+    "iCalUId": "040000008200E00074C5B7101A82E00807E90516D89C5FC39A87DB010000000000000000100000000B74A8E004A96E468A5147D37B4E33F7",
+    "uid": "040000008200E00074C5B7101A82E00800000000D89C5FC39A87DB010000000000000000100000000B74A8E004A96E468A5147D37B4E33F7",
+    "reminderMinutesBeforeStart": 15,
+    "isReminderOn": false,
+    "hasAttachments": false,
+    "subject": "Travel",
+    "bodyPreview": "",
+    "importance": "normal",
+    "sensitivity": "private",
+    "isAllDay": false,
+    "isCancelled": false,
+    "isOrganizer": true,
+    "responseRequested": true,
+    "seriesMasterId": "AQMkADAwATM3ZmYAZS05ZmQzLTljNjAtMDACLTAwCgBGAAADkCL3cqm8KEuRPfSf7t743AcAsHKVScJ-9EOsKHgmr_i57gAAAgENAAAAsHKVScJ-9EOsKHgmr_i57gAHyk9A7gAAAA==",
+    "showAs": "busy",
+    "type": "occurrence",
+    "webLink": "https://outlook.live.com/owa/?itemid=AQMkADAwATM3ZmYAZS05ZmQzLTljNjAtMDACLTAwCgFRAAgIAN2Yw5hwAAAARgAAApAi93KpvChLkT30n%2B7e%2BNwHALBylUnCf%2FRDrCh4Jq%2Foue4AAAIBDQAAALBylUnCf%2FRDrCh4Jq%2Foue4AB8pPQO4AAAAQ&exvsurl=1&path=/calendar/item",
+    "onlineMeetingUrl": null,
+    "isOnlineMeeting": false,
+    "onlineMeetingProvider": "unknown",
+    "allowNewTimeProposals": true,
+    "occurrenceId": "OID.AQMkADAwATM3ZmYAZS05ZmQzLTljNjAtMDACLTAwCgBGAAADkCL3cqm8KEuRPfSf7t743AcAsHKVScJ-9EOsKHgmr_i57gAAAgENAAAAsHKVScJ-9EOsKHgmr_i57gAHyk9A7gAAAA==.2025-05-22",
+    "isDraft": false,
+    "hideAttendees": false,
+    "responseStatus": {
+      "response": "organizer",
+      "time": "0001-01-01T00:00:00Z"
+    },
+    "body": {
+      "contentType": "html",
+      "content": ""
+    },
+    "start": {
+      "dateTime": "2025-05-22T14:45:00.0000000",
+      "timeZone": "UTC"
+    },
+    "end": {
+      "dateTime": "2025-05-22T15:00:00.0000000",
+      "timeZone": "UTC"
+    },
+    "location": {
+      "displayName": "",
+      "locationType": "default",
+      "uniqueIdType": "unknown",
+      "address": {},
+      "coordinates": {}
+    },
+    "locations": [],
+    "recurrence": null,
+    "attendees": [],
+    "organizer": {
+      "emailAddress": {
+        "name": "Bruce Cherrington",
+        "address": "bruce.cherrington@outlook.com"
+      }
+    },
+    "onlineMeeting": null
+  },
+  {
+    "@odata.etag": "W/\"sHKVScJ/9EOsKHgmr+i57gAH0KwEsw==\"",
+    "id": "AQMkADAwATM3ZmYAZS05ZmQzLTljNjAtMDACLTAwCgFRAAgIAN2Yw5hwAAAARgAAApAi93KpvChLkT30n_7e_NwHALBylUnCf-RDrCh4Jq-oue4AAAIBDQAAALBylUnCf-RDrCh4Jq-oue4AB8pPQO0AAAAQ",
+    "createdDateTime": "2025-02-25T15:34:06.7326615Z",
+    "lastModifiedDateTime": "2025-03-06T05:40:08.27564Z",
+    "changeKey": "sHKVScJ/9EOsKHgmr+i57gAH0KwEsw==",
+    "categories": [],
+    "transactionId": "localevent:9863f10b-1955-0c20-97ec-5c343976f358",
+    "originalStartTimeZone": "South Africa Standard Time",
+    "originalEndTimeZone": "South Africa Standard Time",
+    "iCalUId": "040000008200E00074C5B7101A82E00807E90516967FE6B49A87DB010000000000000000100000008420277C6F5B7A49BABF3BCEC208E7E9",
+    "uid": "040000008200E00074C5B7101A82E00800000000967FE6B49A87DB010000000000000000100000008420277C6F5B7A49BABF3BCEC208E7E9",
+    "reminderMinutesBeforeStart": 15,
+    "isReminderOn": false,
+    "hasAttachments": false,
+    "subject": "PT With Storm",
+    "bodyPreview": "",
+    "importance": "normal",
+    "sensitivity": "private",
+    "isAllDay": false,
+    "isCancelled": false,
+    "isOrganizer": true,
+    "responseRequested": true,
+    "seriesMasterId": "AQMkADAwATM3ZmYAZS05ZmQzLTljNjAtMDACLTAwCgBGAAADkCL3cqm8KEuRPfSf7t743AcAsHKVScJ-9EOsKHgmr_i57gAAAgENAAAAsHKVScJ-9EOsKHgmr_i57gAHyk9A7QAAAA==",
+    "showAs": "busy",
+    "type": "occurrence",
+    "webLink": "https://outlook.live.com/owa/?itemid=AQMkADAwATM3ZmYAZS05ZmQzLTljNjAtMDACLTAwCgFRAAgIAN2Yw5hwAAAARgAAApAi93KpvChLkT30n%2B7e%2BNwHALBylUnCf%2FRDrCh4Jq%2Foue4AAAIBDQAAALBylUnCf%2FRDrCh4Jq%2Foue4AB8pPQO0AAAAQ&exvsurl=1&path=/calendar/item",
+    "onlineMeetingUrl": null,
+    "isOnlineMeeting": false,
+    "onlineMeetingProvider": "unknown",
+    "allowNewTimeProposals": true,
+    "occurrenceId": "OID.AQMkADAwATM3ZmYAZS05ZmQzLTljNjAtMDACLTAwCgBGAAADkCL3cqm8KEuRPfSf7t743AcAsHKVScJ-9EOsKHgmr_i57gAAAgENAAAAsHKVScJ-9EOsKHgmr_i57gAHyk9A7QAAAA==.2025-05-22",
+    "isDraft": false,
+    "hideAttendees": false,
+    "responseStatus": {
+      "response": "organizer",
+      "time": "0001-01-01T00:00:00Z"
+    },
+    "body": {
+      "contentType": "html",
+      "content": ""
+    },
+    "start": {
+      "dateTime": "2025-05-22T15:00:00.0000000",
+      "timeZone": "UTC"
+    },
+    "end": {
+      "dateTime": "2025-05-22T16:00:00.0000000",
+      "timeZone": "UTC"
+    },
+    "location": {
+      "displayName": "WTF4 Gym",
+      "locationType": "default",
+      "uniqueId": "WTF4 Gym",
+      "uniqueIdType": "private"
+    },
+    "locations": [
+      {
+        "displayName": "WTF4 Gym",
+        "locationType": "default",
+        "uniqueId": "WTF4 Gym",
+        "uniqueIdType": "private"
+      }
+    ],
+    "recurrence": null,
+    "attendees": [
+      {
+        "type": "required",
+        "status": {
+          "response": "none",
+          "time": "0001-01-01T00:00:00Z"
+        },
+        "emailAddress": {
+          "name": "Bruce Cherrington",
+          "address": "bruce.cherrington@outlook.com"
+        }
+      }
+    ],
+    "organizer": {
+      "emailAddress": {
+        "name": "Bruce Cherrington",
+        "address": "bruce.cherrington@outlook.com"
+      }
+    },
+    "onlineMeeting": null
+  }
+]

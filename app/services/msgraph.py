@@ -78,7 +78,11 @@ def _is_token_expired_impl(user):
     if not user.ms_token_expires_at:
         current_app.logger.debug("User token has no expiry; treating as expired.")
         return True
-    expired = user.ms_token_expires_at <= datetime.now(UTC)
+    expires_at = user.ms_token_expires_at
+    if expires_at.tzinfo is None:
+        # Assume UTC if naive
+        expires_at = expires_at.replace(tzinfo=UTC)
+    expired = expires_at <= datetime.now(UTC)
     if expired:
         current_app.logger.info(f"Token for user {user.email} is expired.")
     return expired

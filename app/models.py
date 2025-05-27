@@ -21,7 +21,7 @@ class User(UserMixin, db.Model):
     is_active = db.Column(db.Boolean, default=True)
     ms_access_token = db.Column(StringEncryptedType(db.String, ENCRYPTION_KEY, AesEngine, 'pkcs5'), nullable=True)
     ms_refresh_token = db.Column(StringEncryptedType(db.String, ENCRYPTION_KEY, AesEngine, 'pkcs5'), nullable=True)
-    ms_token_expires_at = db.Column(db.DateTime, nullable=True)
+    ms_token_expires_at = db.Column(db.DateTime(timezone=True), nullable=True)
     profile_photo_url = db.Column(db.String, nullable=True)
 
     appointments = db.relationship('Appointment', back_populates='user')
