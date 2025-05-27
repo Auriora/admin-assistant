@@ -3,8 +3,8 @@ SQLAlchemy models for Admin Assistant.
 """
 from app import db
 from sqlalchemy.orm import relationship
-from datetime import datetime, date
-from sqlalchemy_utils import EncryptedType
+from datetime import datetime, date, UTC
+from sqlalchemy_utils import EncryptedType, StringEncryptedType
 from sqlalchemy_utils.types.encrypted.encrypted_type import AesEngine
 import os
 from flask_login import UserMixin
@@ -19,8 +19,8 @@ class User(UserMixin, db.Model):
     name = db.Column(db.String)
     role = db.Column(db.String)
     is_active = db.Column(db.Boolean, default=True)
-    ms_access_token = db.Column(EncryptedType(db.String, ENCRYPTION_KEY, AesEngine, 'pkcs5'), nullable=True)
-    ms_refresh_token = db.Column(EncryptedType(db.String, ENCRYPTION_KEY, AesEngine, 'pkcs5'), nullable=True)
+    ms_access_token = db.Column(StringEncryptedType(db.String, ENCRYPTION_KEY, AesEngine, 'pkcs5'), nullable=True)
+    ms_refresh_token = db.Column(StringEncryptedType(db.String, ENCRYPTION_KEY, AesEngine, 'pkcs5'), nullable=True)
     ms_token_expires_at = db.Column(db.DateTime, nullable=True)
     profile_photo_url = db.Column(db.String, nullable=True)
 
@@ -32,6 +32,7 @@ class User(UserMixin, db.Model):
     rules = db.relationship('Rule', back_populates='user')
     notifications = db.relationship('Notification', back_populates='user')
     notification_preferences = db.relationship('NotificationPreference', back_populates='user')
+    archive_preference = db.relationship('ArchivePreference', back_populates='user', uselist=False)
 
 class Location(db.Model):
     __tablename__ = 'locations'
@@ -65,8 +66,8 @@ class Appointment(db.Model):
     is_private = db.Column(db.Boolean, default=False)
     is_archived = db.Column(db.Boolean, default=False)
     is_out_of_office = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(UTC))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
 
     user = db.relationship('User', back_populates='appointments')
     location = db.relationship('Location', back_populates='appointments')
@@ -85,7 +86,7 @@ class Timesheet(db.Model):
     excel_path = db.Column(db.String)
     uploaded_to_onedrive = db.Column(db.Boolean, default=False)
     uploaded_to_xero = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(UTC))
 
     user = db.relationship('User', back_populates='timesheets')
     appointments = db.relationship('Appointment', back_populates='timesheet')
@@ -97,7 +98,7 @@ class AuditLog(db.Model):
     action = db.Column(db.String, nullable=False)
     entity_type = db.Column(db.String)
     entity_id = db.Column(db.Integer)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    timestamp = db.Column(db.DateTime, default=lambda: datetime.now(UTC))
     details = db.Column(db.Text)
 
     user = db.relationship('User', back_populates='audit_logs')
@@ -109,7 +110,7 @@ class Rule(db.Model):
     name = db.Column(db.String, nullable=False)
     description = db.Column(db.String)
     rule_json = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(UTC))
 
     user = db.relationship('User', back_populates='rules')
 
@@ -125,7 +126,7 @@ class Notification(db.Model):
     progress = db.Column(db.String, nullable=True, default=None)  # Progress description
     state = db.Column(db.String, nullable=True, default=None)  # e.g. not started, in-progress, success, failed
     is_read = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(UTC))
 
     user = db.relationship('User', back_populates='notifications')
 
@@ -134,7 +135,7 @@ class Notification(db.Model):
             if field in kwargs:
                 setattr(self, field, kwargs[field])
         if not hasattr(self, 'created_at') or self.created_at is None:
-            self.created_at = datetime.utcnow()
+            self.created_at = datetime.now(UTC)
 
 class NotificationClass(db.Model):
     __tablename__ = 'notification_classes'
@@ -162,4 +163,12 @@ class NotificationPreference(db.Model):
     def __init__(self, **kwargs):
         for field in ['user_id', 'notification_class', 'channel']:
             if field in kwargs:
-                setattr(self, field, kwargs[field]) 
+                setattr(self, field, kwargs[field])
+
+class ArchivePreference(db.Model):
+    __tablename__ = 'archive_preferences'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, unique=True)
+    ms_calendar_id = db.Column(db.String, nullable=True)  # Microsoft calendar ID for archiving
+    # Add more fields for future preferences here
+    user = db.relationship('User', back_populates='archive_preference') 

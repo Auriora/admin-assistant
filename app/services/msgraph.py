@@ -1,7 +1,7 @@
 import os
 import requests
 from flask import current_app, url_for, session
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 import msal
 
 # Scopes required for calendar access
@@ -78,7 +78,7 @@ def _is_token_expired_impl(user):
     if not user.ms_token_expires_at:
         current_app.logger.debug("User token has no expiry; treating as expired.")
         return True
-    expired = user.ms_token_expires_at <= datetime.utcnow()
+    expired = user.ms_token_expires_at <= datetime.now(UTC)
     if expired:
         current_app.logger.info(f"Token for user {user.email} is expired.")
     return expired
@@ -112,7 +112,7 @@ def _refresh_token_impl(user):
         user.ms_access_token = token['access_token']
         user.ms_refresh_token = token.get('refresh_token', user.ms_refresh_token)
         expires_in = token.get('expires_in', 3600)
-        user.ms_token_expires_at = datetime.utcnow() + timedelta(seconds=expires_in)
+        user.ms_token_expires_at = datetime.now(UTC) + timedelta(seconds=expires_in)
         db.session.commit()
         current_app.logger.info(f"Refreshed token for user {user.email}")
         return token['access_token']

@@ -1,10 +1,11 @@
 from typing import List, Optional
-from datetime import datetime, date
+from datetime import datetime, date, timedelta, UTC
 from flask import current_app
 from app.services.msgraph import get_authenticated_session_for_user
 from sqlalchemy.exc import NoResultFound
 import pytz
 from dateutil.rrule import rrulestr
+from dateutil import parser
 
 class CalendarService:
     """
@@ -18,34 +19,75 @@ class CalendarService:
     """
 
     @staticmethod
-    def fetch_appointments_from_ms365(user, for_date: date) -> List[dict]:
+    def fetch_appointments_from_ms365(user, start_date: date, end_date: date) -> List[dict]:
         """
-        Fetch appointments for the given user and date from Microsoft 365 via Graph API.
-        Returns a list of appointment dicts.
+        Fetch appointments for the given user and date range (inclusive) from Microsoft 365 via Graph API.
+        Returns a list of appointment dicts (all event fields).
         """
         try:
             session = get_authenticated_session_for_user(user)
-            # TODO: Implement actual Graph API call for events on for_date
-            # Placeholder: return []
-            current_app.logger.info(f"Fetched appointments for {user.email} on {for_date}")
-            return []
+            # Determine which calendar to use
+            calendar_id = None
+            if hasattr(user, 'archive_preference') and user.archive_preference and user.archive_preference.ms_calendar_id:
+                calendar_id = user.archive_preference.ms_calendar_id
+            user_email = user.email
+            # Build endpoint
+            if calendar_id:
+                endpoint = f"https://graph.microsoft.com/v1.0/users/{user_email}/calendars/{calendar_id}/calendarView"
+            else:
+                endpoint = f"https://graph.microsoft.com/v1.0/users/{user_email}/calendarView"
+            # Format datetimes in ISO 8601 with Z (UTC)
+            start_str = datetime.combine(start_date, datetime.min.time()).isoformat() + 'Z'
+            end_str = datetime.combine(end_date, datetime.max.time()).isoformat() + 'Z'
+            params = {
+                'startDateTime': start_str,
+                'endDateTime': end_str,
+                '$top': 1000  # adjust as needed
+            }
+            response = session.get(endpoint, params=params)
+            response.raise_for_status()
+            events = response.json().get('value', [])
+            current_app.logger.info(f"Fetched {len(events)} appointments for {user.email} from {start_date} to {end_date}")
+            return events
         except Exception as e:
             current_app.logger.exception(f"Failed to fetch appointments: {str(e)}")
             return []
 
     @staticmethod
-    def archive_appointments(user, appointments: List[dict], archive_date: Optional[date] = None) -> dict:
+    def _event_to_appointment_fields(event: dict, user_id: int) -> dict:
         """
-        Archive the given appointments to the archive calendar.
+        Map a Microsoft Graph event dict to Appointment model fields.
+        Only fields that exist in the Appointment model are included.
+        """
+        # Required fields
+        start = event.get('start', {})
+        end = event.get('end', {})
+        # Microsoft Graph returns dateTime and timeZone
+        start_time = parser.parse(start.get('dateTime')) if start.get('dateTime') else None
+        end_time = parser.parse(end.get('dateTime')) if end.get('dateTime') else None
+        return {
+            'user_id': user_id,
+            'subject': event.get('subject'),
+            'start_time': start_time,
+            'end_time': end_time,
+            'is_private': event.get('sensitivity', '').lower() == 'private',
+            'is_out_of_office': event.get('showAs', '').lower() == 'oof',
+            'is_archived': True,
+            # location_id, category_id, timesheet_id are not mapped here
+        }
+
+    @staticmethod
+    def archive_appointments(user, appointments: List[dict], start_date: date, end_date: date) -> dict:
+        """
+        Archive the given appointments to the archive calendar for the given date range (inclusive).
         Handles time zones, recurring, overlaps, and duplicates.
         Returns a result dict with status and errors.
         """
         result = {"archived": 0, "errors": []}
         try:
             from app.models import db, Appointment
-            archive_date = archive_date or datetime.utcnow().date()
-            # 1. Expand recurring events
-            appointments = CalendarService.expand_recurring_events(appointments, archive_date)
+            # 1. Expand recurring events for all days in the range
+            appointments = CalendarService.expand_recurring_events_range(appointments, start_date, end_date)
             # 2. Merge duplicates
             appointments = CalendarService.merge_duplicates(appointments)
             # 3. Check for overlaps
@@ -73,17 +115,12 @@ class CalendarService:
             # 5. Save to DB
             for appt in appointments:
                 try:
-                    archived = Appointment(
-                        user_id=user.id,
-                        subject=appt['subject'],
-                        start_time=appt['start'],
-                        end_time=appt['end'],
-                        is_archived=True,
-                        # Map additional fields here if needed (e.g., location_id, category_id)
-                    )  # type: ignore
+                    # Map event dict to Appointment model fields
+                    appt_fields = CalendarService._event_to_appointment_fields(appt, user.id)
+                    archived = Appointment(**appt_fields)
                     db.session.add(archived)
                 except Exception as e:
-                    result["errors"].append(f"Failed to archive {appt['subject']}: {str(e)}")
+                    result["errors"].append(f"Failed to archive {appt.get('subject', 'Unknown')}: {str(e)}")
             try:
                 db.session.commit()
                 result["archived"] = len(appointments)
@@ -96,17 +133,23 @@ class CalendarService:
         return result
 
     @staticmethod
-    def expand_recurring_events(appointments: List[dict], archive_date: date) -> List[dict]:
+    def expand_recurring_events_range(appointments: List[dict], start_date: date, end_date: date) -> List[dict]:
         """
-        Expand recurring events to non-recurring for the archive day.
+        Expand recurring events to non-recurring for each day in the date range (inclusive).
+        Returns a flat list of all appointments in the range.
         """
         expanded = []
+        day_count = (end_date - start_date).days + 1
         for appt in appointments:
             if appt.get('recurrence'):
-                if CalendarService.occurs_on_date(appt, archive_date):
-                    expanded.append(CalendarService.create_non_recurring_instance(appt, archive_date))
+                for n in range(day_count):
+                    day = start_date + timedelta(days=n)
+                    if CalendarService.occurs_on_date(appt, day):
+                        expanded.append(CalendarService.create_non_recurring_instance(appt, day))
             else:
-                expanded.append(appt)
+                # Only include if the appointment falls within the range
+                if appt['start'].date() >= start_date and appt['start'].date() <= end_date:
+                    expanded.append(appt)
         return expanded
 
     @staticmethod
@@ -230,9 +273,9 @@ def scheduled_archive_job():
     if not user:
         current_app.logger.warning("No user found for scheduled archive job.")
         return
-    today = datetime.utcnow().date()
-    appointments = CalendarService.fetch_appointments_from_ms365(user, today)
-    result = CalendarService.archive_appointments(user, appointments)
+    today = datetime.now(UTC).date()
+    appointments = CalendarService.fetch_appointments_from_ms365(user, today, today)
+    result = CalendarService.archive_appointments(user, appointments, today, today)
     if result["errors"]:
         current_app.logger.error(f"Scheduled archive job errors: {result['errors']}")
     else:

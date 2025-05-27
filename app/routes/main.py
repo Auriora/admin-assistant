@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, redirect, request, session, url_for, flash, jsonify
 from app.services import msgraph
 from app.models import db, User, Notification, NotificationPreference, NotificationClass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from app.services.msgraph import MsAuthError
 from flask import current_app
 from flask_login import login_user, logout_user, login_required, current_user
@@ -57,7 +57,7 @@ def ms365_auth_callback():
     user.ms_access_token = token['access_token']
     user.ms_refresh_token = token.get('refresh_token')
     expires_in = token.get('expires_in', 3600)
-    user.ms_token_expires_at = datetime.utcnow() + timedelta(seconds=expires_in)
+    user.ms_token_expires_at = datetime.now(UTC) + timedelta(seconds=expires_in)
     # Fetch and store profile photo
     photo_url = None
     try:
@@ -122,15 +122,21 @@ def get_user_notification_channel(user_id, notification_class):
 @login_required
 def archive_now():
     """
-    Trigger manual archive for the current user. Returns JSON status for UI notification updates.
+    Trigger manual archive for the current user. Accepts optional start_date and end_date in the request (defaults to today).
+    Returns JSON status for UI notification updates.
     """
     user = cast(User, current_user)
     current_app.logger.info(f"Manual archive started by {user.email}")  # type: ignore[attr-defined]
     # Notify UI: archive started
     try:
-        today = datetime.utcnow().date()
-        appointments = CalendarService.fetch_appointments_from_ms365(user, today)
-        result = CalendarService.archive_appointments(user, appointments)
+        data = request.get_json(silent=True) or {}
+        today = datetime.now(UTC).date()
+        start_date_str = data.get('start_date')
+        end_date_str = data.get('end_date')
+        start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date() if start_date_str else today
+        end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date() if end_date_str else today
+        appointments = CalendarService.fetch_appointments_from_ms365(user, start_date, end_date)
+        result = CalendarService.archive_appointments(user, appointments, start_date, end_date)
         # Example: create a notification using user preferences
         channel = get_user_notification_channel(user.id, 'account_activity')
         notif = Notification(
@@ -164,7 +170,7 @@ def get_notifications():
     Return the current user's notifications as JSON, ordered by created_at descending.
     """
     user = cast(User, current_user)
-    notifications = Notification.query.filter_by(user_id=user.id).order_by(desc(Notification.created_at)).all()
+    notifications = Notification.query.filter_by(user_id=user.id).order_by(desc(getattr(Notification, 'created_at'))).all()
     return jsonify([
         {
             'id': n.id,
