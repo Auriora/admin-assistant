@@ -144,6 +144,9 @@ def archive_now():
         )
         db.session.add(notif)
         db.session.commit()
+        if result.get("status") == "overlap":
+            current_app.logger.warning(f"Manual archive found overlaps: {result['conflicts']}")
+            return jsonify({"status": "overlap", "conflicts": result["conflicts"]}), 409
         if result["errors"]:
             current_app.logger.error(f"Manual archive errors: {result['errors']}")
             return jsonify({"status": "error", "message": "Archive failed.", "details": result["errors"]}), 500
