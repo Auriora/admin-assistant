@@ -5,7 +5,7 @@ import pytest
 from flask import Flask
 from app import create_app, db
 from app.models import User, Appointment
-from core.services.calendar_fetch_service import fetch_appointments_from_ms365
+from core.services.calendar_fetch_service import fetch_appointments
 from core.services.calendar_archive_service import archive_appointments
 import pytz
 
@@ -122,7 +122,7 @@ def test_archive_appointments_time_zone_conversion(app_context, user):
 
 @pytest.mark.skipif(not os.getenv('RUN_REAL_MS365_TESTS'), reason="Real MS365 test skipped unless RUN_REAL_MS365_TESTS is set.")
 def test_fetch_and_save_ms365_calendar_data(app_context, user, monkeypatch):
-    from core.services.calendar_fetch_service import fetch_appointments_from_ms365
+    from core.services.calendar_fetch_service import fetch_appointments
     import types
     class MockSession:
         def get(self, endpoint, params=None):
@@ -133,6 +133,6 @@ def test_fetch_and_save_ms365_calendar_data(app_context, user, monkeypatch):
     msgraph_session = MockSession()
     start_date = datetime.now(UTC).date()
     end_date = start_date
-    result = fetch_appointments_from_ms365(user, start_date, end_date, msgraph_session)
+    result = fetch_appointments(user, start_date, end_date, msgraph_session)
     assert isinstance(result, list)
         

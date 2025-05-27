@@ -1,5 +1,2 @@
-from .calendar_archive_service import event_to_appointment_fields, archive_appointments, make_appointments_immutable
-from .calendar_fetch_service import fetch_appointments_from_ms365
-from .calendar_recurrence_utils import expand_recurring_events_range, occurs_on_date, create_non_recurring_instance
-from .calendar_overlap_utils import merge_duplicates, detect_overlaps
-from .calendar_time_utils import to_utc 
+from .calendar_archive_service import prepare_appointments_for_archive, make_appointments_immutable
+from .calendar_io_service import fetch_appointments, store_appointments

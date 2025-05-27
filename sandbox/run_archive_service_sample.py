@@ -16,9 +16,12 @@ import msal
 import requests
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from core.services import archive_appointments
 from core.models.user import User
 from core.repositories.appointment_repository_msgraph import MSGraphAppointmentRepository
+from core.orchestrators.calendar_archive_orchestrator import CalendarArchiveOrchestrator
+from core.repositories.appointment_repository_sqlalchemy import SQLAlchemyAppointmentRepository
+from msgraph.graph_service_client import GraphServiceClient
+from azure.identity import DeviceCodeCredential
 
 # --- CONFIGURATION ---
 USER_DB_URL = 'sqlite:///instance/admin_assistant_flask_dev.db'
@@ -82,54 +85,46 @@ class MockMSGraphClient:
         # For simplicity, ignore filters/pagination
         return self._events, None
 
-if not USE_LIVE:
-    print(f"[INFO] Loading events from local file: {LOCAL_EVENTS_FILE}")
-    with open(LOCAL_EVENTS_FILE) as f:
-        raw_events = json.load(f)
-    mock_client = MockMSGraphClient(raw_events)
-    repo = MSGraphAppointmentRepository(mock_client)
-    # Use repository to map events to Appointment model instances
-    appointments = [repo._map_api_to_model(e) for e in raw_events]
+def main():
     today = datetime.now(UTC).date()  # Used for archiving range
-else:
-    if not MS_CLIENT_ID or not MS_TENANT_ID:
-        print("Error: MS_CLIENT_ID and MS_TENANT_ID must be set as environment variables.")
-        sys.exit(1)
-    authority = f"https://login.microsoftonline.com/{MS_TENANT_ID}"
-    msal_app = msal.PublicClientApplication(MS_CLIENT_ID, authority=authority)
-    result = get_token(msal_app)
-    if 'access_token' not in result:
-        print("Authentication failed:", result.get('error_description', result))
-        sys.exit(1)
-    access_token = result['access_token']
-    print("Authentication successful.")
-    today = datetime.now(UTC).date()
-    start_str = today.strftime('%Y-%m-%dT00:00:00Z')
-    end_str = today.strftime('%Y-%m-%dT23:59:59Z')
-    user_email = user.email
-    endpoint = f"https://graph.microsoft.com/v1.0/users/{user_email}/calendarView"
-    params = {
-        'startDateTime': start_str,
-        'endDateTime': end_str,
-        '$top': 1000
-    }
-    headers = {'Authorization': f'Bearer {access_token}'}
-    response = requests.get(endpoint, params=params, headers=headers)
-    if response.status_code != 200:
-        print(f"Failed to fetch appointments: {response.status_code} {response.text}")
-        sys.exit(1)
-    event_dicts = response.json().get('value', [])
-    print(f"Fetched {len(event_dicts)} appointments from Microsoft Graph.")
-    # Use repository to map events to Appointment model instances
-    repo = MSGraphAppointmentRepository(None)
-    appointments = [repo._map_api_to_model(e) for e in event_dicts]
 
-# --- STEP 3: Archive appointments into core DB ---
-core_engine = create_engine(CORE_DB_URL, echo=False, future=True)
-CoreSession = sessionmaker(bind=core_engine)
-core_session = CoreSession()
-from core.models.user import User as CoreUser  # For foreign key
+    if not USE_LIVE:
+        print(f"[INFO] Loading events from local file: {LOCAL_EVENTS_FILE}")
+        with open(LOCAL_EVENTS_FILE) as f:
+            raw_events = json.load(f)
+        mock_client = MockMSGraphClient(raw_events)
+        repo = MSGraphAppointmentRepository(mock_client, user)  # type: ignore  # Mock client for testing
+    else:
+        if not MS_CLIENT_ID or not MS_TENANT_ID:
+            print("Error: MS_CLIENT_ID and MS_TENANT_ID must be set as environment variables.")
+            sys.exit(1)
+        # Use DeviceCodeCredential for interactive login
+        credential = DeviceCodeCredential(client_id=MS_CLIENT_ID, tenant_id=MS_TENANT_ID)
+        scopes = ["https://graph.microsoft.com/.default"]
+        graph_client = GraphServiceClient(credentials=credential, scopes=scopes)
+        repo = MSGraphAppointmentRepository(graph_client, user)
 
-result = archive_appointments(user, appointments, today, today, core_session)
-print("Archive result:")
-print(result) 
+    # --- STEP 3: Archive appointments into core DB ---
+    core_engine = create_engine(CORE_DB_URL, echo=False, future=True)
+    CoreSession = sessionmaker(bind=core_engine)
+    core_session = CoreSession()
+    from core.models.user import User as CoreUser  # For foreign key
+
+    # Set up repositories for orchestrator
+    fetch_repo = repo  # MSGraphAppointmentRepository instance from above
+    write_repo = SQLAlchemyAppointmentRepository(core_session)
+
+    orchestrator = CalendarArchiveOrchestrator()
+    result = orchestrator.archive_user_appointments(
+        user=user,
+        start_date=today,
+        end_date=today,
+        fetch_repo=fetch_repo,
+        write_repo=write_repo
+    )
+    print("Archive result:")
+    print(result) 
+
+
+if __name__ == "__main__":
+    main()
