@@ -40,3 +40,4 @@ instance/
 logs/
 
 *.log
+tests/data/ms365_calendar_*_to_*.json
