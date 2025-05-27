@@ -74,5 +74,9 @@ admin-assistant/
 - **Pytest** is used for testing, with tests in the `tests/` directory.
 - **SQLite** is the default development database, configurable via `app/config.py`.
 
+## Migration and Shell Guidelines
+- Always prefer bash over PowerShell for running shell commands, unless specifically instructed otherwise.
+- For database migrations, use Flask-Migrate (`flask db` commands) instead of direct Alembic commands, unless there is a specific reason to use Alembic directly.
+
 ---
 _Last updated: [2025-05-25]_
