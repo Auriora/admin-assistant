@@ -1,13 +1,14 @@
 from core.repositories.appointment_repository_base import BaseAppointmentRepository
 from core.models.appointment import Appointment
 from typing import List, Optional
+from core.db import SessionLocal
 
 class SQLAlchemyAppointmentRepository(BaseAppointmentRepository):
-    def __init__(self, session):
-        self.session = session
+    def __init__(self, session=None):
+        self.session = session or SessionLocal()
 
     def get_by_id(self, appointment_id: int) -> Optional[Appointment]:
-        return self.session.query(Appointment).get(appointment_id)
+        return self.session.get(Appointment, appointment_id)
 
     def add(self, appointment: Appointment) -> None:
         self.session.add(appointment)

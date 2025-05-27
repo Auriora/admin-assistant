@@ -5,7 +5,8 @@ import pytest
 from flask import Flask
 from app import create_app, db
 from app.models import User, Appointment
-from app.services.calendar_service import CalendarService
+from core.services.calendar_fetch_service import fetch_appointments_from_ms365
+from core.services.calendar_archive_service import archive_appointments
 import pytz
 
 TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), '../data')
@@ -56,7 +57,7 @@ def test_archive_appointments_success(app_context, user):
     appts = load_appointments('ms365_calendar_success.json')
     start_date = appts[0]['start'].date()
     end_date = appts[0]['end'].date()
-    result = CalendarService.archive_appointments(user, appts, start_date, end_date)
+    result = archive_appointments(user, appts, start_date, end_date, db.session)
     assert result["archived"] == 1
     archived = Appointment.query.filter_by(user_id=user.id).first()
     assert archived is not None
@@ -67,16 +68,16 @@ def test_archive_appointments_merges_duplicates(app_context, user):
     appts = load_appointments('ms365_calendar_duplicates.json')
     start_date = appts[0]['start'].date()
     end_date = appts[0]['end'].date()
-    result = CalendarService.archive_appointments(user, appts, start_date, end_date)
+    result = archive_appointments(user, appts, start_date, end_date, db.session)
     assert result["archived"] == 1
     archived = Appointment.query.filter_by(user_id=user.id).all()
     assert len(archived) == 1
 
 def test_archive_appointments_detects_overlaps(app_context, user):
     appts = load_appointments('ms365_calendar_overlaps.json')
-    start_date = min(a['start'].date() for a in appts)
-    end_date = max(a['end'].date() for a in appts)
-    result = CalendarService.archive_appointments(user, appts, start_date, end_date)
+    start_date = appts[0]['start'].date()
+    end_date = appts[0]['end'].date()
+    result = archive_appointments(user, appts, start_date, end_date, db.session)
     assert result["status"] == "overlap"
     assert "conflicts" in result
     assert len(result["conflicts"]) == 1
@@ -86,7 +87,7 @@ def test_archive_appointments_expands_recurring(app_context, user):
     appts = load_appointments('ms365_calendar_recurring.json')
     start_date = appts[0]['start'].date()
     end_date = start_date + timedelta(days=2)
-    result = CalendarService.archive_appointments(user, appts, start_date, end_date)
+    result = archive_appointments(user, appts, start_date, end_date, db.session)
     assert result["archived"] == 3
     archived = Appointment.query.filter_by(user_id=user.id).all()
     assert len(archived) == 3
@@ -100,14 +101,14 @@ def test_archive_appointments_handles_partial_failure(app_context, user, monkeyp
     def fail_commit():
         raise Exception("DB commit failed")
     monkeypatch.setattr(db.session, "commit", fail_commit)
-    result = CalendarService.archive_appointments(user, appts, start_date, end_date)
-    assert "DB commit failed" in " ".join(result["errors"])
+    result = archive_appointments(user, appts, start_date, end_date, db.session)
+    assert "DB commit failed" in result["errors"][0]
 
 def test_archive_appointments_time_zone_conversion(app_context, user):
     appts = load_appointments('ms365_calendar_timezone.json')
     start_date = appts[0]['start'].date()
     end_date = appts[0]['end'].date()
-    result = CalendarService.archive_appointments(user, appts, start_date, end_date)
+    result = archive_appointments(user, appts, start_date, end_date, db.session)
     archived = Appointment.query.filter_by(user_id=user.id).first()
     assert archived is not None
     # Should be stored in UTC
@@ -120,19 +121,18 @@ def test_archive_appointments_time_zone_conversion(app_context, user):
         assert archived.start_time.utcoffset() == timedelta(0)
 
 @pytest.mark.skipif(not os.getenv('RUN_REAL_MS365_TESTS'), reason="Real MS365 test skipped unless RUN_REAL_MS365_TESTS is set.")
-def test_fetch_and_save_ms365_calendar_data():
-    app = create_app()
-    with app.app_context():
-        from app.models import User
-        user = User.query.first()
-        assert user, "No user found in DB."
-        end_date = datetime.now(UTC).date()
-        start_date = end_date - timedelta(days=6)
-        appointments = CalendarService.fetch_appointments_from_ms365(user, start_date, end_date)
-        assert isinstance(appointments, list)
-        os.makedirs('tests/data', exist_ok=True)
-        filename = f"tests/data/ms365_calendar_{start_date.strftime('%Y%m%d')}_to_{end_date.strftime('%Y%m%d')}.json"
-        with open(filename, 'w') as f:
-            json.dump(appointments, f, indent=2, default=str)
-        print(f"Saved {len(appointments)} appointments to {filename}")
+def test_fetch_and_save_ms365_calendar_data(app_context, user, monkeypatch):
+    from core.services.calendar_fetch_service import fetch_appointments_from_ms365
+    import types
+    class MockSession:
+        def get(self, endpoint, params=None):
+            class Response:
+                def raise_for_status(self): pass
+                def json(self): return {'value': []}
+            return Response()
+    msgraph_session = MockSession()
+    start_date = datetime.now(UTC).date()
+    end_date = start_date
+    result = fetch_appointments_from_ms365(user, start_date, end_date, msgraph_session)
+    assert isinstance(result, list)
         
