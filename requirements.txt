@@ -1,25 +1,26 @@
 Flask~=3.1.1
 Flask-SQLAlchemy~=3.1.1
-Flask-Migrate~=4.0.4
+Flask-Migrate~=4.0.5
 pytest~=8.3.1
 # Bootstrap is included via static files or CDN
 # Microsoft Graph API
-msgraph-sdk~=1.27.0
+msgraph-sdk~=1.28.0
 # Xero API (official SDK)
 xero-python~=8.1.0
 # OpenAI API
-openai~=1.25.0
+openai~=1.28.0
 # Google Maps Directions API
 googlemaps~=4.10.0
 # For encrypted fields in SQLAlchemy models
 sqlalchemy-utils~=0.41.2
 requests-oauthlib~=2.0.0
 python-dotenv~=1.1.0
-opentelemetry-api~=1.33.1
-opentelemetry-sdk~=1.33.1
-opentelemetry-instrumentation-flask~=0.54b1
-opentelemetry-exporter-otlp~=1.33.1
+opentelemetry-api~=1.33.0
+opentelemetry-sdk~=1.33.0
+opentelemetry-instrumentation-flask~=0.54b0
+opentelemetry-exporter-otlp~=1.33.0
 Flask-Login~=0.6.3
-msal~=1.27.0
-Flask-APScheduler~=1.12.5
+msal~=1.28.0
+Flask-APScheduler~=1.13.1
 pytz~=2024.1
+apprise~=1.7.5
