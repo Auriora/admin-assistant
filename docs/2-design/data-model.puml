@@ -1,5 +1,8 @@
 @startuml DataModel
-entity User {
+' Stereotypes: <<core,web>> = both DBs, <<web>> = Flask DB only
+' Color: #B3E6FF for <<core,web>>, #FFE6B3 for <<web>>
+
+entity User <<core,web>> #B3E6FF {
     * id : integer <<PK>>
     * email : string <<U, unique>>
     * name : string
@@ -7,7 +10,7 @@ entity User {
     * is_active : boolean
 }
 
-entity Appointment {
+entity Appointment <<core,web>> #B3E6FF {
     * id : integer <<PK>>
     * user_id : integer <<FK>>
     * start_time : datetime
@@ -15,6 +18,10 @@ entity Appointment {
     * subject : string
     * location_id : integer <<FK>>
     * category_id : integer <<FK>>
+    * timesheet_id : integer <<FK>>
+    * ms_event_id : string
+    * recurrence : string
+    * ms_event_data : json
     * is_private : boolean
     * is_archived : boolean
     * is_out_of_office : boolean
@@ -22,21 +29,21 @@ entity Appointment {
     * updated_at : datetime
 }
 
-entity Location {
+entity Location <<core,web>> #B3E6FF {
     * id : integer <<PK>>
     * name : string
     * address : string
     * user_id : integer <<FK>>
 }
 
-entity Category {
+entity Category <<core,web>> #B3E6FF {
     * id : integer <<PK>>
     * name : string
     * description : string
     * user_id : integer <<FK>>
 }
 
-entity Timesheet {
+entity Timesheet <<core,web>> #B3E6FF {
     * id : integer <<PK>>
     * user_id : integer <<FK>>
     * start_date : date
@@ -49,7 +56,7 @@ entity Timesheet {
     * created_at : datetime
 }
 
-entity AuditLog {
+entity AuditLog <<web>> #FFE6B3 {
     * id : integer <<PK>>
     * user_id : integer <<FK>>
     * action : string
@@ -59,7 +66,7 @@ entity AuditLog {
     * details : text
 }
 
-entity Rule {
+entity Rule <<web>> #FFE6B3 {
     * id : integer <<PK>>
     * user_id : integer <<FK>>
     * name : string
@@ -68,7 +75,7 @@ entity Rule {
     * created_at : datetime
 }
 
-entity Notification {
+entity Notification <<web>> #FFE6B3 {
     * id : integer <<PK>>
     * user_id : integer <<FK>>
     * message : string
@@ -82,7 +89,25 @@ entity Notification {
     * created_at : datetime
 }
 
-' Note: User preferences determine which channel is used for each notification class.
+entity NotificationClass <<web>> #FFE6B3 {
+    * id : integer <<PK>>
+    * key : string <<U, unique>>
+    * label : string
+    * description : string
+}
+
+entity NotificationPreference <<web>> #FFE6B3 {
+    * id : integer <<PK>>
+    * user_id : integer <<FK>>
+    * notification_class : string <<FK>>
+    * channel : string
+}
+
+entity ArchivePreference <<web>> #FFE6B3 {
+    * id : integer <<PK>>
+    * user_id : integer <<FK, unique>>
+    * ms_calendar_id : string
+}
 
 User ||--o{ Appointment : has
 User ||--o{ Location : has
@@ -91,9 +116,22 @@ User ||--o{ Timesheet : has
 User ||--o{ AuditLog : has
 User ||--o{ Rule : has
 User ||--o{ Notification : has
+User ||--o{ NotificationPreference : has
+User ||--o{ ArchivePreference : has
 
 Appointment }o--|| Location : at
 Appointment }o--|| Category : categorized_as
+Appointment }o--|| Timesheet : timesheet
 Timesheet ||--o{ Appointment : includes
+
+NotificationPreference }o--|| NotificationClass : for
+ArchivePreference }o--|| User : for
+
+' Legend
+legend
+  == Stereotypes ==
+  <color:#B3E6FF> <<core,web>> </color>  Entity in both Core and Web DBs
+  <color:#FFE6B3> <<web>> </color>      Entity in Flask (Web) DB only
+endlegend
 
 @enduml 

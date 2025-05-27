@@ -59,6 +59,13 @@ admin-assistant/
 │   │       └── bootstrap.bundle.min.js
 │   └── config.py         # Configuration (env, DB, etc.)
 │
+├── core/
+│   ├── models/           # SQLAlchemy models for all domain entities
+│   ├── repositories/     # Repository interfaces and implementations (multiple backends)
+│   ├── stores/           # Store abstractions for CRUD operations (SQLAlchemy, MS Graph, etc.)
+│   ├── services/         # Business/domain logic (calendar, recurrence, overlap, etc.)
+│   └── ...               # Other core modules
+│
 ├── tests/
 │   ├── __init__.py
 │   └── test_basic.py     # Pytest starter
@@ -75,9 +82,20 @@ admin-assistant/
 
 - **Flask** is used as the web framework, following the application factory pattern for modularity and testability.
 - **Bootstrap** is used for responsive UI, included in the `static/` and `templates/` folders.
-- **SQLAlchemy** is used for ORM, with models defined in `app/models.py`.
+- **SQLAlchemy** is used for ORM, with models defined in `app/models.py` and `core/models/`.
 - **Pytest** is used for testing, with tests in the `tests/` directory.
 - **SQLite** is the default development database, configurable via `app/config.py`.
+- **core/** encapsulates all business logic, domain models, and data access abstractions, supporting extensibility and maintainability.
+
+## Core Layer and Data Access Guidelines
+- All business logic, domain models, and data access abstractions must reside in the `core/` directory.
+- Use the **Repository Pattern** to abstract data access for each domain entity. Define a base repository interface and provide concrete implementations for each backend (e.g., SQLAlchemy, Microsoft Graph API).
+- Use the **Store Pattern** for generic CRUD operations, enabling code reuse and further abstraction of the data access layer.
+- Use the **Factory Pattern** to instantiate the appropriate repository or store implementation based on configuration or runtime context.
+- The web layer (Flask) must interact only with core services and repositories, never directly with the database or external APIs.
+- All business logic, validation, and data transformation must be handled in the `core/` layer, ensuring testability and extensibility.
+- New data backends (e.g., REST APIs, other databases) should be added by implementing the repository and/or store interfaces, without modifying business logic.
+- All code in `core/` must follow SOLID principles, be fully type-annotated, and include comprehensive docstrings.
 
 ## Migration and Shell Guidelines
 - Always prefer **Bash** over PowerShell for running shell commands, unless specifically instructed otherwise. PowerShell is known to cause issues with interactive and some non-interactive commands on Linux (see recent pytest failures). Use Bash for all development, testing, and migration shell commands.

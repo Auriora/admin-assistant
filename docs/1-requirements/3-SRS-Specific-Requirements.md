@@ -121,6 +121,15 @@ This section details the specific functional and non-functional requirements of 
 | FR-NOT-006   | The UI must visually distinguish notification channels (toast/email/both), show progress and state, and allow marking as read. | Must-have   | Clarity and usability.                      |
 | FR-NOT-007   | All notification events and user responses must be logged for audit and compliance.              | Must-have   | Traceability and compliance.                |
 
+### 3.1.12 Command-Line Interface (CLI)
+
+| ID           | Requirement                                                                                      | Priority    | Rationale                                   |
+|--------------|--------------------------------------------------------------------------------------------------|-------------|---------------------------------------------|
+| FR-CLI-001   | Provide a CLI (`cli/`) for administrative, maintenance, and automation tasks (e.g., archiving, export, user management, diagnostics). | Must-have   | Enables automation, scripting, and headless operation. |
+| FR-CLI-002   | CLI must support all major features available in the web UI, with clear help and error messages. | Should-have | Parity and usability for advanced users.     |
+| FR-CLI-003   | CLI must be secure, require authentication for sensitive operations, and log all actions.        | Must-have   | Security and auditability.                   |
+| FR-CLI-004   | CLI commands must be scriptable and support non-interactive operation.                          | Must-have   | Automation and integration.                  |
+
 ## 3.2 Non-Functional Requirements
 
 ### 3.2.1 Security
