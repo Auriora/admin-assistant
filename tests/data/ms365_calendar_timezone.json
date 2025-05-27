@@ -1,0 +1,77 @@
+[
+  {
+    "@odata.etag": "W/\"dummyetag7\"",
+    "id": "dummyid-7",
+    "createdDateTime": "2025-06-01T08:00:00.0000000Z",
+    "lastModifiedDateTime": "2025-06-01T08:00:00.0000000Z",
+    "changeKey": "dummykey7",
+    "categories": ["EST"],
+    "transactionId": "dummytransaction-7",
+    "originalStartTimeZone": "US/Eastern",
+    "originalEndTimeZone": "US/Eastern",
+    "iCalUId": "dummyicaluid-7",
+    "uid": "dummyuid-7",
+    "reminderMinutesBeforeStart": 10,
+    "isReminderOn": true,
+    "hasAttachments": false,
+    "subject": "EST Meeting",
+    "bodyPreview": "EST timezone meeting.",
+    "importance": "normal",
+    "sensitivity": "normal",
+    "isAllDay": false,
+    "isCancelled": false,
+    "isOrganizer": true,
+    "responseRequested": true,
+    "seriesMasterId": null,
+    "showAs": "busy",
+    "type": "singleInstance",
+    "webLink": "https://dummy.link/estmeeting",
+    "onlineMeetingUrl": null,
+    "isOnlineMeeting": false,
+    "onlineMeetingProvider": "unknown",
+    "allowNewTimeProposals": true,
+    "occurrenceId": null,
+    "isDraft": false,
+    "hideAttendees": false,
+    "responseStatus": {
+      "response": "organizer",
+      "time": "0001-01-01T00:00:00Z"
+    },
+    "body": {
+      "contentType": "html",
+      "content": "<p>EST timezone meeting.</p>"
+    },
+    "start": {
+      "dateTime": "2025-06-01T09:00:00.0000000",
+      "timeZone": "US/Eastern"
+    },
+    "end": {
+      "dateTime": "2025-06-01T10:00:00.0000000",
+      "timeZone": "US/Eastern"
+    },
+    "location": {
+      "displayName": "EST Room",
+      "locationType": "conferenceRoom",
+      "uniqueIdType": "directory",
+      "address": {},
+      "coordinates": {}
+    },
+    "locations": [],
+    "recurrence": null,
+    "attendees": [
+      {
+        "type": "required",
+        "status": {"response": "none", "time": "0001-01-01T00:00:00Z"},
+        "emailAddress": {"name": "User One", "address": "user.one@example.com"}
+      }
+    ],
+    "organizer": {
+      "emailAddress": {
+        "name": "User One",
+        "address": "user.one@example.com"
+      }
+    },
+    "onlineMeeting": null,
+    "description": "EST timezone meeting."
+  }
+] 

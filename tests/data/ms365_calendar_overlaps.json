@@ -1,0 +1,140 @@
+[
+  {
+    "@odata.etag": "W/\"dummyetag1\"",
+    "id": "dummyid-1",
+    "createdDateTime": "2025-05-19T13:19:44.3788095Z",
+    "lastModifiedDateTime": "2025-05-22T20:34:44.429071Z",
+    "changeKey": "dummykey1",
+    "categories": [],
+    "transactionId": "dummytransaction-1",
+    "originalStartTimeZone": "UTC",
+    "originalEndTimeZone": "UTC",
+    "iCalUId": "dummyicaluid-1",
+    "uid": "dummyuid-1",
+    "reminderMinutesBeforeStart": 15,
+    "isReminderOn": false,
+    "hasAttachments": false,
+    "subject": "Project Meeting",
+    "bodyPreview": "",
+    "importance": "normal",
+    "sensitivity": "normal",
+    "isAllDay": false,
+    "isCancelled": false,
+    "isOrganizer": true,
+    "responseRequested": true,
+    "seriesMasterId": null,
+    "showAs": "busy",
+    "type": "singleInstance",
+    "webLink": "https://dummy.link/meeting1",
+    "onlineMeetingUrl": null,
+    "isOnlineMeeting": false,
+    "onlineMeetingProvider": "unknown",
+    "allowNewTimeProposals": true,
+    "occurrenceId": null,
+    "isDraft": false,
+    "hideAttendees": false,
+    "responseStatus": {
+      "response": "organizer",
+      "time": "0001-01-01T00:00:00Z"
+    },
+    "body": {
+      "contentType": "html",
+      "content": ""
+    },
+    "start": {
+      "dateTime": "2025-05-21T11:45:00.0000000",
+      "timeZone": "UTC"
+    },
+    "end": {
+      "dateTime": "2025-05-21T12:00:00.0000000",
+      "timeZone": "UTC"
+    },
+    "location": {
+      "displayName": "Meeting Room 1",
+      "locationType": "default",
+      "uniqueIdType": "unknown",
+      "address": {},
+      "coordinates": {}
+    },
+    "locations": [],
+    "recurrence": null,
+    "attendees": [],
+    "organizer": {
+      "emailAddress": {
+        "name": "User One",
+        "address": "user.one@example.com"
+      }
+    },
+    "onlineMeeting": null,
+    "description": "Project meeting for Q2."
+  },
+  {
+    "@odata.etag": "W/\"dummyetag2\"",
+    "id": "dummyid-2",
+    "createdDateTime": "2025-05-19T13:19:44.3788095Z",
+    "lastModifiedDateTime": "2025-05-22T20:34:44.429071Z",
+    "changeKey": "dummykey2",
+    "categories": [],
+    "transactionId": "dummytransaction-2",
+    "originalStartTimeZone": "UTC",
+    "originalEndTimeZone": "UTC",
+    "iCalUId": "dummyicaluid-2",
+    "uid": "dummyuid-2",
+    "reminderMinutesBeforeStart": 15,
+    "isReminderOn": false,
+    "hasAttachments": false,
+    "subject": "Overlapping Meeting",
+    "bodyPreview": "",
+    "importance": "normal",
+    "sensitivity": "normal",
+    "isAllDay": false,
+    "isCancelled": false,
+    "isOrganizer": true,
+    "responseRequested": true,
+    "seriesMasterId": null,
+    "showAs": "busy",
+    "type": "singleInstance",
+    "webLink": "https://dummy.link/meeting2",
+    "onlineMeetingUrl": null,
+    "isOnlineMeeting": false,
+    "onlineMeetingProvider": "unknown",
+    "allowNewTimeProposals": true,
+    "occurrenceId": null,
+    "isDraft": false,
+    "hideAttendees": false,
+    "responseStatus": {
+      "response": "organizer",
+      "time": "0001-01-01T00:00:00Z"
+    },
+    "body": {
+      "contentType": "html",
+      "content": ""
+    },
+    "start": {
+      "dateTime": "2025-05-21T11:50:00.0000000",
+      "timeZone": "UTC"
+    },
+    "end": {
+      "dateTime": "2025-05-21T12:10:00.0000000",
+      "timeZone": "UTC"
+    },
+    "location": {
+      "displayName": "Meeting Room 2",
+      "locationType": "default",
+      "uniqueIdType": "unknown",
+      "address": {},
+      "coordinates": {}
+    },
+    "locations": [],
+    "recurrence": null,
+    "attendees": [],
+    "organizer": {
+      "emailAddress": {
+        "name": "User Two",
+        "address": "user.two@example.com"
+      }
+    },
+    "onlineMeeting": null,
+    "description": "Overlapping meeting for Q2."
+  }
+] 

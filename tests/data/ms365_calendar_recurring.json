@@ -1,0 +1,77 @@
+[
+  {
+    "@odata.etag": "W/\"dummyetag6\"",
+    "id": "dummyid-6",
+    "createdDateTime": "2025-06-01T08:00:00.0000000Z",
+    "lastModifiedDateTime": "2025-06-01T08:00:00.0000000Z",
+    "changeKey": "dummykey6",
+    "categories": ["Daily"],
+    "transactionId": "dummytransaction-6",
+    "originalStartTimeZone": "UTC",
+    "originalEndTimeZone": "UTC",
+    "iCalUId": "dummyicaluid-6",
+    "uid": "dummyuid-6",
+    "reminderMinutesBeforeStart": 5,
+    "isReminderOn": true,
+    "hasAttachments": false,
+    "subject": "Daily Standup",
+    "bodyPreview": "Daily standup meeting.",
+    "importance": "normal",
+    "sensitivity": "normal",
+    "isAllDay": false,
+    "isCancelled": false,
+    "isOrganizer": true,
+    "responseRequested": true,
+    "seriesMasterId": null,
+    "showAs": "busy",
+    "type": "singleInstance",
+    "webLink": "https://dummy.link/standup",
+    "onlineMeetingUrl": null,
+    "isOnlineMeeting": false,
+    "onlineMeetingProvider": "unknown",
+    "allowNewTimeProposals": true,
+    "occurrenceId": null,
+    "isDraft": false,
+    "hideAttendees": false,
+    "responseStatus": {
+      "response": "organizer",
+      "time": "0001-01-01T00:00:00Z"
+    },
+    "body": {
+      "contentType": "html",
+      "content": "<p>Daily standup meeting.</p>"
+    },
+    "start": {
+      "dateTime": "2025-06-01T09:00:00.0000000",
+      "timeZone": "UTC"
+    },
+    "end": {
+      "dateTime": "2025-06-01T09:15:00.0000000",
+      "timeZone": "UTC"
+    },
+    "location": {
+      "displayName": "Conference Room",
+      "locationType": "conferenceRoom",
+      "uniqueIdType": "directory",
+      "address": {},
+      "coordinates": {}
+    },
+    "locations": [],
+    "recurrence": "FREQ=DAILY;COUNT=3",
+    "attendees": [
+      {
+        "type": "required",
+        "status": {"response": "none", "time": "0001-01-01T00:00:00Z"},
+        "emailAddress": {"name": "User One", "address": "user.one@example.com"}
+      }
+    ],
+    "organizer": {
+      "emailAddress": {
+        "name": "User One",
+        "address": "user.one@example.com"
+      }
+    },
+    "onlineMeeting": null,
+    "description": "Daily standup meeting."
+  }
+] 

@@ -1,0 +1,89 @@
+[
+  {
+    "@odata.etag": "W/\"dummyetag3\"",
+    "id": "dummyid-3",
+    "createdDateTime": "2025-05-22T08:57:53.9504973Z",
+    "lastModifiedDateTime": "2025-05-22T20:34:38.5356017Z",
+    "changeKey": "dummykey3",
+    "categories": ["Team"],
+    "transactionId": "dummytransaction-3",
+    "originalStartTimeZone": "UTC",
+    "originalEndTimeZone": "UTC",
+    "iCalUId": "dummyicaluid-3",
+    "uid": "dummyuid-3",
+    "reminderMinutesBeforeStart": 10,
+    "isReminderOn": true,
+    "hasAttachments": false,
+    "subject": "Team Sync",
+    "bodyPreview": "Weekly team sync meeting.",
+    "importance": "normal",
+    "sensitivity": "normal",
+    "isAllDay": false,
+    "isCancelled": false,
+    "isOrganizer": true,
+    "responseRequested": true,
+    "seriesMasterId": null,
+    "showAs": "busy",
+    "type": "singleInstance",
+    "webLink": "https://dummy.link/meeting3",
+    "onlineMeetingUrl": "https://dummy.link/online3",
+    "isOnlineMeeting": true,
+    "onlineMeetingProvider": "teamsForBusiness",
+    "allowNewTimeProposals": true,
+    "occurrenceId": null,
+    "isDraft": false,
+    "hideAttendees": false,
+    "responseStatus": {
+      "response": "organizer",
+      "time": "0001-01-01T00:00:00Z"
+    },
+    "body": {
+      "contentType": "html",
+      "content": "<p>Weekly team sync meeting.</p>"
+    },
+    "start": {
+      "dateTime": "2025-05-22T09:00:00.0000000",
+      "timeZone": "UTC"
+    },
+    "end": {
+      "dateTime": "2025-05-22T10:00:00.0000000",
+      "timeZone": "UTC"
+    },
+    "location": {
+      "displayName": "Conference Room",
+      "locationType": "conferenceRoom",
+      "uniqueIdType": "directory",
+      "address": {},
+      "coordinates": {}
+    },
+    "locations": [],
+    "recurrence": null,
+    "attendees": [
+      {
+        "type": "required",
+        "status": {"response": "none", "time": "0001-01-01T00:00:00Z"},
+        "emailAddress": {"name": "User One", "address": "user.one@example.com"}
+      },
+      {
+        "type": "required",
+        "status": {"response": "none", "time": "0001-01-01T00:00:00Z"},
+        "emailAddress": {"name": "User Two", "address": "user.two@example.com"}
+      },
+      {
+        "type": "optional",
+        "status": {"response": "none", "time": "0001-01-01T00:00:00Z"},
+        "emailAddress": {"name": "User Three", "address": "user.three@example.com"}
+      }
+    ],
+    "organizer": {
+      "emailAddress": {
+        "name": "User One",
+        "address": "user.one@example.com"
+      }
+    },
+    "onlineMeeting": {
+      "joinUrl": "https://dummy.link/online3"
+    },
+    "description": "Weekly team sync meeting."
+  }
+] 
