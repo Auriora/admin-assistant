@@ -57,14 +57,32 @@ class CalendarService:
     def _event_to_appointment_fields(event: dict, user_id: int) -> dict:
         """
         Map a Microsoft Graph event dict to Appointment model fields.
+        Handles both MS Graph dict format and already-converted datetime objects for 'start' and 'end'.
         Only fields that exist in the Appointment model are included.
+        Ensures all datetimes are UTC and timezone-aware.
         """
-        # Required fields
         start = event.get('start', {})
         end = event.get('end', {})
-        # Microsoft Graph returns dateTime and timeZone
-        start_time = parser.parse(start.get('dateTime')) if start.get('dateTime') else None
-        end_time = parser.parse(end.get('dateTime')) if end.get('dateTime') else None
+        if isinstance(start, dict):
+            dt = start.get('dateTime')
+            start_time = parser.parse(dt) if isinstance(dt, str) else None
+        elif isinstance(start, datetime):
+            start_time = start
+        else:
+            start_time = None
+        if isinstance(end, dict):
+            dt = end.get('dateTime')
+            end_time = parser.parse(dt) if isinstance(dt, str) else None
+        elif isinstance(end, datetime):
+            end_time = end
+        else:
+            end_time = None
+        if start_time is not None:
+            start_time = CalendarService.to_utc(start_time)
+        if end_time is not None:
+            end_time = CalendarService.to_utc(end_time)
+        if start_time is None or end_time is None:
+            current_app.logger.error(f"Skipping appointment with missing start or end time: {event}")
         return {
             'user_id': user_id,
             'subject': event.get('subject'),
@@ -115,15 +133,17 @@ class CalendarService:
             # 5. Save to DB
             for appt in appointments:
                 try:
-                    # Map event dict to Appointment model fields
                     appt_fields = CalendarService._event_to_appointment_fields(appt, user.id)
+                    if appt_fields['start_time'] is None or appt_fields['end_time'] is None:
+                        result["errors"].append(f"Skipped appointment with missing start or end time: {appt.get('subject', 'Unknown')}")
+                        continue
                     archived = Appointment(**appt_fields)
                     db.session.add(archived)
                 except Exception as e:
                     result["errors"].append(f"Failed to archive {appt.get('subject', 'Unknown')}: {str(e)}")
             try:
                 db.session.commit()
-                result["archived"] = len(appointments)
+                result["archived"] = len([a for a in appointments if CalendarService._event_to_appointment_fields(a, user.id)['start_time'] is not None and CalendarService._event_to_appointment_fields(a, user.id)['end_time'] is not None])
             except Exception as e:
                 db.session.rollback()
                 result["errors"].append(f"DB commit failed: {str(e)}")
@@ -157,15 +177,19 @@ class CalendarService:
         """
         Returns True if the recurring event occurs on target_date.
         Assumes appt['recurrence'] is an RFC 5545 RRULE string.
+        Ensures all datetimes are timezone-aware (UTC).
         """
         if not appt.get('recurrence'):
             return False
-        rule = rrulestr(appt['recurrence'], dtstart=appt['start'])
-        occurrences = list(rule.between(
-            datetime.combine(target_date, datetime.min.time()),
-            datetime.combine(target_date, datetime.max.time()),
-            inc=True
-        ))
+        # Ensure dtstart is aware (UTC)
+        dtstart = appt['start']
+        if dtstart.tzinfo is None:
+            dtstart = dtstart.replace(tzinfo=pytz.UTC)
+        # Make target_date range aware (UTC)
+        range_start = pytz.UTC.localize(datetime.combine(target_date, datetime.min.time()))
+        range_end = pytz.UTC.localize(datetime.combine(target_date, datetime.max.time()))
+        rule = rrulestr(appt['recurrence'], dtstart=dtstart)
+        occurrences = list(rule.between(range_start, range_end, inc=True))
         return bool(occurrences)
 
     @staticmethod
@@ -186,18 +210,35 @@ class CalendarService:
     def merge_duplicates(appointments: List[dict]) -> List[dict]:
         """
         Merge duplicate appointments (same subject, start, end, attendees).
+        Attendees are compared by their email addresses.
         """
+        def attendee_emails(attendees):
+            # Handles both MS Graph and synthetic attendee formats
+            emails = []
+            for a in attendees:
+                if isinstance(a, dict):
+                    # MS Graph: {'emailAddress': {'address': ...}}
+                    if 'emailAddress' in a and 'address' in a['emailAddress']:
+                        emails.append(a['emailAddress']['address'].lower())
+                    elif 'address' in a:
+                        emails.append(a['address'].lower())
+                elif isinstance(a, str):
+                    emails.append(a.lower())
+            return tuple(sorted(set(emails)))
+
         seen = {}
         for appt in appointments:
             key = (
-                appt['subject'],
-                appt['start'],
-                appt['end'],
-                tuple(sorted(appt.get('attendees', [])))
+                appt.get('subject'),
+                appt.get('start'),
+                appt.get('end'),
+                attendee_emails(appt.get('attendees', []))
             )
             if key in seen:
-                seen[key]['description'] += "\n---\n" + appt.get('description', '')
-                seen[key]['attendees'] = list(set(seen[key]['attendees']) | set(appt.get('attendees', [])))
+                seen[key]['description'] = seen[key].get('description', '') + "\n---\n" + appt.get('description', '')
+                # Merge attendees by email
+                merged_emails = set(attendee_emails(seen[key].get('attendees', []))) | set(attendee_emails(appt.get('attendees', [])))
+                seen[key]['attendees'] = [{'emailAddress': {'address': e}} for e in merged_emails]
             else:
                 seen[key] = appt
         return list(seen.values())

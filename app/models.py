@@ -58,16 +58,16 @@ class Appointment(db.Model):
     __tablename__ = 'appointments'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    start_time = db.Column(db.DateTime, nullable=False)
-    end_time = db.Column(db.DateTime, nullable=False)
+    start_time = db.Column(db.DateTime(timezone=True), nullable=False)
+    end_time = db.Column(db.DateTime(timezone=True), nullable=False)
     subject = db.Column(db.String)
     location_id = db.Column(db.Integer, db.ForeignKey('locations.id'))
     category_id = db.Column(db.Integer, db.ForeignKey('categories.id'))
     is_private = db.Column(db.Boolean, default=False)
     is_archived = db.Column(db.Boolean, default=False)
     is_out_of_office = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(UTC))
-    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
+    created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(UTC))
+    updated_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
 
     user = db.relationship('User', back_populates='appointments')
     location = db.relationship('Location', back_populates='appointments')
@@ -86,7 +86,7 @@ class Timesheet(db.Model):
     excel_path = db.Column(db.String)
     uploaded_to_onedrive = db.Column(db.Boolean, default=False)
     uploaded_to_xero = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(UTC))
+    created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(UTC))
 
     user = db.relationship('User', back_populates='timesheets')
     appointments = db.relationship('Appointment', back_populates='timesheet')
@@ -98,7 +98,7 @@ class AuditLog(db.Model):
     action = db.Column(db.String, nullable=False)
     entity_type = db.Column(db.String)
     entity_id = db.Column(db.Integer)
-    timestamp = db.Column(db.DateTime, default=lambda: datetime.now(UTC))
+    timestamp = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(UTC))
     details = db.Column(db.Text)
 
     user = db.relationship('User', back_populates='audit_logs')
@@ -110,7 +110,7 @@ class Rule(db.Model):
     name = db.Column(db.String, nullable=False)
     description = db.Column(db.String)
     rule_json = db.Column(db.Text)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(UTC))
+    created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(UTC))
 
     user = db.relationship('User', back_populates='rules')
 
@@ -126,7 +126,7 @@ class Notification(db.Model):
     progress = db.Column(db.String, nullable=True, default=None)  # Progress description
     state = db.Column(db.String, nullable=True, default=None)  # e.g. not started, in-progress, success, failed
     is_read = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(UTC))
+    created_at = db.Column(db.DateTime(timezone=True), default=lambda: datetime.now(UTC))
 
     user = db.relationship('User', back_populates='notifications')
 
