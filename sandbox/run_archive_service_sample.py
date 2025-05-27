@@ -90,8 +90,6 @@ if not USE_LIVE:
     repo = MSGraphAppointmentRepository(mock_client)
     # Use repository to map events to Appointment model instances
     appointments = [repo._map_api_to_model(e) for e in raw_events]
-    # Convert Appointment objects back to MS Graph event dicts for archiving
-    event_dicts = [repo._map_model_to_api(a) for a in appointments]
     today = datetime.now(UTC).date()  # Used for archiving range
 else:
     if not MS_CLIENT_ID or not MS_TENANT_ID:
@@ -122,6 +120,9 @@ else:
         sys.exit(1)
     event_dicts = response.json().get('value', [])
     print(f"Fetched {len(event_dicts)} appointments from Microsoft Graph.")
+    # Use repository to map events to Appointment model instances
+    repo = MSGraphAppointmentRepository(None)
+    appointments = [repo._map_api_to_model(e) for e in event_dicts]
 
 # --- STEP 3: Archive appointments into core DB ---
 core_engine = create_engine(CORE_DB_URL, echo=False, future=True)
@@ -129,6 +130,6 @@ CoreSession = sessionmaker(bind=core_engine)
 core_session = CoreSession()
 from core.models.user import User as CoreUser  # For foreign key
 
-result = archive_appointments(user, event_dicts, today, today, core_session)
+result = archive_appointments(user, appointments, today, today, core_session)
 print("Archive result:")
 print(result) 

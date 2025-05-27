@@ -64,20 +64,21 @@ class MSGraphAppointmentRepository(BaseAppointmentRepository):
         """
         Map an MS Graph event dict to an Appointment model instance.
         Handles timezone-aware datetime conversion using 'dateTime' and 'timeZone'.
+        Assigns MS Graph event 'id' to ms_event_id (not id).
         :param data: MS Graph event dict.
         :return: Appointment model instance.
         """
         start_dt = self._parse_msgraph_datetime(data.get('start'))
         end_dt = self._parse_msgraph_datetime(data.get('end'))
         return Appointment(
-            id=data.get('id'),
+            ms_event_id=data.get('id'),
             user_id=data.get('user_id'),
             start_time=start_dt,
             end_time=end_dt,
             subject=data.get('subject'),
-            is_private=data.get('is_private', False),
-            is_archived=data.get('is_archived', False),
-            is_out_of_office=data.get('is_out_of_office', False),
+            is_private=data.get('sensitivity', '').lower() == 'private',
+            is_archived=True,
+            is_out_of_office=data.get('showAs', '').lower() == 'oof',
             recurrence=data.get('recurrence'),
             ms_event_data=data,
         )

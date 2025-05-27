@@ -7,11 +7,13 @@ from core.db import Base
 class Appointment(Base):
     """
     SQLAlchemy model for an appointment.
+    - ms_event_id: Original MS Graph event id (nullable string)
     - recurrence: RFC 5545 RRULE string for recurring events (nullable)
     - ms_event_data: Full original MS Graph event as JSON (nullable)
     """
     __tablename__ = 'appointments'
     id = Column(Integer, primary_key=True)
+    ms_event_id = Column(String, nullable=True, doc="Original MS Graph event id.")
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     start_time = Column(DateTime(timezone=True), nullable=False)
     end_time = Column(DateTime(timezone=True), nullable=False)

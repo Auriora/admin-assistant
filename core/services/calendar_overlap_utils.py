@@ -1,43 +1,35 @@
-from typing import List, Dict
+from typing import List
+from core.models.appointment import Appointment
+from datetime import datetime
 
-def merge_duplicates(appointments: List[dict]) -> List[dict]:
+def merge_duplicates(appointments: List[Appointment]) -> List[Appointment]:
     """
-    Merge duplicate appointments (same subject, start, end, attendees).
-    Attendees are compared by their email addresses.
+    Merge duplicate appointments (same subject, start_time, end_time).
+    Only model fields are considered for deduplication.
     """
-    def attendee_emails(attendees):
-        emails = []
-        for a in attendees:
-            if isinstance(a, dict):
-                if 'emailAddress' in a and 'address' in a['emailAddress']:
-                    emails.append(a['emailAddress']['address'].lower())
-                elif 'address' in a:
-                    emails.append(a['address'].lower())
-            elif isinstance(a, str):
-                emails.append(a.lower())
-        return tuple(sorted(set(emails)))
-
     seen = {}
     for appt in appointments:
+        subject = getattr(appt, 'subject', None)
+        start_time = getattr(appt, 'start_time', None)
+        end_time = getattr(appt, 'end_time', None)
         key = (
-            appt.get('subject'),
-            appt.get('start'),
-            appt.get('end'),
-            attendee_emails(appt.get('attendees', []))
+            subject,
+            start_time,
+            end_time,
         )
-        if key in seen:
-            seen[key]['description'] = seen[key].get('description', '') + "\n---\n" + appt.get('description', '')
-            merged_emails = set(attendee_emails(seen[key].get('attendees', []))) | set(attendee_emails(appt.get('attendees', [])))
-            seen[key]['attendees'] = [{'emailAddress': {'address': e}} for e in merged_emails]
-        else:
+        if key not in seen:
             seen[key] = appt
     return list(seen.values())
 
-def detect_overlaps(appointments: List[dict]) -> List[List[dict]]:
+def detect_overlaps(appointments: List[Appointment]) -> List[List[Appointment]]:
     """
     Returns a list of lists, where each sublist contains appointments that overlap.
+    Uses start_time and end_time attributes. Ignores appointments missing these fields.
     """
-    sorted_appts = sorted(appointments, key=lambda a: a['start'])
+    # Filter out appointments missing start_time or end_time or where start_time is not a datetime
+    valid_appts = [a for a in appointments if isinstance(getattr(a, 'start_time', None), datetime) and isinstance(getattr(a, 'end_time', None), datetime)]
+    # Use the actual value, not the SQLAlchemy Column object
+    sorted_appts = sorted(valid_appts, key=lambda a: a.__dict__.get('start_time', None))
     overlaps = []
     current_group = []
     for appt in sorted_appts:
@@ -45,7 +37,7 @@ def detect_overlaps(appointments: List[dict]) -> List[List[dict]]:
             current_group.append(appt)
         else:
             last = current_group[-1]
-            if appt['start'] < last['end']:
+            if appt.__dict__.get('start_time', None) < last.__dict__.get('end_time', None):
                 current_group.append(appt)
             else:
                 if len(current_group) > 1:
