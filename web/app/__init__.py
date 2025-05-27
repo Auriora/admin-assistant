@@ -7,7 +7,7 @@ from flask_migrate import Migrate
 from flask_login import LoginManager
 from flask_apscheduler import APScheduler
 from core.services.scheduled_archive_job import scheduled_archive_job
-from app.services import msgraph
+from web.app.services import msgraph
 try:
     from opentelemetry import trace
     from opentelemetry.sdk.resources import SERVICE_NAME, Resource

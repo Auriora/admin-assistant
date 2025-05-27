@@ -1,4 +1,4 @@
-from app import create_app
+from web.app import create_app
 import os
 from dotenv import load_dotenv
 
@@ -12,7 +12,7 @@ else:
     if os.path.exists('.env'):
         load_dotenv('.env')
 
-app = create_app()
+web_app = create_app()
 
 if __name__ == "__main__":
-    app.run() 
+    web_app.run() 

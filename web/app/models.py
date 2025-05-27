@@ -1,7 +1,7 @@
 """
 SQLAlchemy models for Admin Assistant.
 """
-from app import db
+from web.app import db
 from sqlalchemy.orm import relationship
 from datetime import datetime, date, UTC
 from sqlalchemy_utils import EncryptedType, StringEncryptedType

@@ -14,14 +14,14 @@ class Config:
 
 class DevelopmentConfig(Config):
     DEBUG = True
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DEV_DATABASE_URL', 'sqlite:///admin_assistant_dev.db')
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DEV_DATABASE_URL', 'sqlite:///admin_assistant_flask_dev.db')
     LOG_LEVEL = os.environ.get('DEV_LOG_LEVEL', 'DEBUG')
 
 class TestingConfig(Config):
     TESTING = True
-    SQLALCHEMY_DATABASE_URI = os.environ.get('TEST_DATABASE_URL', 'sqlite:///admin_assistant_test.db')
+    SQLALCHEMY_DATABASE_URI = os.environ.get('TEST_DATABASE_URL', 'sqlite:///admin_assistant_flask_test.db')
     LOG_LEVEL = os.environ.get('TEST_LOG_LEVEL', 'INFO')
 
 class ProductionConfig(Config):
-    SQLALCHEMY_DATABASE_URI = os.environ.get('PROD_DATABASE_URL', 'sqlite:///admin_assistant_prod.db')
+    SQLALCHEMY_DATABASE_URI = os.environ.get('PROD_DATABASE_URL', 'sqlite:///admin_assistant_flask_prod.db')
     LOG_LEVEL = os.environ.get('PROD_LOG_LEVEL', 'WARNING') 

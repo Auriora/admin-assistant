@@ -1,8 +1,8 @@
 from flask import Blueprint, render_template, redirect, request, session, url_for, flash, jsonify
-from app.services import msgraph
-from app.models import db, User, Notification, NotificationPreference, NotificationClass
+from web.app.services import msgraph
+from web.app.models import db, User, Notification, NotificationPreference, NotificationClass
 from datetime import datetime, timedelta, UTC
-from app.services.msgraph import MsAuthError
+from web.app.services.msgraph import MsAuthError
 from flask import current_app
 from flask_login import login_user, logout_user, login_required, current_user
 import requests
