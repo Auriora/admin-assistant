@@ -81,7 +81,8 @@ admin-assistant/
 
 ## Migration and Shell Guidelines
 - Always prefer **Bash** over PowerShell for running shell commands, unless specifically instructed otherwise. PowerShell is known to cause issues with interactive and some non-interactive commands on Linux (see recent pytest failures). Use Bash for all development, testing, and migration shell commands.
-- For database migrations, use Flask-Migrate (`flask db` commands) instead of direct Alembic commands.
+- For 'core/' database migrations, use Alembic.
+- For Flask database migrations, use Flask-Migrate (`flask db` commands) instead of direct Alembic commands.
 
 
 ## AI Agent Operational Best Practices
