@@ -29,11 +29,11 @@ def create_app():
     app = Flask(__name__)
     env = os.environ.get('APP_ENV', 'development').lower()
     if env == 'production':
-        app.config.from_object('app.config.ProductionConfig')
+        app.config.from_object('web.app.config.ProductionConfig')
     elif env == 'testing':
-        app.config.from_object('app.config.TestingConfig')
+        app.config.from_object('web.app.config.TestingConfig')
     else:
-        app.config.from_object('app.config.DevelopmentConfig')
+        app.config.from_object('web.app.config.DevelopmentConfig')
 
     db.init_app(app)
     migrate.init_app(app, db)
@@ -97,12 +97,12 @@ def create_app():
                 pass
 
     # Import and register blueprints
-    from app.routes.main import main_bp
+    from web.app.routes.main import main_bp
     app.register_blueprint(main_bp)
 
     @login_manager.user_loader
     def load_user(user_id):
-        from app.models import User
+        from web.app.models import User
         return User.query.get(int(user_id))
 
     return app 
