@@ -80,8 +80,9 @@ admin-assistant/
 - **SQLite** is the default development database, configurable via `app/config.py`.
 
 ## Migration and Shell Guidelines
-- Always prefer bash over PowerShell for running shell commands, unless specifically instructed otherwise.
+- Always prefer **Bash** over PowerShell for running shell commands, unless specifically instructed otherwise. PowerShell is known to cause issues with interactive and some non-interactive commands on Linux (see recent pytest failures). Use Bash for all development, testing, and migration shell commands.
 - For database migrations, use Flask-Migrate (`flask db` commands) instead of direct Alembic commands.
+
 
 ## AI Agent Operational Best Practices
 
@@ -93,6 +94,9 @@ admin-assistant/
 - **Clarification:** Always ask clarifying questions if requirements are ambiguous. Prefer tool-based discovery over user queries when possible.
 - **Process Transparency:** Justify all actions taken and explain them in the context of the user's request.
 - **Security:** Never output, log, or expose sensitive information in any user-facing message or code output.
+- **Documentation Consistency:** Always update `.cursor/rules/guidelines.mdc` (this file) when asked to update AI Guidelines to ensure documentation remains current and consistent.
+- **Command Output Analysis:** Read command output thoroughly to the end before interpreting results. Avoid making premature assumptions about errors or success states. Always verify the exact location and nature of issues by analyzing the complete output rather than jumping to conclusions based on partial information.
+
 
 ---
 _Last updated: [2025-05-27]_
