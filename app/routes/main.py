@@ -6,7 +6,8 @@ from app.services.msgraph import MsAuthError
 from flask import current_app
 from flask_login import login_user, logout_user, login_required, current_user
 import requests
-from app.services.calendar_service import CalendarService
+from core.services.calendar_fetch_service import fetch_appointments_from_ms365
+from core.services.calendar_archive_service import archive_appointments
 from typing import cast
 from flask import abort
 from sqlalchemy import desc
@@ -127,7 +128,6 @@ def archive_now():
     """
     user = cast(User, current_user)
     current_app.logger.info(f"Manual archive started by {user.email}")  # type: ignore[attr-defined]
-    # Notify UI: archive started
     try:
         data = request.get_json(silent=True) or {}
         today = datetime.now(UTC).date()
@@ -135,9 +135,9 @@ def archive_now():
         end_date_str = data.get('end_date')
         start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date() if start_date_str else today
         end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date() if end_date_str else today
-        appointments = CalendarService.fetch_appointments_from_ms365(user, start_date, end_date)
-        result = CalendarService.archive_appointments(user, appointments, start_date, end_date)
-        # Example: create a notification using user preferences
+        msgraph_session = msgraph.get_authenticated_session_for_user(user)
+        appointments = fetch_appointments_from_ms365(user, start_date, end_date, msgraph_session, logger=current_app.logger)
+        result = archive_appointments(user, appointments, start_date, end_date, db.session, logger=current_app.logger)
         channel = get_user_notification_channel(user.id, 'account_activity')
         notif = Notification(
             user_id=user.id,
