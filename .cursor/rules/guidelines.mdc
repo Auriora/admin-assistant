@@ -110,6 +110,10 @@ admin-assistant/
 - For 'core/' database migrations, use Alembic.
 - For Flask database migrations, use Flask-Migrate (`flask db` commands) instead of direct Alembic commands.
 
+**Best Practice: Never modify an existing Alembic migration after it has been run/applied to any environment.**
+- Always create a new migration file for any schema change (e.g., adding a new column).
+- Never edit or append schema changes to an already-applied migration.
+- This preserves migration integrity and avoids database inconsistencies or migration failures.
 
 ## AI Agent Operational Best Practices
 
