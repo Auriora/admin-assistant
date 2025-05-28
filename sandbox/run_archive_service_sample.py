@@ -23,6 +23,9 @@ from core.repositories.appointment_repository_sqlalchemy import SQLAlchemyAppoin
 from msgraph.graph_service_client import GraphServiceClient
 from azure.identity import DeviceCodeCredential, TokenCachePersistenceOptions
 import re
+from core.models.archive_configuration import ArchiveConfiguration
+from core.services.archive_configuration_service import ArchiveConfigurationService
+from sqlalchemy.exc import SQLAlchemyError
 
 # --- CONFIGURATION ---
 CORE_DB_URL = 'sqlite:///instance/admin_assistant_core_dev.db'
@@ -44,6 +47,20 @@ if not user:
     print("No user found in user DB.")
     sys.exit(1)
 print(f"Using user: {user.email}")
+
+# --- Load ArchiveConfiguration for user ---
+archive_config_service = ArchiveConfigurationService()
+user_id = int(getattr(user, 'id', 0))
+archive_configs = archive_config_service.list_for_user(user_id)
+archive_config = next((c for c in archive_configs if getattr(c, 'is_active', False)), None)
+if not archive_config:
+    print(f"No active archive configuration found for user {user.email}.")
+    sys.exit(1)
+print(f"Using archive configuration: {archive_config}")
+
+# Use configured calendar IDs
+source_calendar_id = str(getattr(archive_config, 'source_calendar_id', ''))
+archive_calendar_id = str(getattr(archive_config, 'destination_calendar_id', ''))
 
 def get_token(msal_app):
     """
@@ -176,7 +193,7 @@ def main():
         else:
             print("No valid event dates found; using today for archive range.")
         mock_client = MockMSGraphClient(raw_events)
-        repo = MSGraphAppointmentRepository(mock_client, user)  # type: ignore  # Mock client for testing
+        repo = MSGraphAppointmentRepository(mock_client, user, source_calendar_id)  # type: ignore  # Mock client for testing
         print(f"[DEBUG] Calling repo.list_for_user...")
         appointments = repo.list_for_user(start_date=start_date, end_date=end_date)
         print(f"[DEBUG] repo.list_for_user returned {len(appointments)} appointments.")
@@ -201,7 +218,7 @@ def main():
         )
         scopes = ["https://graph.microsoft.com/.default"]
         graph_client = GraphServiceClient(credentials=credential, scopes=scopes)
-        repo = MSGraphAppointmentRepository(graph_client, user)
+        repo = MSGraphAppointmentRepository(graph_client, user, source_calendar_id)
         print("[INFO] DeviceCodeCredential is now using a persistent token cache. You should only be prompted to authenticate once unless the token expires or is revoked.")
         print(f"[DEBUG] User email: {getattr(user, 'email', None)}")
         print(f"[DEBUG] Querying appointments from {start_date} to {end_date}")
@@ -223,7 +240,7 @@ def main():
 
     # Set up repositories for orchestrator
     fetch_repo = repo  # MSGraphAppointmentRepository instance from above
-    write_repo = SQLAlchemyAppointmentRepository(user, core_session)
+    write_repo = SQLAlchemyAppointmentRepository(user, archive_calendar_id, core_session)
 
     orchestrator = CalendarArchiveOrchestrator()
     print("[DEBUG] Calling orchestrator.archive_user_appointments...")
@@ -237,6 +254,44 @@ def main():
     print("[DEBUG] Archive result:")
     print(result) 
 
+# === ArchiveConfigurationRepository/Service Usage Example ===
+service = ArchiveConfigurationService()
+
+try:
+    # Create a new configuration
+    config = ArchiveConfiguration(
+        user_id=1,
+        name="Test Archive Config",
+        source_calendar_id="source-calendar-id",
+        destination_calendar_id="dest-calendar-id",
+        is_active=True,
+        timezone="Europe/London"
+    )
+    service.create(config)
+    print(f"Created: {config}")
+
+    # List all configurations for the user
+    configs = service.list_for_user(1)
+    print(f"Configs for user 1: {configs}")
+
+    # Update the configuration's name
+    if configs:
+        config_to_update = configs[0]
+        setattr(config_to_update, 'name', "Updated Archive Config Name")
+        service.update(config_to_update)
+        print(f"Updated: {config_to_update}")
+
+    # Delete the configuration
+    if configs:
+        config_id = getattr(configs[0], 'id', None)
+        if isinstance(config_id, int):
+            service.delete(config_id)
+            print(f"Deleted config with id {config_id}")
+        else:
+            print(f"Could not delete: invalid config_id {config_id}")
+
+except (ValueError, SQLAlchemyError) as e:
+    print(f"Error: {e}")
 
 if __name__ == "__main__":
     main()

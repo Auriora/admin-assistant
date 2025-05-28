@@ -23,14 +23,23 @@ class MSGraphAppointmentRepository(BaseAppointmentRepository):
     ensuring correct timezone handling.
     Expects an instance of msgraph.core.GraphClient as msgraph_client and a user_email (UPN).
     """
-    def __init__(self, msgraph_client: 'GraphServiceClient', user: 'User'):
+    def __init__(self, msgraph_client: 'GraphServiceClient', user: 'User', calendar_id: str = ""):
         """
-        Initialize the repository with a Microsoft GraphClient instance and User model.
+        Initialize the repository with a Microsoft GraphClient instance, User model, and calendar_id.
         :param msgraph_client: Authenticated msgraph.core.GraphClient instance.
         :param user: User model instance (must have .email).
+        :param calendar_id: The calendar identifier (string). If empty, use the user's primary calendar.
         """
         self.client = msgraph_client
         self.user = user
+        self.calendar_id = calendar_id or ""
+
+    def _get_calendar(self):
+        """Return the calendar object for the given user and calendar_id."""
+        if self.calendar_id:
+            return self.client.users.by_user_id(self.get_user_email()).calendars.by_calendar_id(self.calendar_id)
+        else:
+            return self.client.users.by_user_id(self.get_user_email()).calendar
 
     async def aget_by_id(self, ms_event_id: str) -> Optional[Appointment]:
         """
@@ -41,7 +50,7 @@ class MSGraphAppointmentRepository(BaseAppointmentRepository):
         if not ms_event_id or not isinstance(ms_event_id, str):
             raise ValueError("ms_event_id (Graph event id) must be provided as a string.")
         try:
-            event = await self.client.users.by_user_id(self.get_user_email()).events.by_event_id(ms_event_id).get()
+            event = await self._get_calendar().events.by_event_id(ms_event_id).get()
             if event:
                 # msgraph-sdk Event does not have to_dict; use vars(event) to get a dict
                 event_dict = vars(event)
@@ -66,7 +75,7 @@ class MSGraphAppointmentRepository(BaseAppointmentRepository):
             for k, v in data.items():
                 if hasattr(event_body, k):
                     setattr(event_body, k, v)
-            await self.client.users.by_user_id(self.get_user_email()).calendar.events.post(body=event_body)
+            await self._get_calendar().events.post(body=event_body)
         except Exception as e:
             logger.exception(f"Failed to add appointment for user {self.get_user_email()}")
             if hasattr(e, 'add_note'):
@@ -98,20 +107,20 @@ class MSGraphAppointmentRepository(BaseAppointmentRepository):
                 logger.debug(f"Querying with URL: {url}")
                 # Paging support: fetch all pages using odata_next_link/@odata.nextLink
                 events = []
-                page = await self.client.users.by_user_id(user_id).calendar.calendar_view.with_url(url).get()
+                page = await self._get_calendar().calendar_view.with_url(url).get()
                 while page:
                     page_events = getattr(page, 'value', [])
                     events.extend(page_events)
                     # Try both odata_next_link and @odata.nextLink for compatibility
                     next_link = getattr(page, 'odata_next_link', None) or getattr(page, '@odata.nextLink', None)
                     if next_link:
-                        page = await self.client.users.by_user_id(user_id).calendar.calendar_view.with_url(next_link).get()
+                        page = await self._get_calendar().calendar_view.with_url(next_link).get()
                     else:
                         break
                 return [self._map_api_to_model(vars(e)) for e in events]
             else:
                 logger.debug("MSGraphAppointmentRepository.alist_for_user: Querying all events (no date range)")
-                events_page = await self.client.users.by_user_id(self.get_user_email()).calendar.events.get()
+                events_page = await self._get_calendar().events.get()
                 events = getattr(events_page, 'value', [])
                 return [self._map_api_to_model(vars(e)) for e in events]
         except Exception as e:
@@ -135,7 +144,7 @@ class MSGraphAppointmentRepository(BaseAppointmentRepository):
             for k, v in data.items():
                 if hasattr(event_body, k):
                     setattr(event_body, k, v)
-            await self.client.users.by_user_id(self.get_user_email()).events.by_event_id(ms_event_id).patch(body=event_body)
+            await self._get_calendar().events.by_event_id(ms_event_id).patch(body=event_body)
         except Exception as e:
             logger.exception(f"Failed to update appointment {ms_event_id} for user {self.get_user_email()}")
             if hasattr(e, 'add_note'):
@@ -150,7 +159,7 @@ class MSGraphAppointmentRepository(BaseAppointmentRepository):
         if not ms_event_id or not isinstance(ms_event_id, str):
             raise ValueError("ms_event_id (Graph event id) must be provided as a string.")
         try:
-            await self.client.users.by_user_id(self.get_user_email()).events.by_event_id(ms_event_id).delete()
+            await self._get_calendar().events.by_event_id(ms_event_id).delete()
         except Exception as e:
             logger.exception(f"Failed to delete appointment {ms_event_id} for user {self.get_user_email()}")
             if hasattr(e, 'add_note'):

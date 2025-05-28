@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, Boolean, DateTime
+from sqlalchemy.orm import relationship
 from core.db import Base
 
 class User(Base):
@@ -11,4 +12,8 @@ class User(Base):
     ms_access_token = Column(String, nullable=True)
     ms_refresh_token = Column(String, nullable=True)
     ms_token_expires_at = Column(DateTime(timezone=True), nullable=True)
-    profile_photo_url = Column(String, nullable=True) 
+    profile_photo_url = Column(String, nullable=True)
+    # Relationship to ArchiveConfiguration
+    archive_configurations = relationship("ArchiveConfiguration", back_populates="user")
+    # Relationship to Calendar
+    calendars = relationship("Calendar", back_populates="user") 

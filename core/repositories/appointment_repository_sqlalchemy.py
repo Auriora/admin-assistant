@@ -5,40 +5,44 @@ from core.db import SessionLocal
 from core.exceptions import DuplicateAppointmentException
 
 class SQLAlchemyAppointmentRepository(BaseAppointmentRepository):
-    def __init__(self, user, session=None):
+    def __init__(self, user, calendar_id: str, session=None):
         """
         :param user: User model instance (must have .id)
+        :param calendar_id: The calendar identifier (string)
         :param session: Optional SQLAlchemy session
         """
         self.user = user
+        self.calendar_id = calendar_id
         self.session = session or SessionLocal()
 
     def get_by_id(self, appointment_id: int) -> Optional[Appointment]:
         return self.session.get(Appointment, appointment_id)
 
     def add(self, appointment: Appointment) -> None:
-        # Prevent duplicate appointments for the same user, start_time, end_time, and subject
+        # Prevent duplicate appointments for the same user, calendar, start_time, end_time, and subject
         exists = self.session.query(Appointment).filter_by(
             user_id=self.user.id,
+            calendar_id=self.calendar_id,
             start_time=appointment.start_time,
             end_time=appointment.end_time,
             subject=appointment.subject
         ).first()
         if exists:
             raise DuplicateAppointmentException(
-                f"Duplicate appointment for user_id={self.user.id}, start_time={appointment.start_time}, end_time={appointment.end_time}, subject={appointment.subject}"
+                f"Duplicate appointment for user_id={self.user.id}, calendar_id={self.calendar_id}, start_time={appointment.start_time}, end_time={appointment.end_time}, subject={appointment.subject}"
             )
+        appointment.calendar_id = self.calendar_id  # Ensure calendar_id is set
         self.session.add(appointment)
         self.session.commit()
 
     def list_for_user(self, start_date=None, end_date=None) -> List[Appointment]:
         """
-        List appointments for the current user, optionally filtered by date range.
+        List appointments for the current user and calendar, optionally filtered by date range.
         :param start_date: Optional start date (date or datetime) for filtering events.
         :param end_date: Optional end date (date or datetime) for filtering events.
         :return: List of Appointment instances.
         """
-        query = self.session.query(Appointment).filter_by(user_id=self.user.id)
+        query = self.session.query(Appointment).filter_by(user_id=self.user.id, calendar_id=self.calendar_id)
         if start_date is not None:
             query = query.filter(Appointment.start_time >= start_date)
         if end_date is not None:
@@ -46,11 +50,12 @@ class SQLAlchemyAppointmentRepository(BaseAppointmentRepository):
         return query.all()
 
     def update(self, appointment: Appointment) -> None:
+        appointment.calendar_id = self.calendar_id  # Ensure calendar_id is set
         self.session.merge(appointment)
         self.session.commit()
 
     def delete(self, appointment_id: int) -> None:
         appt = self.get_by_id(appointment_id)
-        if appt:
+        if appt and appt.calendar_id == self.calendar_id:
             self.session.delete(appt)
             self.session.commit() 

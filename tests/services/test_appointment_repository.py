@@ -33,15 +33,17 @@ def user(app_context):
 
 @pytest.fixture
 def sqlalchemy_repo(db_session, user):
-    repo = AppointmentRepositoryFactory.create('sqlalchemy', session=db_session)
+    # Use a test calendar_id for the test calendar
+    calendar_id = 'test-calendar-id'
+    repo = AppointmentRepositoryFactory.create('sqlalchemy', session=db_session, user=user, calendar_id=calendar_id)
     return repo
 
 @pytest.fixture
-def msgraph_repo():
-    # Mock MS Graph client
-    client = MagicMock()
-    repo = AppointmentRepositoryFactory.create('msgraph', msgraph_client=client)
-    return repo, client
+def msgraph_repo(client, user):
+    # Use a test calendar_id for the test calendar
+    calendar_id = 'test-calendar-id'
+    repo = AppointmentRepositoryFactory.create('msgraph', msgraph_client=client, user=user, calendar_id=calendar_id)
+    return repo
 
 @pytest.fixture
 def appointment(user):

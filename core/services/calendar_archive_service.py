@@ -52,15 +52,23 @@ def prepare_appointments_for_archive(
                 for group in overlap_groups:
                     for appt in group:
                         overlapping_appts.add(appt)
-                        log = ActionLog(
+                        # Prevent duplicate ActionLog entries
+                        existing_log = session.query(ActionLog).filter_by(
                             user_id=user.id,
                             event_id=getattr(appt, 'ms_event_id', None),
-                            event_subject=getattr(appt, 'subject', None),
                             action_type='overlap',
-                            status='needs_user_action',
-                            message=f"Overlapping event detected: {getattr(appt, 'subject', None)} ({getattr(appt, 'start_time', None)} - {getattr(appt, 'end_time', None)})"
-                        )
-                        session.add(log)
+                            status='needs_user_action'
+                        ).first()
+                        if not existing_log:
+                            log = ActionLog(
+                                user_id=user.id,
+                                event_id=getattr(appt, 'ms_event_id', None),
+                                event_subject=getattr(appt, 'subject', None),
+                                action_type='overlap',
+                                status='needs_user_action',
+                                message=f"Overlapping event detected: {getattr(appt, 'subject', None)} ({getattr(appt, 'start_time', None)} - {getattr(appt, 'end_time', None)})"
+                            )
+                            session.add(log)
                 session.commit()
         for appt in appts:
             if not isinstance(appt, Appointment):
