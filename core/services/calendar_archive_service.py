@@ -5,6 +5,10 @@ from core.utilities.calendar_overlap_utility import merge_duplicates, detect_ove
 from core.utilities.time_utility import to_utc
 from core.models.appointment import Appointment
 from sqlalchemy.orm.attributes import InstrumentedAttribute
+from core.exceptions import CalendarServiceException
+import logging
+
+logger = logging.getLogger(__name__)
 
 def prepare_appointments_for_archive(
     appointments: List[Appointment],
@@ -56,8 +60,10 @@ def prepare_appointments_for_archive(
             result["appointments"].append(appt)
     except Exception as e:
         if logger:
-            logger.exception(f"Archiving preparation failed: {str(e)}")
-        result["errors"].append(str(e))
+            logger.exception(f"Archiving preparation failed for range {start_date} to {end_date}: {str(e)}")
+        if hasattr(e, 'add_note'):
+            e.add_note(f"Error in prepare_appointments_for_archive for range {start_date} to {end_date}")
+        raise CalendarServiceException(f"Archiving preparation failed for range {start_date} to {end_date}") from e
     return result
 
 

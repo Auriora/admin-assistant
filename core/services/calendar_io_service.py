@@ -1,6 +1,10 @@
 from typing import List
 from datetime import date
 from core.models.appointment import Appointment
+from core.exceptions import CalendarServiceException
+import logging
+
+logger = logging.getLogger(__name__)
 
 def fetch_appointments(
     user,
@@ -28,8 +32,10 @@ def fetch_appointments(
         return filtered
     except Exception as e:
         if logger:
-            logger.exception(f"Failed to fetch appointments: {str(e)}")
-        return []
+            logger.exception(f"Failed to fetch appointments for user {user.email} from {start_date} to {end_date}: {str(e)}")
+        if hasattr(e, 'add_note'):
+            e.add_note(f"Error in fetch_appointments for user {user.email} and range {start_date} to {end_date}")
+        raise CalendarServiceException(f"Failed to fetch appointments for user {user.email}") from e
 
 def store_appointments(
     appointments: List[Appointment],
@@ -51,4 +57,8 @@ def store_appointments(
             errors.append(msg)
             if logger:
                 logger.error(msg)
+            if hasattr(e, 'add_note'):
+                e.add_note(f"Error in store_appointments for appointment {getattr(appt, 'subject', 'Unknown')}")
+            # Optionally, raise a CalendarServiceException here if you want to fail fast
+            # raise CalendarServiceException(msg) from e
     return {"stored": stored_count, "errors": errors} 

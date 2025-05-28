@@ -12,7 +12,13 @@ class BaseAppointmentRepository(ABC):
         pass
 
     @abstractmethod
-    def list_for_user(self, user_id: int, page: int = 1, page_size: int = 100) -> List[Appointment]:
+    def list_for_user(self, start_date=None, end_date=None) -> List[Appointment]:
+        """
+        List appointments for the user, optionally filtered by date range.
+        :param start_date: Optional start date (date or datetime) for filtering events.
+        :param end_date: Optional end date (date or datetime) for filtering events.
+        :return: List of Appointment instances.
+        """
         pass
 
     @abstractmethod

@@ -4,7 +4,12 @@ from typing import List, Optional
 from core.db import SessionLocal
 
 class SQLAlchemyAppointmentRepository(BaseAppointmentRepository):
-    def __init__(self, session=None):
+    def __init__(self, user, session=None):
+        """
+        :param user: User model instance (must have .id)
+        :param session: Optional SQLAlchemy session
+        """
+        self.user = user
         self.session = session or SessionLocal()
 
     def get_by_id(self, appointment_id: int) -> Optional[Appointment]:
@@ -14,9 +19,19 @@ class SQLAlchemyAppointmentRepository(BaseAppointmentRepository):
         self.session.add(appointment)
         self.session.commit()
 
-    def list_for_user(self, user_id: int, page: int = 1, page_size: int = 100) -> List[Appointment]:
-        query = self.session.query(Appointment).filter_by(user_id=user_id)
-        return query.offset((page - 1) * page_size).limit(page_size).all()
+    def list_for_user(self, start_date=None, end_date=None) -> List[Appointment]:
+        """
+        List appointments for the current user, optionally filtered by date range.
+        :param start_date: Optional start date (date or datetime) for filtering events.
+        :param end_date: Optional end date (date or datetime) for filtering events.
+        :return: List of Appointment instances.
+        """
+        query = self.session.query(Appointment).filter_by(user_id=self.user.id)
+        if start_date is not None:
+            query = query.filter(Appointment.start_time >= start_date)
+        if end_date is not None:
+            query = query.filter(Appointment.end_time <= end_date)
+        return query.all()
 
     def update(self, appointment: Appointment) -> None:
         self.session.merge(appointment)

@@ -4,11 +4,18 @@ from typing import List, NoReturn, Optional, Dict, Any, TYPE_CHECKING
 from dateutil import parser
 import pytz
 import asyncio
+from core.exceptions import AppointmentRepositoryException
+import logging
+logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from msgraph.graph_service_client import GraphServiceClient
     from msgraph.generated.models.event import Event
     from core.models.user import User
 
+
+# TODO extend repositories to handle bulk operations so that updates and deletes are not done one by one
+# TODO add caching to the repositories
+# TODO add lazy loading to the repositories
 class MSGraphAppointmentRepository(BaseAppointmentRepository):
     """
     Repository for managing appointments via the Microsoft Graph API for a specific user's calendar.
@@ -40,8 +47,11 @@ class MSGraphAppointmentRepository(BaseAppointmentRepository):
                 event_dict = vars(event)
                 return self._map_api_to_model(event_dict)
             return None
-        except Exception:
-            return None
+        except Exception as e:
+            logger.exception(f"Failed to get appointment by id {ms_event_id} for user {self.get_user_email()}")
+            if hasattr(e, 'add_note'):
+                e.add_note(f"Error in aget_by_id for user {self.get_user_email()} and event {ms_event_id}")
+            raise AppointmentRepositoryException(f"Failed to get appointment by id {ms_event_id}") from e
 
     async def aadd(self, appointment: Appointment) -> None:
         """
@@ -58,25 +68,57 @@ class MSGraphAppointmentRepository(BaseAppointmentRepository):
                     setattr(event_body, k, v)
             await self.client.users.by_user_id(self.get_user_email()).calendar.events.post(body=event_body)
         except Exception as e:
-            raise
+            logger.exception(f"Failed to add appointment for user {self.get_user_email()}")
+            if hasattr(e, 'add_note'):
+                e.add_note(f"Error in aadd for user {self.get_user_email()} and appointment {getattr(appointment, 'subject', None)}")
+            raise AppointmentRepositoryException("Failed to add appointment") from e
 
-    async def alist_for_user(self, user_id: int, page: int = 1, page_size: int = 100) -> List[Appointment]:
+    async def alist_for_user(self, start_date=None, end_date=None) -> List[Appointment]:
         """
-        Async: List appointments for this user's calendar from MS Graph.
-        :param user_id: User's unique identifier (ignored).
-        :param page: Page number for pagination.
-        :param page_size: Number of items per page.
+        Async: List appointments for this user's calendar from MS Graph, optionally filtered by date range.
+        :param start_date: Optional start date (date or datetime) for filtering events.
+        :param end_date: Optional end date (date or datetime) for filtering events.
         :return: List of Appointment instances.
         """
         try:
-            # msgraph-sdk may require request_configuration for query params
-            # If not supported, remove and fetch all events (TODO: add paging if needed)
-            events_page = await self.client.users.by_user_id(self.get_user_email()).calendar.events.get()
-            events = getattr(events_page, 'value', [])
-            # Each event is an Event object; use vars() to get dict
-            return [self._map_api_to_model(vars(e)) for e in events]
-        except Exception:
-            return []
+            if start_date is not None and end_date is not None:
+                from datetime import datetime, time
+                if isinstance(start_date, datetime):
+                    start_str = start_date.isoformat()
+                else:
+                    start_str = datetime.combine(start_date, time.min).isoformat()
+                if isinstance(end_date, datetime):
+                    end_str = end_date.isoformat()
+                else:
+                    end_str = datetime.combine(end_date, time.max).isoformat()
+                logger.debug(f"MSGraphAppointmentRepository.alist_for_user: Querying calendar_view from {start_str} to {end_str}")
+                # Most robust and version-independent way: build the URL manually and use .with_url(url).get() on the calendar_view request builder
+                user_id = self.get_user_email()
+                url = f"/users/{user_id}/calendar/calendarView?startDateTime={start_str}&endDateTime={end_str}"
+                logger.debug(f"Querying with URL: {url}")
+                # Paging support: fetch all pages using odata_next_link/@odata.nextLink
+                events = []
+                page = await self.client.users.by_user_id(user_id).calendar.calendar_view.with_url(url).get()
+                while page:
+                    page_events = getattr(page, 'value', [])
+                    events.extend(page_events)
+                    # Try both odata_next_link and @odata.nextLink for compatibility
+                    next_link = getattr(page, 'odata_next_link', None) or getattr(page, '@odata.nextLink', None)
+                    if next_link:
+                        page = await self.client.users.by_user_id(user_id).calendar.calendar_view.with_url(next_link).get()
+                    else:
+                        break
+                return [self._map_api_to_model(vars(e)) for e in events]
+            else:
+                logger.debug("MSGraphAppointmentRepository.alist_for_user: Querying all events (no date range)")
+                events_page = await self.client.users.by_user_id(self.get_user_email()).calendar.events.get()
+                events = getattr(events_page, 'value', [])
+                return [self._map_api_to_model(vars(e)) for e in events]
+        except Exception as e:
+            logger.exception(f"Failed to list appointments for user {self.get_user_email()} from {start_date} to {end_date}")
+            if hasattr(e, 'add_note'):
+                e.add_note(f"Error in alist_for_user for user {self.get_user_email()} and range {start_date} to {end_date}")
+            raise AppointmentRepositoryException("Failed to list appointments") from e
 
     async def aupdate(self, appointment: Appointment) -> None:
         """
@@ -95,7 +137,10 @@ class MSGraphAppointmentRepository(BaseAppointmentRepository):
                     setattr(event_body, k, v)
             await self.client.users.by_user_id(self.get_user_email()).events.by_event_id(ms_event_id).patch(body=event_body)
         except Exception as e:
-            raise
+            logger.exception(f"Failed to update appointment {ms_event_id} for user {self.get_user_email()}")
+            if hasattr(e, 'add_note'):
+                e.add_note(f"Error in aupdate for user {self.get_user_email()} and event {ms_event_id}")
+            raise AppointmentRepositoryException(f"Failed to update appointment {ms_event_id}") from e
 
     async def adelete(self, ms_event_id: str) -> None:
         """
@@ -107,7 +152,10 @@ class MSGraphAppointmentRepository(BaseAppointmentRepository):
         try:
             await self.client.users.by_user_id(self.get_user_email()).events.by_event_id(ms_event_id).delete()
         except Exception as e:
-            raise
+            logger.exception(f"Failed to delete appointment {ms_event_id} for user {self.get_user_email()}")
+            if hasattr(e, 'add_note'):
+                e.add_note(f"Error in adelete for user {self.get_user_email()} and event {ms_event_id}")
+            raise AppointmentRepositoryException(f"Failed to delete appointment {ms_event_id}") from e
 
     def get_user_email(self) -> str:
         """
@@ -228,9 +276,9 @@ class MSGraphAppointmentRepository(BaseAppointmentRepository):
         """Sync wrapper for aadd."""
         return asyncio.run(self.aadd(appointment))
 
-    def list_for_user(self, user_id: int, page: int = 1, page_size: int = 100) -> List[Appointment]:
+    def list_for_user(self, start_date=None, end_date=None) -> List[Appointment]:
         """Sync wrapper for alist_for_user."""
-        return asyncio.run(self.alist_for_user(user_id, page, page_size))
+        return asyncio.run(self.alist_for_user(start_date, end_date))
 
     def update(self, appointment: Appointment) -> None:
         """Sync wrapper for aupdate."""
