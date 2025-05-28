@@ -29,13 +29,56 @@ This document outlines a detailed, step-by-step technical implementation plan fo
 ## 2. Core Functional Services and Business Logic
 
 ### 2.1 Calendar Archiving (FR-CAL-001 to FR-CAL-009)
-- Implement Calendar Service in `app/services/calendar_service.py`:
-  - Fetch appointments from Microsoft 365 via Graph API.
-  - Copy appointments to archive calendar (handle time zones, recurring, overlaps, duplicates).
-  - Make archived appointments immutable except for user.
-  - Handle API rate limits, partial failures, and notifications.
-- Implement background job for scheduled end-of-day archiving (Celery/RQ/Flask-APScheduler).
-- Add manual archive trigger route and UI button.
+
+**Implementation Tasks & Tracking:**
+
+- [ ] **Archive Configuration Table, Repository, and Service**
+    - [X] Design and create a database table to store archive configuration (source calendar, destination calendar, user-specific settings, name, is_active).
+    - [X] Implement `ArchiveConfigurationRepository` in `core/repositories/` for CRUD operations.
+    - [X] Implement `ArchiveConfigurationService` in `core/services/` for business logic and validation.
+    - [ ] Integrate configuration loading into the archiving logic (read from DB, not static files/env).
+
+- [ ] **ActionLogRepository Refactor**
+    - [ ] Refactor all action logging to use a dedicated `ActionLogRepository` for consistency and maintainability.
+
+- [ ] **UserRepository**
+    - [ ] Implement a `UserRepository` for user data access, supporting future multi-user and role-based features.
+
+- [ ] **Core Archiving Service Logic**
+    - [ ] Implement/extend the Calendar Archiving Service to:
+        - [ ] Fetch appointments from the configured source calendar.
+        - [ ] Copy appointments to the configured archive calendar.
+        - [ ] Handle time zones, recurring events, and duplicates.
+        - [ ] Enforce immutability of archived appointments (except for the user).
+
+- [ ] **Re-Archiving (Replacement) Logic**
+    - [ ] Add logic and a service method to allow re-archiving (replacement) of appointments for a specified period, ensuring idempotency and safe replacement.
+
+- [ ] **Overlap Resolution Orchestrator/Service**
+    - [ ] Implement an orchestrator/service to detect and resolve overlapping appointments during archiving.
+    - [ ] Support user-configurable or default rules for overlap resolution.
+    - [ ] Log all overlap resolutions in the ActionLog.
+
+- [ ] **Background Job Management (Scheduled/Manual Triggers)**
+    - [ ] Implement background job logic (using Flask-APScheduler or similar) to run archiving at scheduled intervals.
+    - [ ] Add manual trigger support (route and service method).
+
+- [ ] **Audit Logging and Traceability**
+    - [ ] Ensure all archiving actions, overlap resolutions, and re-archiving operations are logged for traceability and compliance.
+
+- [ ] **Testing and Observability**
+    - [ ] Add unit and integration tests for all new repositories, services, and archiving flows.
+    - [ ] Add OpenTelemetry tracing and metrics for archiving operations.
+
+- [ ] **Job Configuration Table, Repository, and Service**
+    - [ ] Design and create a database table to store job scheduling parameters (e.g., archive_window_days, schedule, archive_configuration_id as FK).
+    - [ ] Implement `JobConfigurationRepository` in `core/repositories/` for CRUD operations.
+    - [ ] Implement `JobConfigurationService` in `core/services/` for business logic and validation.
+    - [ ] Integrate job configuration into background job scheduling and archiving logic.
+    
+**Parked for future implementation:**
+- Notifications (to be handled in a separate module)
+- API Rate Limiting (to be revisited after core functionality is stable)
 
 ### 2.2 Timesheet Extraction and Billing (FR-BIL-001 to FR-BIL-008)
 - Implement Timesheet Service in `app/services/timesheet_service.py`:
