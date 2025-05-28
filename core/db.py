@@ -10,4 +10,10 @@ CORE_DATABASE_URL = os.getenv(
 
 engine = create_engine(CORE_DATABASE_URL, echo=False, future=True)
 SessionLocal = scoped_session(sessionmaker(bind=engine, autoflush=False, autocommit=False))
-Base = declarative_base() 
+Base = declarative_base()
+
+def get_session():
+    """
+    Returns a new SQLAlchemy session using SessionLocal.
+    """
+    return SessionLocal() 

@@ -13,6 +13,7 @@ class User(Base):
     ms_refresh_token = Column(String, nullable=True)
     ms_token_expires_at = Column(DateTime(timezone=True), nullable=True)
     profile_photo_url = Column(String, nullable=True)
+    ms_token_cache = Column(String, nullable=True, doc="Encrypted MS Graph token cache (Fernet base64-encoded string)")
     # Relationship to ArchiveConfiguration
     archive_configurations = relationship("ArchiveConfiguration", back_populates="user")
     # Relationship to Calendar

@@ -44,4 +44,17 @@ class ArchiveConfigurationService:
         if not source_calendar_id or not destination_calendar_id:
             raise ValueError("Source and destination calendar IDs are required.")
         if not timezone or not str(timezone).strip():
-            raise ValueError("Timezone is required.") 
+            raise ValueError("Timezone is required.")
+
+    def get_active_for_user(self, user_id: int) -> Optional[ArchiveConfiguration]:
+        """
+        Return the active ArchiveConfiguration for a user, or None if not found.
+
+        Args:
+            user_id (int): The user ID to search for.
+
+        Returns:
+            Optional[ArchiveConfiguration]: The active configuration, or None if not found.
+        """
+        configs = self.list_for_user(user_id)
+        return next((c for c in configs if getattr(c, 'is_active', False)), None) 

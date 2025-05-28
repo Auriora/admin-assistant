@@ -5,3 +5,4 @@ from .archive_configuration_repository import ArchiveConfigurationRepository
 from .calendar_repository_base import BaseCalendarRepository
 from .calendar_repository_sqlalchemy import SQLAlchemyCalendarRepository
 from .calendar_repository_msgraph import MSGraphCalendarRepository
+from .user_repository import UserRepository

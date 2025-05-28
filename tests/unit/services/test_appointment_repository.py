@@ -3,8 +3,8 @@ from datetime import datetime, UTC
 from core.models.appointment import Appointment
 from core.repositories.factory import AppointmentRepositoryFactory
 from unittest.mock import MagicMock
-from app import create_app, db
-from app.models import User, Appointment as AppAppointment, Location, Category, Timesheet
+from web.app import create_app, db
+from web.app.models import User, Appointment as AppAppointment, Location, Category, Timesheet
 
 @pytest.fixture(scope="function")
 def app_context():

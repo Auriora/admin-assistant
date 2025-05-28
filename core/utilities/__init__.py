@@ -1,3 +1,5 @@
 from .calendar_recurrence_utility import expand_recurring_events_range, occurs_on_date, create_non_recurring_instance
 from .calendar_overlap_utility import merge_duplicates, detect_overlaps
 from .time_utility import to_utc
+from .auth_utility import get_device_code_credential
+from .graph_utility import get_graph_client

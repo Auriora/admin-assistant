@@ -24,4 +24,4 @@ msal~=1.28.0
 Flask-APScheduler~=1.13.1
 pytz~=2024.1
 apprise~=1.7.5
-typer[all]  # For CLI support
+typer[all]~=0.16.0  # For CLI support

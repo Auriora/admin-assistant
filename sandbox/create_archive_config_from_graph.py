@@ -1,25 +1,18 @@
 import os
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from core.db import get_session
 from core.models.user import User
 from core.models.archive_configuration import ArchiveConfiguration
 from core.services.archive_configuration_service import ArchiveConfigurationService
 from core.repositories.calendar_repository_msgraph import MSGraphCalendarRepository
-from msgraph.graph_service_client import GraphServiceClient
-from azure.identity import DeviceCodeCredential, TokenCachePersistenceOptions
-
-# --- CONFIGURATION ---
-CORE_DB_URL = 'sqlite:///instance/admin_assistant_core_dev.db'
-MS_CLIENT_ID = os.getenv('MS_CLIENT_ID')
-MS_TENANT_ID = os.getenv('MS_TENANT_ID')
+from core.utilities import get_graph_client
+from core.services import UserService
 
 # --- DB SETUP ---
-engine = create_engine(CORE_DB_URL, echo=False, future=True)
-Session = sessionmaker(bind=engine)
-session = Session()
+session = get_session()
+user_service = UserService()
 
-# --- Get first user ---
-user = session.query(User).first()
+# --- Get user by ID ---
+user = user_service.get_by_id(1)
 if not user:
     print("No user found in user DB.")
     exit(1)
@@ -27,24 +20,12 @@ print(f"Using user: {user.email}")
 user_id = int(getattr(user, 'id', 0))
 
 # --- Check required env vars ---
-if not MS_CLIENT_ID or not MS_TENANT_ID:
+if not os.getenv('MS_CLIENT_ID') or not os.getenv('MS_TENANT_ID'):
     print("Error: MS_CLIENT_ID and MS_TENANT_ID must be set as environment variables.")
     exit(1)
 
-# --- MS Graph Auth ---
-cache_path = os.path.join(os.path.dirname(__file__), '.msgraph_token_cache.bin')
-cache_opts = TokenCachePersistenceOptions(
-    name="msgraph_token_cache",
-    allow_unencrypted_storage=True,
-    path=cache_path
-)
-credential = DeviceCodeCredential(
-    client_id=MS_CLIENT_ID,
-    tenant_id=MS_TENANT_ID,
-    cache_persistence_options=cache_opts
-)
-scopes = ["https://graph.microsoft.com/.default"]
-graph_client = GraphServiceClient(credentials=credential, scopes=scopes)
+# --- MS Graph Auth & Client ---
+graph_client = get_graph_client(user, session)
 
 # --- List calendars from Graph ---
 cal_repo = MSGraphCalendarRepository(graph_client, user)
