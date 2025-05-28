@@ -1,4 +1,4 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from datetime import date, datetime
 from core.utilities.calendar_recurrence_utility import expand_recurring_events_range
 from core.utilities.calendar_overlap_utility import merge_duplicates, detect_overlaps
@@ -7,6 +7,7 @@ from core.models.appointment import Appointment
 from sqlalchemy.orm.attributes import InstrumentedAttribute
 from core.exceptions import CalendarServiceException
 from core.models.action_log import ActionLog
+from core.repositories.action_log_repository import ActionLogRepository
 import logging
 
 logger = logging.getLogger(__name__)
@@ -17,7 +18,8 @@ def prepare_appointments_for_archive(
     end_date: date,
     user=None,
     session=None,
-    logger=None
+    logger=None,
+    action_log_repository: 'Optional[ActionLogRepository]' = None
 ) -> Dict[str, Any]:
     """
     Process a list of Appointment model instances to prepare them for archiving.
@@ -48,18 +50,19 @@ def prepare_appointments_for_archive(
                 for group in overlap_groups
             ]
             # Log each overlap as an ActionLog entry and collect overlapping appts
-            if session is not None and user is not None:
+            if user is not None and action_log_repository is not None:
                 for group in overlap_groups:
                     for appt in group:
                         overlapping_appts.add(appt)
                         # Prevent duplicate ActionLog entries
-                        existing_log = session.query(ActionLog).filter_by(
-                            user_id=user.id,
-                            event_id=getattr(appt, 'ms_event_id', None),
-                            action_type='overlap',
-                            status='needs_user_action'
-                        ).first()
-                        if not existing_log:
+                        existing_logs = action_log_repository.list_for_user(user.id)
+                        exists = any(
+                            log.event_id == getattr(appt, 'ms_event_id', None) and
+                            log.action_type == 'overlap' and
+                            log.status == 'needs_user_action'
+                            for log in existing_logs
+                        )
+                        if not exists:
                             log = ActionLog(
                                 user_id=user.id,
                                 event_id=getattr(appt, 'ms_event_id', None),
@@ -68,19 +71,21 @@ def prepare_appointments_for_archive(
                                 status='needs_user_action',
                                 message=f"Overlapping event detected: {getattr(appt, 'subject', None)} ({getattr(appt, 'start_time', None)} - {getattr(appt, 'end_time', None)})"
                             )
-                            session.add(log)
-                session.commit()
+                            action_log_repository.add(log)
         for appt in appts:
             if not isinstance(appt, Appointment):
                 continue
             if appt in overlapping_appts:
                 continue  # Skip archiving overlapping events
             # Ensure times are UTC, but only if not a Column object
-            if hasattr(appt, 'start_time') and isinstance(appt.start_time, datetime):
-                setattr(appt, 'start_time', to_utc(appt.start_time))
-            if hasattr(appt, 'end_time') and isinstance(appt.end_time, datetime):
-                setattr(appt, 'end_time', to_utc(appt.end_time))
-            if not (hasattr(appt, 'start_time') and isinstance(appt.start_time, datetime)) or not (hasattr(appt, 'end_time') and isinstance(appt.end_time, datetime)):
+            start_time = getattr(appt, 'start_time', None)
+            end_time = getattr(appt, 'end_time', None)
+            if isinstance(start_time, datetime):
+                setattr(appt, 'start_time', to_utc(start_time))
+            if isinstance(end_time, datetime):
+                setattr(appt, 'end_time', to_utc(end_time))
+            # Only allow if both are real datetimes
+            if not (isinstance(start_time, datetime) and isinstance(end_time, datetime)):
                 result["errors"].append(f"Skipped appointment with missing start or end time: {getattr(appt, 'subject', 'Unknown')}")
                 continue
             # Always use setattr for is_archived
@@ -101,4 +106,20 @@ def make_appointments_immutable(appointments: List[Appointment], db_session):
     """
     for appt in appointments:
         setattr(appt, 'is_archived', True)  # type: ignore
-    db_session.commit() 
+    db_session.commit()
+
+
+def archive_appointments(user, appointments, start_date, end_date, session, logger=None):
+    """
+    Archive appointments for a user, ensuring all action logging uses ActionLogRepository.
+    """
+    action_log_repository = ActionLogRepository(session=session)
+    return prepare_appointments_for_archive(
+        appointments=appointments,
+        start_date=start_date,
+        end_date=end_date,
+        user=user,
+        session=session,
+        logger=logger,
+        action_log_repository=action_log_repository
+    ) 
