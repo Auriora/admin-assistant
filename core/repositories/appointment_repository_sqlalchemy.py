@@ -58,4 +58,23 @@ class SQLAlchemyAppointmentRepository(BaseAppointmentRepository):
         appt = self.get_by_id(appointment_id)
         if appt and appt.calendar_id == self.calendar_id:
             self.session.delete(appt)
-            self.session.commit() 
+            self.session.commit()
+
+    def delete_for_period(self, start_date, end_date) -> int:
+        """
+        Delete all appointments for the current user in the given period.
+        Args:
+            start_date (datetime/date): Start of the period (inclusive).
+            end_date (datetime/date): End of the period (inclusive).
+        Returns:
+            int: Number of deleted appointments.
+        """
+        query = self.session.query(Appointment).filter(
+            Appointment.user_id == self.user.id,
+            Appointment.start_time >= start_date,
+            Appointment.end_time <= end_date
+        )
+        count = query.count()
+        query.delete(synchronize_session=False)
+        self.session.commit()
+        return count 

@@ -57,9 +57,9 @@ def prepare_appointments_for_archive(
                         # Prevent duplicate ActionLog entries
                         existing_logs = action_log_repository.list_for_user(user.id)
                         exists = any(
-                            log.event_id == getattr(appt, 'ms_event_id', None) and
-                            log.action_type == 'overlap' and
-                            log.status == 'needs_user_action'
+                            getattr(log, 'event_id', None) == getattr(appt, 'ms_event_id', None) and
+                            getattr(log, 'action_type', None) == 'overlap' and
+                            getattr(log, 'status', None) == 'needs_user_action'
                             for log in existing_logs
                         )
                         if not exists:
@@ -123,3 +123,43 @@ def archive_appointments(user, appointments, start_date, end_date, session, logg
         logger=logger,
         action_log_repository=action_log_repository
     ) 
+
+def rearchive_period(user, archive_config, start_date, end_date, session, logger=None):
+    """
+    Re-archive (replace) all appointments for a specified period.
+    Deletes all appointments in the archive calendar for the period, then archives the current source appointments.
+    Args:
+        user: User model instance.
+        archive_config: ArchiveConfiguration instance (must have destination_calendar_id, source_calendar_id).
+        start_date: Start of the period (datetime/date).
+        end_date: End of the period (datetime/date).
+        session: SQLAlchemy session.
+        logger: Optional logger.
+    Returns:
+        dict: Summary of the operation (deleted_count, archived_count, errors).
+    """
+    from core.repositories.appointment_repository_sqlalchemy import SQLAlchemyAppointmentRepository
+    from core.repositories.factory import get_appointment_repository
+    import logging
+    logger = logger or logging.getLogger(__name__)
+    result = {"deleted_count": 0, "archived_count": 0, "errors": []}
+    try:
+        # 1. Delete all appointments in the archive calendar for the period
+        archive_repo = SQLAlchemyAppointmentRepository(user, archive_config.destination_calendar_id, session=session)
+        deleted_count = archive_repo.delete_for_period(start_date, end_date)
+        logger.info(f"Re-archiving: Deleted {deleted_count} appointments for user {user.id} in archive calendar {archive_config.destination_calendar_id} for period {start_date} to {end_date}.")
+        result["deleted_count"] = deleted_count
+        # 2. Fetch source appointments for the period
+        source_repo = get_appointment_repository(user, archive_config.source_calendar_id, session=session)
+        source_appointments = source_repo.list_for_user(start_date, end_date)
+        logger.info(f"Re-archiving: Fetched {len(source_appointments)} source appointments for user {user.id} from calendar {archive_config.source_calendar_id}.")
+        # 3. Archive them to the destination calendar
+        archive_result = archive_appointments(user, source_appointments, start_date, end_date, session, logger=logger)
+        archived_count = len(archive_result.get("appointments", []))
+        result["archived_count"] = archived_count
+        result["errors"] = archive_result.get("errors", [])
+        logger.info(f"Re-archiving: Archived {archived_count} appointments for user {user.id} to archive calendar {archive_config.destination_calendar_id}.")
+    except Exception as e:
+        logger.exception(f"Re-archiving failed for user {user.id} period {start_date} to {end_date}: {str(e)}")
+        result["errors"].append(str(e))
+    return result 
