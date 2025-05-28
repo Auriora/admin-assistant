@@ -2,6 +2,7 @@ from core.repositories.appointment_repository_base import BaseAppointmentReposit
 from core.models.appointment import Appointment
 from typing import List, Optional
 from core.db import SessionLocal
+from core.exceptions import DuplicateAppointmentException
 
 class SQLAlchemyAppointmentRepository(BaseAppointmentRepository):
     def __init__(self, user, session=None):
@@ -16,6 +17,17 @@ class SQLAlchemyAppointmentRepository(BaseAppointmentRepository):
         return self.session.get(Appointment, appointment_id)
 
     def add(self, appointment: Appointment) -> None:
+        # Prevent duplicate appointments for the same user, start_time, end_time, and subject
+        exists = self.session.query(Appointment).filter_by(
+            user_id=self.user.id,
+            start_time=appointment.start_time,
+            end_time=appointment.end_time,
+            subject=appointment.subject
+        ).first()
+        if exists:
+            raise DuplicateAppointmentException(
+                f"Duplicate appointment for user_id={self.user.id}, start_time={appointment.start_time}, end_time={appointment.end_time}, subject={appointment.subject}"
+            )
         self.session.add(appointment)
         self.session.commit()
 

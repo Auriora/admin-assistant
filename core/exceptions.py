@@ -26,4 +26,10 @@ class OrchestrationException(AdminAssistantException):
     """
     Exception raised for errors in orchestration layer operations.
     """
+    pass
+
+class DuplicateAppointmentException(AppointmentRepositoryException):
+    """
+    Exception raised when attempting to add a duplicate appointment (same user, start_time, end_time, subject).
+    """
     pass 

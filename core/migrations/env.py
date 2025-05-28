@@ -5,7 +5,7 @@ import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 from core.db import engine, Base
-from core.models import appointment, user, category, location, timesheet
+import core.models
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

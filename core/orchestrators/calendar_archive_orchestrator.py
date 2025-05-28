@@ -4,7 +4,7 @@ from core.models.appointment import Appointment
 from core.repositories.appointment_repository_base import BaseAppointmentRepository
 from core.services.calendar_io_service import fetch_appointments, store_appointments
 from core.services.calendar_archive_service import prepare_appointments_for_archive
-from core.exceptions import OrchestrationException
+from core.exceptions import OrchestrationException, DuplicateAppointmentException
 import logging
 
 logger = logging.getLogger(__name__)
@@ -30,17 +30,19 @@ class CalendarArchiveOrchestrator:
         """
         try:
             appointments = fetch_repo.list_for_user(start_date=start_date, end_date=end_date)
-            process_result = prepare_appointments_for_archive(appointments, start_date, end_date, logger=logger)
-            if process_result.get("status") == "overlap":
-                return {
-                    "status": "overlap",
-                    "conflicts": process_result.get("conflicts", []),
-                    "archived": 0,
-                    "errors": process_result.get("errors", [])
-                }
-            store_result = store_appointments(process_result.get("appointments", []), write_repo, logger=logger)
+            process_result = prepare_appointments_for_archive(
+                appointments, start_date, end_date, user=user, session=getattr(write_repo, 'session', None), logger=logger
+            )
+            try:
+                store_result = store_appointments(process_result.get("appointments", []), write_repo, logger=logger)
+            except DuplicateAppointmentException as dup_exc:
+                if logger:
+                    logger.warning(f"Duplicate appointment detected for user {getattr(user, 'email', None)}: {dup_exc}")
+                # Optionally, add to errors in the result
+                store_result = {"stored": 0, "errors": [str(dup_exc)]}
             return {
-                "status": "ok",
+                "status": process_result.get("status", "ok"),
+                "conflicts": process_result.get("conflicts", []),
                 "archived": store_result.get("stored", 0),
                 "errors": process_result.get("errors", []) + store_result.get("errors", [])
             }
