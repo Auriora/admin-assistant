@@ -94,6 +94,10 @@ BE -> UI: Confirm update, show status
 - All AI actions and user decisions are logged for audit and compliance
 - Future: Support for multi-user and admin troubleshooting
 
+## Additional Note: Persistent Chat/AI for Overlap Resolution and Beyond
+
+- The persistent chat/AI interface will be used for overlap resolution (see UXF-OVL-001) and other features in future. Chat history is stored for each session, enabling both synchronous and asynchronous user interaction with AI-powered features.
+
 ## Change Tracking
 
 This section records the history of changes made to this document. Add a new row for each significant update.

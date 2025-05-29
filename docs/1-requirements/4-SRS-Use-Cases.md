@@ -145,3 +145,19 @@ This section describes the key use cases for the Admin Assistant system, focusin
 | **Special Requirements**     | - Progress, state, and channel must be shown in UI<br>- User can configure notification preferences           |
 | **Related FRs**              | FR-NOT-002, FR-NOT-003, FR-NOT-004, FR-NOT-005, FR-NOT-006, FR-NOT-007                                       |
 | **Related NFRs**             | NFR-REL-001, NFR-USE-001, NFR-AUD-001                                                                         |
+
+## 4.x UC-OVL-001 Manual Overlap Resolution and AI Chat
+
+| Field                        | Description                                                                                                   |
+|------------------------------|---------------------------------------------------------------------------------------------------------------|
+| **Use Case ID**              | UC-OVL-001                                                                                                    |
+| **Name**                     | Manual Overlap Resolution and AI Chat                                                                         |
+| **Primary Actors**           | User                                                                                                          |
+| **Stakeholders & Interests** | **User**: Wants to resolve overlapping appointments accurately and efficiently, with AI assistance             |
+| **Pre-conditions**           | 1. Overlapping appointments detected and logged in ActionLog<br>2. User is authenticated                      |
+| **Post-conditions**          | **Successful**: Overlaps resolved as per user decision<br>**Failure**: Overlaps remain unresolved             |
+| **Main Flow**                | 1. User views unresolved overlaps (grouped in a virtual calendar)<br>2. System presents options and AI suggestions<br>3. User chooses to keep, edit, merge, or create new appointment(s)<br>4. User can interact with AI chat for suggestions<br>5. System applies resolution and updates ActionLog<br>6. Chat history is saved for future reference |
+| **Alternative Flows**        | **AF-1**: User returns later to continue resolution<br>**AF-2**: User ignores AI suggestions and resolves manually |
+| **Special Requirements**     | - Persistent chat interface<br>- AI-powered suggestions<br>- All actions logged for audit                     |
+| **Related FRs**              | FR-OVL-001, FR-OVL-002, FR-OVL-003, FR-OVL-004, FR-OVL-005, FR-OVL-006, FR-OVL-007                           |
+| **Related NFRs**             | NFR-USE-001, NFR-AUD-001                                                                                      |

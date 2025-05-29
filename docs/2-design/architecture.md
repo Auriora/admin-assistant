@@ -144,6 +144,21 @@ graph LR
 - **Security:** CLI commands requiring sensitive operations must enforce authentication and log all actions for auditability.
 - **See also:** [CLI Design Document](UXF-CLI-001-Command-Line-Interface.md)
 
+### H. Overlap Resolution, Virtual Calendar, and AI Chat Service
+
+- **Overlap Resolution Service:** Handles user-driven resolution of overlapping appointments, presenting options to keep, edit, merge, or create new appointments. Integrates with the ActionLog and virtual calendar for grouping and context.
+- **Virtual Calendar:** A special data structure (backed by the database) that groups overlapping appointments for each resolution action, ensuring all details are available during the process. Referenced by ActionLog entries.
+- **Persistent Chat/AI Integration:** Provides a chat interface for user interaction during overlap resolution (and other features in future). Stores chat history for asynchronous and collaborative workflows. Integrates with OpenAI to suggest resolutions, merged subject lines, and descriptions.
+- **Interaction:** The Overlap Resolution Service retrieves unresolved overlaps from the ActionLog/virtual calendar, presents them to the user (with AI suggestions), and applies user-driven resolutions, updating the relevant repositories and logs.
+
+### I. Generic Entity Association, Prompt Management, and Extensible AI Integration
+
+- **Generic Entity Association:** All cross-entity relationships (e.g., linking ActionLog to calendars, appointments, chat sessions, etc.) are managed via a single, generic `entity_association` table. This reduces schema complexity and supports future extensibility.
+- **Prompt Table:** The `Prompt` table stores system, user, and action-specific prompts for AIService, enabling advanced, context-aware, and personalized AI interactions.
+- **ActionLog:** Serves as the central, extensible task/action list for user attention and audit. It includes a `recommendations` field for serialized AI suggestions and is linked to other entities via `entity_association`. The `state` field tracks open/resolved/archived status.
+- **ChatSession:** A generic, persistent chat entity, mapped to actions/tasks or other entities via `entity_association`. Supports both synchronous and asynchronous workflows, and is extensible for future features.
+- **Extensibility & Auditability:** This design allows any feature to create ActionLog entries, link to any entity, and leverage AIService for recommendations and chat. All actions and AI suggestions are logged, providing a full audit trail and supporting compliance, analytics, and future feature growth.
+
 ---
 
 ## 4.1 Core Layer and Data Access Patterns

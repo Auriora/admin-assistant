@@ -32,32 +32,35 @@ This document outlines a detailed, step-by-step technical implementation plan fo
 
 **Implementation Tasks & Tracking:**
 
-- [ ] **Archive Configuration Table, Repository, and Service**
+- [X] **Archive Configuration Table, Repository, and Service**
     - [X] Design and create a database table to store archive configuration (source calendar, destination calendar, user-specific settings, name, is_active).
     - [X] Implement `ArchiveConfigurationRepository` in `core/repositories/` for CRUD operations.
     - [X] Implement `ArchiveConfigurationService` in `core/services/` for business logic and validation.
-    - [ ] Integrate configuration loading into the archiving logic (read from DB, not static files/env).
+    - [X] Integrate configuration loading into the archiving logic (read from DB, not static files/env).
 
-- [ ] **ActionLogRepository Refactor**
-    - [ ] Refactor all action logging to use a dedicated `ActionLogRepository` for consistency and maintainability.
+- [X] **ActionLogRepository Refactor**
+    - [X] Refactor all action logging to use a dedicated `ActionLogRepository` for consistency and maintainability.
 
-- [ ] **UserRepository**
-    - [ ] Implement a `UserRepository` for user data access, supporting future multi-user and role-based features.
+- [X] **UserRepository**
+    - [X] Implement a `UserRepository` for user data access, supporting future multi-user and role-based features.
 
-- [ ] **Core Archiving Service Logic**
+- [] **Core Archiving Service Logic**
     - [ ] Implement/extend the Calendar Archiving Service to:
-        - [ ] Fetch appointments from the configured source calendar.
-        - [ ] Copy appointments to the configured archive calendar.
-        - [ ] Handle time zones, recurring events, and duplicates.
+        - [X] Fetch appointments from the configured source calendar.
+        - [X] Copy appointments to the configured archive calendar.
+        - [X] Handle time zones, recurring events, and duplicates.
         - [ ] Enforce immutability of archived appointments (except for the user).
 
-- [ ] **Re-Archiving (Replacement) Logic**
-    - [ ] Add logic and a service method to allow re-archiving (replacement) of appointments for a specified period, ensuring idempotency and safe replacement.
+- [X] **Re-Archiving (Replacement) Logic**
+    - [X] Add logic and a service method to allow re-archiving (replacement) of appointments for a specified period, ensuring idempotency and safe replacement.
 
 - [ ] **Overlap Resolution Orchestrator/Service**
-    - [ ] Implement an orchestrator/service to detect and resolve overlapping appointments during archiving.
-    - [ ] Support user-configurable or default rules for overlap resolution.
-    - [ ] Log all overlap resolutions in the ActionLog.
+    - [ ] Implement a service to present overlapping appointments (from ActionLog) for manual, user-driven resolution only (not during archiving).
+    - [ ] Create a virtual calendar data structure to group overlapping appointments for each resolution action, integrating with repository/service logic.
+    - [ ] Enhance ActionLog to reference the virtual calendar for each overlap group, ensuring all appointment details are available during resolution.
+    - [ ] Provide user options to keep, edit, merge, or create new appointments to resolve overlaps.
+    - [ ] Integrate persistent chat/AI suggestions (OpenAI) for overlap resolution, storing chat history for asynchronous workflows.
+    - [ ] Log all overlap resolutions and user actions in the ActionLog.
 
 - [ ] **Background Job Management (Scheduled/Manual Triggers)**
     - [ ] Implement background job logic (using Flask-APScheduler or similar) to run archiving at scheduled intervals.
@@ -75,7 +78,7 @@ This document outlines a detailed, step-by-step technical implementation plan fo
     - [ ] Implement `JobConfigurationRepository` in `core/repositories/` for CRUD operations.
     - [ ] Implement `JobConfigurationService` in `core/services/` for business logic and validation.
     - [ ] Integrate job configuration into background job scheduling and archiving logic.
-    
+
 **Parked for future implementation:**
 - Notifications (to be handled in a separate module)
 - API Rate Limiting (to be revisited after core functionality is stable)
@@ -131,6 +134,27 @@ This document outlines a detailed, step-by-step technical implementation plan fo
 - Implement Notification Service in `app/services/notification_service.py`:
   - In-app and email notifications for errors, conflicts, and important events.
   - Configurable notification methods.
+
+### 2.10 Entity Association and Mapping
+- [ ] Implement a generic `entity_association` table to manage all cross-entity relationships (e.g., ActionLog to calendar, appointment, chat session, etc.), replacing multiple mapping tables and supporting extensibility.
+
+### 2.11 Prompt and Recommendation Management
+- [ ] Implement a `Prompt` table to store system, user, and action-specific prompts for AIService.
+- [ ] Update `ActionLog` to include a `recommendations` JSON field for storing serialized AI suggestions, with metadata (timestamp, prompt, result, accepted, etc.).
+- [ ] Ensure all AI recommendations and user/AI chat interactions are logged in ActionLog and ChatSession for audit and compliance.
+
+### 2.12 AI Tool Integration
+- [ ] Extend AIService to support the use of AI tools (e.g., function calling, data lookup, code execution) for advanced, context-aware recommendations and actions.
+- [ ] Provide methods for prompt management, tool invocation, and recommendation logging.
+
+### 2.13 CLI Integration
+- [ ] Add CLI commands for listing unresolved actions/tasks (ActionLog), viewing details of virtual calendars or overlap groups, submitting resolutions, and interacting with chat/AI for a given action/task.
+- [ ] Ensure CLI uses the same service/repository layer as the API and UI for consistency and maintainability.
+
+### 2.14 Extensibility & Auditability
+- [ ] Leverage the `entity_association` table to link any entity to any action/task, chat session, or other entity, supporting future features and reducing schema complexity.
+- [ ] Ensure all actions and AI suggestions are logged in ActionLog, providing a full audit trail for compliance, analytics, and troubleshooting.
+- [ ] Support prompt customization per user, per action, or system-wide, enabling advanced AI integration and user personalization.
 
 ---
 

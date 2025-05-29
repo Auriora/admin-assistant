@@ -82,6 +82,7 @@ BE -> UI: Notify user (if error)
 | Duplicate Archive     | Archive already in progress             | Prevents duplicate, shows status                | Wait for completion                 |
 | Auth Expired          | User session/token expired              | Prompts user to re-authenticate                 | Log in again                        |
 | Calendar Not Found    | Archive calendar missing                | Prompts user to create/select archive calendar  | Create/select calendar              |
+| Overlap Detected      | Overlapping appointments found           | Logs overlap in ActionLog; user resolves via dedicated overlap resolution flow (see UXF-OVL-001) | User resolves overlap manually      |
 
 ## UI Components
 - Dashboard with "Archive Now" button and archive status indicator
@@ -120,4 +121,5 @@ This section records the history of changes made to this document. Add a new row
 ## Additional UI/UX Note
 - When the user clicks the manual archive button, a notification should appear indicating 'Archive started'.
 - When the archive completes (success or error), the same notification should be updated to reflect the final state (e.g., 'Archive complete', 'Archive failed').
-- This ensures real-time feedback and avoids notification clutter. 
+- This ensures real-time feedback and avoids notification clutter.
+- Overlap resolution is not handled during archiving. Instead, users resolve overlaps via a dedicated manual process with persistent chat/AI support (see UXF-OVL-001). 

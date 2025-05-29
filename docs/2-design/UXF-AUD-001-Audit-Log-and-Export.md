@@ -92,6 +92,9 @@ BE -> UI: Provide export/download link
 - All audit log actions and exports are logged for compliance
 - Future: Support for multi-user and admin troubleshooting
 
+## Additional Note: Overlap Resolution Traceability
+- Audit log entries for overlap resolution reference the associated virtual calendar and chat/AI session, ensuring full traceability of user actions and AI suggestions.
+
 ## Change Tracking
 
 This section records the history of changes made to this document. Add a new row for each significant update.

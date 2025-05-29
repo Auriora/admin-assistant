@@ -19,6 +19,18 @@ This section details the specific functional and non-functional requirements of 
 | FR-CAL-009   | Prevent duplicate archiving: if archiving is in progress, new requests wait; only archive from last archived appointment unless overridden. | Must-have | Data integrity and efficiency.              |
 | FR-CAL-010   | Manual archive trigger must provide real-time feedback: show 'archive started' and 'archive complete' notifications, updating the same notification as state changes. | Should-have | Improves user experience and clarity. |
 
+### 3.1.x Overlap Resolution
+
+| ID           | Requirement                                                                                      | Priority    | Rationale                                   |
+|--------------|--------------------------------------------------------------------------------------------------|-------------|---------------------------------------------|
+| FR-OVL-001   | The system must detect overlapping appointments and log them for user-driven resolution.         | Must-have   | Prevents data conflicts and double-counting.|
+| FR-OVL-002   | Overlap resolution must be handled only by user intervention, not automatically during archiving.| Must-have   | Ensures user control and accuracy.          |
+| FR-OVL-003   | The user must be able to choose which appointment(s) to keep, adjust start/end times, merge descriptions, or combine these actions to resolve overlaps. | Must-have | Flexibility in conflict resolution.         |
+| FR-OVL-004   | The system must provide AI-powered suggestions (using OpenAI) for resolving overlaps, including merged subject lines and descriptions. | Should-have | Improves efficiency and user experience.    |
+| FR-OVL-005   | The system must provide a persistent chat interface for overlap resolution, storing the chat so the user can return at any time. | Should-have | Supports asynchronous and collaborative resolution. |
+| FR-OVL-006   | The ActionLog must group/associate all appointments needing resolution for a given overlap, referencing a virtual calendar containing the full details of the overlapping appointments. | Must-have | Ensures all relevant data is available for resolution. |
+| FR-OVL-007   | The user must be able to update an existing appointment or create a new one as the result of a resolution. | Must-have | Supports all user workflows.                |
+
 ### 3.1.2 Timesheet Extraction and Billing
 
 | ID           | Requirement                                                                                      | Priority    | Rationale                                   |
