@@ -8,7 +8,7 @@ class TestCalendarArchiveService:
     Test suite for calendar_archive_service, focusing on rearchive_period logic.
     """
 
-    @patch('core.services.calendar_archive_service.SQLAlchemyAppointmentRepository')
+    @patch('core.repositories.appointment_repository_sqlalchemy.SQLAlchemyAppointmentRepository')
     @patch('core.services.calendar_archive_service.get_appointment_repository')
     def test_rearchive_period(self, mock_get_appointment_repository, mock_SQLAlchemyAppointmentRepository):
         """

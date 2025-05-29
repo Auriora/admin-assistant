@@ -65,6 +65,65 @@ class MockCalendar:
         self.events = MockEvents(events)
         self.calendar_view = MockCalendarView(events)
 
+class MockCalendarItem:
+    """
+    Mock object to simulate a single calendar item for get, patch, delete.
+    """
+    def __init__(self, calendar_id=None, data=None):
+        self.calendar_id = calendar_id
+        self.data = data or {}
+        self.get_called = False
+        self.patch_called = False
+        self.delete_called = False
+    def get(self):
+        self.get_called = True
+        print(f"[MOCK DEBUG] MockCalendarItem.get() called for id={self.calendar_id}")
+        # Return a simple namespace with expected calendar fields
+        return type('MsCal', (), {
+            'id': self.calendar_id,
+            'name': self.data.get('name', 'Mock Calendar'),
+            'description': self.data.get('description', 'Mock Desc'),
+            'is_default': self.data.get('is_default', False)
+        })()
+    def patch(self, body):
+        self.patch_called = True
+        print(f"[MOCK DEBUG] MockCalendarItem.patch() called for id={self.calendar_id} body={body}")
+    def delete(self):
+        self.delete_called = True
+        print(f"[MOCK DEBUG] MockCalendarItem.delete() called for id={self.calendar_id}")
+
+class MockCalendars:
+    """
+    Mock object to simulate the calendars collection for a user.
+    """
+    def __init__(self):
+        self._calendars = {}
+        self.get_called = False
+        self.post_called = False
+    def get(self):
+        self.get_called = True
+        print("[MOCK DEBUG] MockCalendars.get() called.")
+        # Return a mock response with a 'value' attribute (list of calendars)
+        return type('MsCalendars', (), {
+            'value': [
+                type('MsCal', (), {
+                    'id': 'abc123',
+                    'name': 'Mock Calendar',
+                    'description': 'Mock Desc',
+                    'is_default': True
+                })()
+            ]
+        })()
+    def post(self, body):
+        self.post_called = True
+        print(f"[MOCK DEBUG] MockCalendars.post() called with body={body}")
+        # Simulate adding a calendar
+        cal_id = getattr(body, 'id', 'newid')
+        self._calendars[cal_id] = body
+    def by_calendar_id(self, calendar_id):
+        print(f"[MOCK DEBUG] MockCalendars.by_calendar_id({calendar_id}) called.")
+        return MockCalendarItem(calendar_id, self._calendars.get(calendar_id, {}))
+
 class MockUser:
     """
     Mock object to simulate a user with a calendar.
@@ -72,6 +131,7 @@ class MockUser:
     def __init__(self, events: List[Any]) -> None:
         print(f"[MOCK DEBUG] MockUser initialized.")
         self.calendar = MockCalendar(events)
+        self.calendars = MockCalendars()
 
 class MockUsers:
     """

@@ -1,4 +1,5 @@
 import pytest
+from dotenv import load_dotenv; load_dotenv()
 from core.models.archive_configuration import ArchiveConfiguration
 from core.services.archive_configuration_service import ArchiveConfigurationService
 
