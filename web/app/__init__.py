@@ -6,7 +6,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager
 from flask_apscheduler import APScheduler
-from core.services.scheduled_archive_job import scheduled_archive_job
+# from core.services.scheduled_archive_job import scheduled_archive_job
 from web.app.services import msgraph
 try:
     from opentelemetry import trace
@@ -59,13 +59,13 @@ def create_app():
     scheduler.init_app(app)
     scheduler.start()
     # Schedule the archive job to run daily at 23:59 UTC
-    scheduler.add_job(
-        id='daily_archive',
-        func=lambda: scheduled_archive_job(db, db.models['User'], msgraph.get_authenticated_session_for_user, app.logger),
-        trigger='cron',
-        hour=23,
-        minute=59
-    )
+    # scheduler.add_job(
+    #     id='daily_archive',
+    #     func=lambda: scheduled_archive_job(db, db.models['User'], msgraph.get_authenticated_session_for_user, app.logger),
+    #     trigger='cron',
+    #     hour=23,
+    #     minute=59
+    # )
     # --- End Scheduler Setup ---
 
     # Logging setup
