@@ -54,13 +54,13 @@ This document outlines a detailed, step-by-step technical implementation plan fo
 - [X] **Re-Archiving (Replacement) Logic**
     - [X] Add logic and a service method to allow re-archiving (replacement) of appointments for a specified period, ensuring idempotency and safe replacement.
 
-- [ ] **Overlap Resolution Orchestrator/Service**
-    - [ ] Implement a service to present overlapping appointments (from ActionLog) for manual, user-driven resolution only (not during archiving).
-    - [ ] Create a virtual calendar data structure to group overlapping appointments for each resolution action, integrating with repository/service logic.
-    - [ ] Enhance ActionLog to reference the virtual calendar for each overlap group, ensuring all appointment details are available during resolution.
-    - [ ] Provide user options to keep, edit, merge, or create new appointments to resolve overlaps.
-    - [ ] Integrate persistent chat/AI suggestions (OpenAI) for overlap resolution, storing chat history for asynchronous workflows.
-    - [ ] Log all overlap resolutions and user actions in the ActionLog.
+- [x] **Overlap Resolution Orchestrator/Service**
+    - [x] Implement a service to present overlapping appointments (from ActionLog) for manual, user-driven resolution only (not during archiving).
+    - [x] Create a virtual calendar data structure to group overlapping appointments for each resolution action, integrating with repository/service logic.
+    - [x] Enhance ActionLog to reference the virtual calendar for each overlap group, ensuring all appointment details are available during resolution.
+    - [x] Integrate persistent chat/AI suggestions and prompt management for overlap resolution.
+    - [x] Implement business logic for associating, resolving, and tracking overlap actions.
+    - [x] Orchestrator is now ready for API/UI integration and testing.
 
 - [ ] **Background Job Management (Scheduled/Manual Triggers)**
     - [ ] Implement background job logic (using Flask-APScheduler or similar) to run archiving at scheduled intervals.
@@ -136,7 +136,7 @@ This document outlines a detailed, step-by-step technical implementation plan fo
   - Configurable notification methods.
 
 ### 2.10 Entity Association and Mapping
-- [ ] Implement a generic `entity_association` table to manage all cross-entity relationships (e.g., ActionLog to calendar, appointment, chat session, etc.), replacing multiple mapping tables and supporting extensibility.
+- [X] Implement a generic `entity_association` table to manage all cross-entity relationships (e.g., ActionLog to calendar, appointment, chat session, etc.), replacing multiple mapping tables and supporting extensibility.
 
 ### 2.11 Prompt and Recommendation Management
 - [ ] Implement a `Prompt` table to store system, user, and action-specific prompts for AIService.
