@@ -1,14 +1,23 @@
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, func
+from sqlalchemy.types import JSON
 from datetime import datetime
 from core.db import Base
 
 class ActionLog(Base):
+    """
+    Central task/action log for user attention and audit.
+    - state: open, resolved, archived, etc.
+    - description: summary of the required action/task.
+    - details: JSON for additional context.
+    - recommendations: JSON for serialized AI recommendations.
+    """
     __tablename__ = 'action_log'
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
-    event_id = Column(String, nullable=True)
-    event_subject = Column(String, nullable=True)
-    action_type = Column(String, nullable=False)
-    status = Column(String, nullable=False)
-    message = Column(String, nullable=True)
-    timestamp = Column(DateTime, default=func.now(), nullable=False) 
+    event_type = Column(String, nullable=False)
+    state = Column(String, nullable=False, default='open')
+    description = Column(String, nullable=True)
+    details = Column(JSON, nullable=True)
+    recommendations = Column(JSON, nullable=True)
+    created_at = Column(DateTime, default=func.now(), nullable=False)
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=False) 

@@ -1,0 +1,16 @@
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy.types import JSON
+from sqlalchemy.sql import func
+from core.db import Base
+
+class ChatSession(Base):
+    """
+    Persistent chat history and AI suggestions, mapped to actions/tasks or other entities via entity_association.
+    """
+    __tablename__ = 'chat_sessions'
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    messages = Column(JSON, nullable=True)  # List of messages with sender, timestamp, content, etc.
+    status = Column(String(32), nullable=False, default='open')  # open, closed
+    created_at = Column(DateTime, default=func.now(), nullable=False)
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=False) 
