@@ -1,5 +1,6 @@
 from sqlalchemy import Column, Integer, String, Date, Boolean, DateTime, ForeignKey
 from core.db import Base
+from core.models.appointment import UTCDateTime
 
 class Timesheet(Base):
     __tablename__ = 'timesheets'
@@ -12,4 +13,4 @@ class Timesheet(Base):
     excel_path = Column(String)
     uploaded_to_onedrive = Column(Boolean, default=False)
     uploaded_to_xero = Column(Boolean, default=False)
-    created_at = Column(DateTime(timezone=True)) 
+    created_at = Column(UTCDateTime()) 

@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.types import JSON
 from sqlalchemy.sql import func
 from core.db import Base
+from core.models.appointment import UTCDateTime
 
 class ChatSession(Base):
     """
@@ -12,5 +13,5 @@ class ChatSession(Base):
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     messages = Column(JSON, nullable=True)  # List of messages with sender, timestamp, content, etc.
     status = Column(String(32), nullable=False, default='open')  # open, closed
-    created_at = Column(DateTime, default=func.now(), nullable=False)
-    updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=False) 
+    created_at = Column(UTCDateTime(), default=func.now(), nullable=False)
+    updated_at = Column(UTCDateTime(), default=func.now(), onupdate=func.now(), nullable=False) 

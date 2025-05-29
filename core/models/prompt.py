@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.sql import func
 from core.db import Base
+from core.models.appointment import UTCDateTime
 
 class Prompt(Base):
     """
@@ -12,5 +13,5 @@ class Prompt(Base):
     user_id = Column(Integer, ForeignKey('users.id'), nullable=True)
     action_type = Column(String(64), nullable=True)
     content = Column(String, nullable=False)
-    created_at = Column(DateTime, default=func.now(), nullable=False)
-    updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=False) 
+    created_at = Column(UTCDateTime(), default=func.now(), nullable=False)
+    updated_at = Column(UTCDateTime(), default=func.now(), onupdate=func.now(), nullable=False) 

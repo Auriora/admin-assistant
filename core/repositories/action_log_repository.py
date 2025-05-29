@@ -36,4 +36,21 @@ class ActionLogRepository:
         log = self.get_by_id(log_id)
         if log:
             self.session.delete(log)
+            self.session.commit()
+
+    def list_by_state(self, state: str) -> List[ActionLog]:
+        """
+        List all ActionLog entries by state (e.g., open, resolved).
+        """
+        return self.session.query(ActionLog).filter_by(state=state).all()
+
+    def update_recommendations(self, log_id: int, recommendations: dict) -> None:
+        """
+        Update the recommendations field for a given ActionLog.
+        :param recommendations: Should be a JSON-serializable dict.
+        """
+        log = self.get_by_id(log_id)
+        if log:
+            # Ensure recommendations is JSON-serializable
+            log.recommendations = recommendations  # type: ignore
             self.session.commit() 

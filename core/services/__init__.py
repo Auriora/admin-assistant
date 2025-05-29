@@ -1,3 +1,6 @@
 from .calendar_archive_service import prepare_appointments_for_archive, make_appointments_immutable
 from .calendar_io_service import fetch_appointments, store_appointments
 from .user_service import UserService
+from .entity_association_service import EntityAssociationService
+from .prompt_service import PromptService
+from .chat_session_service import ChatSessionService

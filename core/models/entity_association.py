@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, DateTime
 from sqlalchemy.types import Enum
 from sqlalchemy.sql import func
 from core.db import Base
+from core.models.appointment import UTCDateTime
 
 class EntityAssociation(Base):
     """
@@ -15,4 +16,4 @@ class EntityAssociation(Base):
     target_type = Column(String(64), nullable=False)
     target_id = Column(Integer, nullable=False)
     association_type = Column(String(64), nullable=False)
-    created_at = Column(DateTime, default=func.now(), nullable=False) 
+    created_at = Column(UTCDateTime(), default=func.now(), nullable=False) 

@@ -7,3 +7,6 @@ from .calendar_repository_sqlalchemy import SQLAlchemyCalendarRepository
 from .calendar_repository_msgraph import MSGraphCalendarRepository
 from .user_repository import UserRepository
 from .action_log_repository import ActionLogRepository
+from .entity_association_repository import EntityAssociationRepository
+from .prompt_repository import PromptRepository
+from .chat_session_repository import ChatSessionRepository

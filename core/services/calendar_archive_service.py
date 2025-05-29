@@ -8,6 +8,7 @@ from sqlalchemy.orm.attributes import InstrumentedAttribute
 from core.exceptions import CalendarServiceException
 from core.models.action_log import ActionLog
 from core.repositories.action_log_repository import ActionLogRepository
+from core.repositories.factory import get_appointment_repository
 import logging
 
 logger = logging.getLogger(__name__)
@@ -65,11 +66,15 @@ def prepare_appointments_for_archive(
                         if not exists:
                             log = ActionLog(
                                 user_id=user.id,
-                                event_id=getattr(appt, 'ms_event_id', None),
-                                event_subject=getattr(appt, 'subject', None),
-                                action_type='overlap',
-                                status='needs_user_action',
-                                message=f"Overlapping event detected: {getattr(appt, 'subject', None)} ({getattr(appt, 'start_time', None)} - {getattr(appt, 'end_time', None)})"
+                                event_type='overlap',
+                                state='needs_user_action',
+                                description=f"Overlapping event detected: {getattr(appt, 'subject', None)} ({getattr(appt, 'start_time', None)} - {getattr(appt, 'end_time', None)})",
+                                details={
+                                    'ms_event_id': getattr(appt, 'ms_event_id', None),
+                                    'subject': getattr(appt, 'subject', None),
+                                    'start_time': str(getattr(appt, 'start_time', None)),
+                                    'end_time': str(getattr(appt, 'end_time', None)),
+                                }
                             )
                             action_log_repository.add(log)
         for appt in appts:
@@ -114,7 +119,7 @@ def archive_appointments(user, appointments, start_date, end_date, session, logg
     Archive appointments for a user, ensuring all action logging uses ActionLogRepository.
     """
     action_log_repository = ActionLogRepository(session=session)
-    return prepare_appointments_for_archive(
+    result = prepare_appointments_for_archive(
         appointments=appointments,
         start_date=start_date,
         end_date=end_date,
@@ -122,7 +127,26 @@ def archive_appointments(user, appointments, start_date, end_date, session, logg
         session=session,
         logger=logger,
         action_log_repository=action_log_repository
-    ) 
+    )
+    # Before persisting appointments, ensure times are UTC
+    for appt in result["appointments"]:
+        appt.start_time = to_utc(appt.start_time)
+        appt.end_time = to_utc(appt.end_time)
+        # Ensure timezone-aware datetimes
+        assert appt.start_time.tzinfo is not None, "start_time must be timezone-aware"
+        assert appt.end_time.tzinfo is not None, "end_time must be timezone-aware"
+    # Persist archived appointments
+    try:
+        for appt in result["appointments"]:
+            session.add(appt)
+        session.commit()
+    except Exception as e:
+        if logger:
+            logger.exception(f"Failed to persist archived appointments for user {getattr(user, 'id', None)}: {str(e)}")
+        if hasattr(e, 'add_note'):
+            e.add_note(f"Error in archive_appointments for user {getattr(user, 'id', None)}")
+        raise CalendarServiceException(f"Failed to persist archived appointments for user {getattr(user, 'id', None)}") from e
+    return result
 
 def rearchive_period(user, archive_config, start_date, end_date, session, logger=None):
     """

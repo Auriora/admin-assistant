@@ -53,9 +53,7 @@ def create_non_recurring_instance(appt: Appointment, target_date: date) -> Appoi
         subject=appt.subject,
         start_time=new_start,
         end_time=new_end,
-        is_private=appt.is_private,
-        is_archived=appt.is_archived,
-        is_out_of_office=appt.is_out_of_office,
+        calendar_id=getattr(appt, 'calendar_id', 'test-calendar-id')
         # Add other fields as needed
     )
     # Remove recurrence for the instance

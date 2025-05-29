@@ -6,6 +6,7 @@ from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from core.db import Base
 from datetime import datetime, UTC
+from core.models.appointment import UTCDateTime
 
 class ArchiveConfiguration(Base):
     """
@@ -32,8 +33,8 @@ class ArchiveConfiguration(Base):
     destination_calendar_id = Column(String(255), nullable=False, doc="ID of the archive calendar in Outlook/Graph")
     is_active = Column(Boolean, default=True, nullable=False, doc="Whether this configuration is active (disables all jobs using this config)")
     timezone = Column(String(64), nullable=False, doc="Timezone for archiving operations (IANA format)")
-    created_at = Column(DateTime(timezone=True), default=datetime.now(UTC), nullable=False)
-    updated_at = Column(DateTime(timezone=True), default=datetime.now(UTC), onupdate=datetime.now(UTC), nullable=False)
+    created_at = Column(UTCDateTime(), default=datetime.now(UTC), nullable=False)
+    updated_at = Column(UTCDateTime(), default=datetime.now(UTC), onupdate=datetime.now(UTC), nullable=False)
 
     user = relationship("User", back_populates="archive_configurations")
 

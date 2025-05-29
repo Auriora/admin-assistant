@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String, Boolean, DateTime
 from sqlalchemy.orm import relationship
 from core.db import Base
+from core.models.appointment import UTCDateTime
 
 class User(Base):
     __tablename__ = 'users'
@@ -11,7 +12,7 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     ms_access_token = Column(String, nullable=True)
     ms_refresh_token = Column(String, nullable=True)
-    ms_token_expires_at = Column(DateTime(timezone=True), nullable=True)
+    ms_token_expires_at = Column(UTCDateTime(), nullable=True)
     profile_photo_url = Column(String, nullable=True)
     ms_token_cache = Column(String, nullable=True, doc="Encrypted MS Graph token cache (Fernet base64-encoded string)")
     # Relationship to ArchiveConfiguration

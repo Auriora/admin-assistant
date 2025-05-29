@@ -1,8 +1,28 @@
 from sqlalchemy import Column, Integer, String, DateTime, Boolean, ForeignKey
 from sqlalchemy.orm import relationship
-from sqlalchemy.types import JSON
-from datetime import datetime, UTC
+from sqlalchemy.types import JSON, TypeDecorator
+from datetime import datetime, timezone
 from core.db import Base
+
+class UTCDateTime(TypeDecorator):
+    """
+    SQLAlchemy type that always stores datetimes as UTC (naive in DB) and returns them as UTC-aware.
+    Ensures cross-database consistency (SQLite, Postgres, MySQL).
+    """
+    impl = DateTime
+    cache_ok = True
+
+    def process_bind_param(self, value, dialect):
+        if value is not None and isinstance(value, datetime):
+            if value.tzinfo is not None:
+                value = value.astimezone(timezone.utc)
+            return value.replace(tzinfo=None)
+        return value
+
+    def process_result_value(self, value, dialect):
+        if value is not None:
+            return value.replace(tzinfo=timezone.utc)
+        return value
 
 class Appointment(Base):
     """
@@ -15,16 +35,16 @@ class Appointment(Base):
     id = Column(Integer, primary_key=True)
     ms_event_id = Column(String, nullable=True, doc="Original MS Graph event id.")
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
-    start_time = Column(DateTime(timezone=True), nullable=False)
-    end_time = Column(DateTime(timezone=True), nullable=False)
+    start_time = Column(UTCDateTime(), nullable=False)
+    end_time = Column(UTCDateTime(), nullable=False)
     subject = Column(String)
     location_id = Column(Integer, ForeignKey('locations.id'), nullable=True)
     category_id = Column(Integer, ForeignKey('categories.id'), nullable=True)
     timesheet_id = Column(Integer, ForeignKey('timesheets.id'), nullable=True)
     recurrence = Column(String, nullable=True, doc="RFC 5545 RRULE string for recurring events.")
     ms_event_data = Column(JSON, nullable=True, doc="Full original MS Graph event as JSON.")
-    created_at = Column(DateTime(timezone=True), default=datetime.now(UTC))
-    updated_at = Column(DateTime(timezone=True), default=datetime.now(UTC), onupdate=datetime.now(UTC))
+    created_at = Column(UTCDateTime(), default=datetime.now(timezone.utc))
+    updated_at = Column(UTCDateTime(), default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
     show_as = Column(String, nullable=True, doc="MS Graph showAs value (free, tentative, busy, oof, workingElsewhere, unknown)")
     sensitivity = Column(String, nullable=True, doc="MS Graph sensitivity value (normal, personal, private, confidential)")
     location = Column(String, nullable=True, doc="Event location (simple string)")
@@ -40,6 +60,7 @@ class Appointment(Base):
     body_content = Column(String, nullable=True, doc="Event body content (text or html)")
     body_content_type = Column(String, nullable=True, doc="Body content type (text or html)")
     body_preview = Column(String, nullable=True, doc="Short preview of body content")
+    calendar_id = Column(String, nullable=False, doc="ID of the calendar this appointment belongs to")
     # Relationships (optional, for completeness)
     # user = relationship('User', back_populates='appointments')
     # location = relationship('Location')

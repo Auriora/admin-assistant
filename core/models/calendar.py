@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from core.db import Base
 from datetime import datetime, UTC
+from core.models.appointment import UTCDateTime
 
 class Calendar(Base):
     """
@@ -29,8 +30,8 @@ class Calendar(Base):
     calendar_type = Column(String(32), nullable=False, default='real')
     is_primary = Column(Boolean, default=False, nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
-    created_at = Column(DateTime(timezone=True), default=datetime.now(UTC), nullable=False)
-    updated_at = Column(DateTime(timezone=True), default=datetime.now(UTC), onupdate=datetime.now(UTC), nullable=False)
+    created_at = Column(UTCDateTime(), default=datetime.now(UTC), nullable=False)
+    updated_at = Column(UTCDateTime(), default=datetime.now(UTC), onupdate=datetime.now(UTC), nullable=False)
 
     user = relationship("User", back_populates="calendars")
 
