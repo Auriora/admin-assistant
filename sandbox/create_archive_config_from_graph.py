@@ -50,8 +50,8 @@ except Exception:
 archive_config = ArchiveConfiguration(
     user_id=user_id,
     name=f"Archive: {archive_cal.name}",
-    source_calendar_id=archive_cal.ms_calendar_id,  # For demo, use as both source and dest
-    destination_calendar_id=archive_cal.ms_calendar_id,
+    source_calendar_uri=archive_cal.ms_calendar_id,  # For demo, use as both source and dest
+    destination_calendar_uri=archive_cal.ms_calendar_id,
     is_active=True,
     timezone="Europe/London"
 )

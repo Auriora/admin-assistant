@@ -67,8 +67,8 @@ if not archive_config:
 print(f"Using archive configuration: {archive_config}")
 
 # Use configured calendar IDs
-source_calendar_id = str(getattr(archive_config, 'source_calendar_id', ''))
-archive_calendar_id = str(getattr(archive_config, 'destination_calendar_id', ''))
+source_calendar_uri = str(getattr(archive_config, 'source_calendar_uri', ''))
+archive_calendar_uri = str(getattr(archive_config, 'destination_calendar_uri', ''))
 
 
 # --- STEP 2: Get events ---
@@ -89,6 +89,11 @@ def main():
     args = parser.parse_args()
 
     runner = ArchiveJobRunner()
+    archive_config_id = getattr(archive_config, 'id', None)
+    if archive_config_id is None:
+        logging.error("Archive configuration does not have an ID.")
+        sys.exit(1)
+    archive_config_id = int(archive_config_id)
     if args.live:
         # Live mode: get session and graph client
         session = get_session()
@@ -101,15 +106,14 @@ def main():
         graph_client = get_graph_client(user=user, session=session)
         result = runner.run_archive_job(
             user_id=args.user_id,
-            use_live=True,
-            graph_client=graph_client,
-            session=session
+            archive_config_id=archive_config_id,
+            # start_date and end_date can be added if needed
         )
     else:
         result = runner.run_archive_job(
             user_id=args.user_id,
-            use_live=False,
-            local_events_file=args.events_file
+            archive_config_id=archive_config_id,
+            # start_date and end_date can be added if needed
         )
     print("[ARCHIVE RESULT]")
     print(result)

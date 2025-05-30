@@ -36,13 +36,13 @@ class ArchiveConfigurationService:
         Validate ArchiveConfiguration fields. Raises ValueError if invalid.
         """
         name = getattr(config, 'name', None)
-        source_calendar_id = getattr(config, 'source_calendar_id', None)
-        destination_calendar_id = getattr(config, 'destination_calendar_id', None)
+        source_calendar_uri = getattr(config, 'source_calendar_uri', None)
+        destination_calendar_uri = getattr(config, 'destination_calendar_uri', None)
         timezone = getattr(config, 'timezone', None)
         if not name or not str(name).strip():
             raise ValueError("Archive configuration name is required.")
-        if not source_calendar_id or not destination_calendar_id:
-            raise ValueError("Source and destination calendar IDs are required.")
+        if not source_calendar_uri or not destination_calendar_uri:
+            raise ValueError("Source and destination calendar URIs are required.")
         if not timezone or not str(timezone).strip():
             raise ValueError("Timezone is required.")
 

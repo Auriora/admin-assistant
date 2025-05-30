@@ -22,7 +22,7 @@ class CalendarArchiveOrchestrator:
         self,
         user: Any,
         msgraph_client: Any,
-        source_calendar_id: str,
+        source_calendar_uri: str,
         archive_calendar_id: str,
         start_date: date,
         end_date: date,
@@ -34,7 +34,7 @@ class CalendarArchiveOrchestrator:
         Args:
             user: User model instance.
             msgraph_client: Authenticated MS Graph client.
-            source_calendar_id: Source calendar ID (MS Graph).
+            source_calendar_uri: Source calendar URI (with backend context).
             archive_calendar_id: Archive calendar ID (MS Graph).
             start_date: Start of the period.
             end_date: End of the period.
@@ -45,7 +45,7 @@ class CalendarArchiveOrchestrator:
         """
         try:
             # 1. Fetch appointments from MS Graph (source calendar)
-            source_repo = MSGraphAppointmentRepository(msgraph_client, user, source_calendar_id)
+            source_repo = MSGraphAppointmentRepository(msgraph_client, user, source_calendar_uri)
             appointments = source_repo.list_for_user(start_date, end_date)
 
             # 2. Process: expand recurrences, deduplicate, detect overlaps

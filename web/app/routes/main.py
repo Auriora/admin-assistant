@@ -137,16 +137,16 @@ def archive_now():
         if not archive_config:
             return jsonify({"status": "error", "message": "No active archive configuration found for user."}), 400
         # Access the actual values, not the Column objects
-        source_calendar_id = getattr(archive_config, 'source_calendar_id', None)
-        archive_calendar_id = getattr(archive_config, 'destination_calendar_id', None)
-        if not source_calendar_id or not archive_calendar_id:
+        source_calendar_uri = getattr(archive_config, 'source_calendar_uri', None)
+        archive_calendar_uri = getattr(archive_config, 'destination_calendar_uri', None)
+        if not source_calendar_uri or not archive_calendar_uri:
             return jsonify({"status": "error", "message": "Archive configuration is missing calendar IDs."}), 400
         appointments = fetch_appointments(user, start_date, end_date, msgraph_session, logger=current_app.logger)
         result = CalendarArchiveOrchestrator().archive_user_appointments(
             user=user,
             msgraph_client=msgraph_session,
-            source_calendar_id=source_calendar_id,
-            archive_calendar_id=archive_calendar_id,
+            source_calendar_uri=source_calendar_uri,
+            archive_calendar_id=archive_calendar_uri,
             start_date=start_date,
             end_date=end_date,
             db_session=cast(SQLAlchemySession, db.session),

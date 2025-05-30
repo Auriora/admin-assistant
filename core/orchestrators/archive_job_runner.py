@@ -22,26 +22,18 @@ class ArchiveJobRunner:
     def run_archive_job(
         self,
         user_id: int,
-        use_live: bool = False,
-        local_events_file: Optional[str] = None,
-        graph_client: Optional[Any] = None,
+        archive_config_id: int,
         start_date: Optional[date] = None,
         end_date: Optional[date] = None,
-        session: Optional[Any] = None,
-        mock_events: Optional[Any] = None,
     ) -> dict:
         """
-        Run the archive job for the given user.
+        Run the archive job for the given user and archive configuration.
 
         Args:
             user_id (int): The user ID.
-            use_live (bool): Whether to use live MS Graph API.
-            local_events_file (Optional[str]): Path to local events file (for mock mode).
-            graph_client (Optional[Any]): MS Graph client (for live mode).
+            archive_config_id (int): The archive configuration ID.
             start_date (Optional[date]): Start date for archiving.
             end_date (Optional[date]): End date for archiving.
-            session (Optional[Any]): SQLAlchemy session for DB writes.
-            mock_events (Optional[Any]): Mock event data (for mock mode).
 
         Returns:
             dict: Result of the archive operation.
@@ -51,60 +43,40 @@ class ArchiveJobRunner:
             if not user:
                 logger.error(f"No user found with ID {user_id}.")
                 return {"status": "error", "error": f"No user found with ID {user_id}."}
-            archive_config = self.archive_config_service.get_active_for_user(user_id)
+            archive_config = self.archive_config_service.get_by_id(archive_config_id)
             if not archive_config:
-                logger.error(f"No active archive configuration for user {user.email}.")
-                return {"status": "error", "error": f"No active archive configuration for user {user.email}."}
-            source_calendar_id = str(getattr(archive_config, 'source_calendar_id', ''))
-            archive_calendar_id = str(getattr(archive_config, 'destination_calendar_id', ''))
+                logger.error(f"No archive configuration with ID {archive_config_id} for user {user.email}.")
+                return {"status": "error", "error": f"No archive configuration with ID {archive_config_id} for user {user.email}."}
+            source_calendar_uri = str(getattr(archive_config, 'source_calendar_uri', ''))
+            archive_calendar_uri = str(getattr(archive_config, 'destination_calendar_uri', ''))
 
             # Determine date range
+            if start_date and not end_date:
+                end_date = start_date
+            if end_date and not start_date:
+                start_date = end_date
             if not start_date or not end_date:
                 from datetime import datetime, timedelta
                 end_date = datetime.now().date()
                 start_date = end_date - timedelta(days=7)
 
-            # Repository selection and event loading
-            if not use_live:
-                if not mock_events and local_events_file:
-                    from tests.utilities.calendar_utils import load_events_from_file, get_event_date_range
-                    mock_events = load_events_from_file(local_events_file)
-                    date_range = get_event_date_range(mock_events)
-                    if date_range:
-                        start_date, end_date = date_range
-                fetch_repo = get_appointment_repository(
-                    user=user,
-                    calendar_id=source_calendar_id,
-                    use_mock=True,
-                    mock_data=mock_events
-                )
-            else:
-                if not graph_client:
-                    logger.error("graph_client must be provided for live mode.")
-                    return {"status": "error", "error": "graph_client must be provided for live mode."}
-                fetch_repo = get_appointment_repository(
-                    user=user,
-                    calendar_id=source_calendar_id,
-                    mock_data=graph_client
-                )
-            # Write repo (always SQLAlchemy)
-            if not session:
-                session = get_session()
-            write_repo = get_appointment_repository(
-                user=user,
-                calendar_id=archive_calendar_id,
-                session=session
-            )
-            # Archive orchestration
+            # Fetch graph client and session internally
+            from core.utilities import get_graph_client
+            from core.db import get_session
+            session = get_session()
+            graph_client = get_graph_client(user=user, session=session)
+
             result = self.orchestrator.archive_user_appointments(
                 user=user,
+                msgraph_client=graph_client,
+                source_calendar_uri=source_calendar_uri,
+                archive_calendar_id=archive_calendar_uri,
                 start_date=start_date,
                 end_date=end_date,
-                fetch_repo=fetch_repo,
-                write_repo=write_repo,
+                db_session=session,
                 logger=logger
             )
             return result
         except Exception as e:
-            logger.exception(f"Archive job failed for user_id={user_id}: {e}")
+            logger.exception(f"Archive job failed for user_id={user_id}, archive_config_id={archive_config_id}: {e}")
             return {"status": "error", "error": str(e)} 

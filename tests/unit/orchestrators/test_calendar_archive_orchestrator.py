@@ -105,7 +105,7 @@ def test_archive_user_appointments(user, msgraph_client, db_session, appointment
     result = orchestrator.archive_user_appointments(
         user=user,
         msgraph_client=msgraph_client,
-        source_calendar_id="source",
+        source_calendar_uri="source",
         archive_calendar_id="archive",
         start_date=date.today(),
         end_date=date.today() + timedelta(days=1),
@@ -149,7 +149,7 @@ def test_archive_appointments_success(user, msgraph_client, db_session, monkeypa
     result = orchestrator.archive_user_appointments(
         user=user,
         msgraph_client=msgraph_client,
-        source_calendar_id="source",
+        source_calendar_uri="source",
         archive_calendar_id="archive",
         start_date=date.today(),
         end_date=date.today() + timedelta(days=1),
@@ -178,7 +178,7 @@ def test_archive_appointments_merges_duplicates(user, msgraph_client, db_session
     result = orchestrator.archive_user_appointments(
         user=user,
         msgraph_client=msgraph_client,
-        source_calendar_id="source",
+        source_calendar_uri="source",
         archive_calendar_id="archive",
         start_date=date.today(),
         end_date=date.today() + timedelta(days=1),
@@ -205,7 +205,7 @@ def test_archive_appointments_detects_overlaps(user, msgraph_client, db_session,
     result = orchestrator.archive_user_appointments(
         user=user,
         msgraph_client=msgraph_client,
-        source_calendar_id="source",
+        source_calendar_uri="source",
         archive_calendar_id="archive",
         start_date=date.today(),
         end_date=date.today() + timedelta(days=1),
@@ -233,7 +233,7 @@ def test_archive_appointments_expands_recurring(user, msgraph_client, db_session
     result = orchestrator.archive_user_appointments(
         user=user,
         msgraph_client=msgraph_client,
-        source_calendar_id="source",
+        source_calendar_uri="source",
         archive_calendar_id="archive",
         start_date=date.today(),
         end_date=date.today() + timedelta(days=3),
@@ -266,7 +266,7 @@ def test_archive_appointments_handles_partial_failure(user, msgraph_client, db_s
     result = orchestrator.archive_user_appointments(
         user=user,
         msgraph_client=msgraph_client,
-        source_calendar_id="source",
+        source_calendar_uri="source",
         archive_calendar_id="archive",
         start_date=date.today(),
         end_date=date.today() + timedelta(days=1),
@@ -292,7 +292,7 @@ def test_archive_appointments_time_zone_conversion(user, msgraph_client, db_sess
     result = orchestrator.archive_user_appointments(
         user=user,
         msgraph_client=msgraph_client,
-        source_calendar_id="source",
+        source_calendar_uri="source",
         archive_calendar_id="archive",
         start_date=date(2024, 1, 1),
         end_date=date(2024, 1, 2),

@@ -16,8 +16,8 @@ class ArchiveConfiguration(Base):
         id (int): Primary key.
         user_id (int): Foreign key to User.
         name (str): Human-readable name for this archive configuration.
-        source_calendar_id (str): ID of the source (main) calendar in Outlook/Graph.
-        destination_calendar_id (str): ID of the archive calendar in Outlook/Graph.
+        source_calendar_uri (str): URI of the source (main) calendar, including backend context (e.g., msgraph://, sqlite://, google://, etc.).
+        destination_calendar_uri (str): URI of the archive calendar, including backend context (e.g., msgraph://, sqlite://, google://, etc.).
         is_active (bool): Whether this configuration is active (disables all jobs using this config).
         timezone (str): Timezone for archiving operations (IANA format).
         created_at (datetime): Creation timestamp.
@@ -29,8 +29,8 @@ class ArchiveConfiguration(Base):
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False, index=True, doc="User this configuration belongs to")
     name = Column(String(100), nullable=False, doc="Human-readable name for this archive configuration")
-    source_calendar_id = Column(String(255), nullable=False, doc="ID of the source (main) calendar in Outlook/Graph")
-    destination_calendar_id = Column(String(255), nullable=False, doc="ID of the archive calendar in Outlook/Graph")
+    source_calendar_uri = Column(String(255), nullable=False, doc="URI of the source (main) calendar, including backend context (e.g., msgraph://, sqlite://, google://, etc.)")
+    destination_calendar_uri = Column(String(255), nullable=False, doc="URI of the archive calendar, including backend context (e.g., msgraph://, sqlite://, google://, etc.)")
     is_active = Column(Boolean, default=True, nullable=False, doc="Whether this configuration is active (disables all jobs using this config)")
     timezone = Column(String(64), nullable=False, doc="Timezone for archiving operations (IANA format)")
     created_at = Column(UTCDateTime(), default=datetime.now(UTC), nullable=False)
@@ -39,4 +39,4 @@ class ArchiveConfiguration(Base):
     user = relationship("User", back_populates="archive_configurations")
 
     def __repr__(self) -> str:
-        return f"<ArchiveConfiguration name={self.name} user_id={self.user_id} source={self.source_calendar_id} dest={self.destination_calendar_id} active={self.is_active}>" 
+        return f"<ArchiveConfiguration name={self.name} user_id={self.user_id} source={self.source_calendar_uri} dest={self.destination_calendar_uri} active={self.is_active}>" 

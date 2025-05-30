@@ -14,8 +14,8 @@ def sample_config():
     return ArchiveConfiguration(
         user_id=1,
         name="Sample Config",
-        source_calendar_id="source-id",
-        destination_calendar_id="dest-id",
+        source_calendar_uri="source-id",
+        destination_calendar_uri="dest-id",
         is_active=True,
         timezone="Europe/London"
     )
