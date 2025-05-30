@@ -1,13 +1,36 @@
 """
-CLI entry point for Admin Assistant using Typer.
+Admin Assistant CLI
+==================
 
-Commands:
-- calendar archive <start_date> <end_date>: Manually trigger calendar archiving
-- calendar travel auto-plan: Auto-plan travel
-- calendar timesheet export -o [PDF|CSV]: Export timesheet data
-- calendar timesheet upload --destination Xero: Upload timesheet
+Usage Examples:
+---------------
+# List all archive configs for a user
+admin-assistant config calendar archive config list --user <USER_ID>
 
-This CLI is intended for both end users and administrators, supporting automation and scripting.
+# Create a new archive config (interactive prompts for missing fields)
+admin-assistant config calendar archive config create --user <USER_ID>
+
+# Create a new archive config (all options provided)
+admin-assistant config calendar archive config create --user <USER_ID> --name "Work Archive" --source-uri "msgraph://source" --dest-uri "msgraph://dest" --timezone "Europe/London" --active
+
+# Activate/deactivate/delete a config
+admin-assistant config calendar archive config activate --user <USER_ID> --config-id <CONFIG_ID>
+admin-assistant config calendar archive config deactivate --user <USER_ID> --config-id <CONFIG_ID>
+admin-assistant config calendar archive config delete --user <USER_ID> --config-id <CONFIG_ID>
+
+# Set a config as default (prints usage instructions)
+admin-assistant config calendar archive config set-default --user <USER_ID> --config-id <CONFIG_ID>
+
+# Archive calendar events using a specific config
+admin-assistant config calendar archive archive --user <USER_ID> --archive-config <CONFIG_ID> --date "last 7 days"
+
+All commands support --help for detailed options and descriptions.
+
+Extending the CLI:
+------------------
+- To add new calendar or archive features, add commands to the appropriate Typer app (calendar_app, archive_app, archive_config_app).
+- Integrate with core services by importing from core.services or core.orchestrators as needed.
+- Use interactive prompts for user-friendly CLI, and provide all options for automation/scripting.
 """
 import typer
 from datetime import datetime, timedelta, date
@@ -19,12 +42,16 @@ import re
 app = typer.Typer(help="Admin Assistant CLI for running calendar and timesheet operations.")
 calendar_app = typer.Typer(help="Calendar operations")
 timesheet_app = typer.Typer(help="Timesheet operations")
+archive_app = typer.Typer(help="Archive operations")
+config_app = typer.Typer(help="Configuration operations")
+archive_config_app = typer.Typer(help="Calendar configuration operations")
+archive_archive_config_app = typer.Typer(help="Archive configuration management")
 
 user_id_option = typer.Option(
     ...,
-    "--user-id",
-    help="User ID to operate on.",
-    envvar="ADMIN_ASSISTANT_USER_ID",
+    "--user",
+    help="User to operate on.",
+    envvar="ADMIN_ASSISTANT_USER",
     show_default=False,
 )
 
@@ -116,11 +143,21 @@ def parse_date_range(date_str: str) -> tuple[date, date]:
     return single, single
 
 @app.callback()
-def main():
-    """Admin Assistant CLI."""
-    pass
+def main(ctx: typer.Context):
+    """Admin Assistant CLI: Manage calendars, archives, and timesheets for users.
 
-@calendar_app.command("archive")
+Use --help on any command for details and options.
+
+Examples:
+  admin-assistant config calendar archive config list --user <USER_ID>
+  admin-assistant config calendar archive config create --user <USER_ID>
+  admin-assistant config calendar archive config activate --user <USER_ID> --config-id <CONFIG_ID>
+  admin-assistant config calendar archive archive --user <USER_ID> --archive-config <CONFIG_ID> --date "last 7 days"
+"""
+    if ctx.invoked_subcommand is None:
+        typer.echo(ctx.get_help())
+
+@archive_app.command("archive")
 def archive(
     date_option: str = typer.Option(
         "yesterday",
@@ -168,7 +205,116 @@ def travel_auto_plan():
     """Auto-plan travel."""
     typer.echo("Auto-planning travel...")
 
-calendar_app.add_typer(timesheet_app, name="timesheet")
+@archive_archive_config_app.command("list")
+def list_configs(user_id: int = user_id_option):
+    """List all archive configurations for a user."""
+    from core.services.archive_configuration_service import ArchiveConfigurationService
+    service = ArchiveConfigurationService()
+    configs = service.list_for_user(user_id)
+    if not configs:
+        typer.echo(f"No archive configurations found for user_id={user_id}.")
+        raise typer.Exit(code=0)
+    typer.echo(f"Archive Configurations for user_id={user_id}:")
+    for c in configs:
+        typer.echo(f"ID: {getattr(c, 'id', None)} | Name: {getattr(c, 'name', None)} | Source: {getattr(c, 'source_calendar_uri', None)} | Dest: {getattr(c, 'destination_calendar_uri', None)} | Active: {getattr(c, 'is_active', None)} | TZ: {getattr(c, 'timezone', None)}")
+
+@archive_archive_config_app.command("create")
+def create_config(
+    user_id: int = user_id_option,
+    name: str = typer.Option(None, "--name", help="Name for the archive configuration"),
+    source_calendar_uri: str = typer.Option(None, "--source-uri", help="Source calendar URI (e.g., msgraph://id)"),
+    destination_calendar_uri: str = typer.Option(None, "--dest-uri", help="Destination (archive) calendar URI (e.g., msgraph://id)"),
+    timezone: str = typer.Option(None, "--timezone", help="Timezone (IANA format, e.g., Europe/London)"),
+    is_active: bool = typer.Option(True, "--active/--inactive", help="Whether this config is active")
+):
+    """Create a new archive configuration for a user."""
+    from core.models.archive_configuration import ArchiveConfiguration
+    from core.services.archive_configuration_service import ArchiveConfigurationService
+    # Prompt for missing fields
+    if not name:
+        name = typer.prompt("Name for the archive configuration")
+    if not source_calendar_uri:
+        source_calendar_uri = typer.prompt("Source calendar URI (e.g., msgraph://id)")
+    if not destination_calendar_uri:
+        destination_calendar_uri = typer.prompt("Destination (archive) calendar URI (e.g., msgraph://id)")
+    if not timezone:
+        timezone = typer.prompt("Timezone (IANA format, e.g., Europe/London)")
+    config = ArchiveConfiguration(
+        user_id=user_id,
+        name=name,
+        source_calendar_uri=source_calendar_uri,
+        destination_calendar_uri=destination_calendar_uri,
+        is_active=is_active,
+        timezone=timezone
+    )
+    service = ArchiveConfigurationService()
+    try:
+        service.create(config)
+        typer.echo(f"Created archive configuration: {config}")
+    except Exception as e:
+        typer.echo(f"Failed to create archive configuration: {e}")
+        raise typer.Exit(code=1)
+
+@archive_archive_config_app.command("set-default")
+def set_default_config(
+    user_id: int = user_id_option,
+    config_id: int = typer.Option(..., "--config-id", help="ID of the config to set as default")
+):
+    """Set a config as the default for a user (prints instructions if persistent storage is not available)."""
+    typer.echo(f"To use this config as default, use --archive-config {config_id} in archive commands.")
+    typer.echo("(Persistent default config storage is not implemented in this CLI. Consider scripting this or request a feature update.)")
+
+@archive_archive_config_app.command("activate")
+def activate_config(
+    user_id: int = user_id_option,
+    config_id: int = typer.Option(..., "--config-id", help="ID of the config to activate")
+):
+    """Activate an archive configuration (set is_active=True)."""
+    from core.services.archive_configuration_service import ArchiveConfigurationService
+    service = ArchiveConfigurationService()
+    config = service.get_by_id(config_id)
+    if not config or getattr(config, 'user_id', None) != user_id:
+        typer.echo(f"Config {config_id} not found for user {user_id}.")
+        raise typer.Exit(code=1)
+    setattr(config, 'is_active', True)
+    service.update(config)
+    typer.echo(f"Config {config_id} activated.")
+
+@archive_archive_config_app.command("deactivate")
+def deactivate_config(
+    user_id: int = user_id_option,
+    config_id: int = typer.Option(..., "--config-id", help="ID of the config to deactivate")
+):
+    """Deactivate an archive configuration (set is_active=False)."""
+    from core.services.archive_configuration_service import ArchiveConfigurationService
+    service = ArchiveConfigurationService()
+    config = service.get_by_id(config_id)
+    if not config or getattr(config, 'user_id', None) != user_id:
+        typer.echo(f"Config {config_id} not found for user {user_id}.")
+        raise typer.Exit(code=1)
+    setattr(config, 'is_active', False)
+    service.update(config)
+    typer.echo(f"Config {config_id} deactivated.")
+
+@archive_archive_config_app.command("delete")
+def delete_config(
+    user_id: int = user_id_option,
+    config_id: int = typer.Option(..., "--config-id", help="ID of the config to delete")
+):
+    """Delete an archive configuration by ID."""
+    from core.services.archive_configuration_service import ArchiveConfigurationService
+    service = ArchiveConfigurationService()
+    config = service.get_by_id(config_id)
+    if not config or getattr(config, 'user_id', None) != user_id:
+        typer.echo(f"Config {config_id} not found for user {user_id}.")
+        raise typer.Exit(code=1)
+    service.delete(config_id)
+    typer.echo(f"Config {config_id} deleted.")
+
+archive_config_app.add_typer(archive_archive_config_app, name="archive")
+config_app.add_typer(archive_config_app, name="calendar")
+
+timesheet_app.add_typer(timesheet_app, name="timesheet")
 
 @timesheet_app.command("export")
 def export(
@@ -187,6 +333,7 @@ def upload(
     typer.echo(f"Uploading timesheet to {destination} for user {user_id}")
 
 app.add_typer(calendar_app, name="calendar")
+app.add_typer(config_app, name="config")
 
 if __name__ == "__main__":
     app() 
