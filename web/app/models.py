@@ -30,6 +30,4 @@ class User(UserMixin, db.Model):
     timesheets = db.relationship('Timesheet', back_populates='user')
     audit_logs = db.relationship('AuditLog', back_populates='user')
     rules = db.relationship('Rule', back_populates='user')
-    notifications = db.relationship('Notification', back_populates='user')
-    notification_preferences = db.relationship('NotificationPreference', back_populates='user')
     archive_preference = db.relationship('ArchivePreference', back_populates='user', uselist=False)
