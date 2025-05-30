@@ -6,12 +6,27 @@ import pytz
 import asyncio
 from core.exceptions import AppointmentRepositoryException
 import logging
+import sys
+import nest_asyncio
+from sqlalchemy.orm.attributes import InstrumentedAttribute
+
 logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
     from msgraph.graph_service_client import GraphServiceClient
     from msgraph.generated.models.event import Event
     from core.models.user import User
 
+DEFAULT_TIMEOUT = 30  # seconds
+
+def _run_async(coro, timeout=DEFAULT_TIMEOUT):
+    try:
+        loop = asyncio.get_running_loop()
+        # If already in an event loop, use nest_asyncio to allow nested run
+        nest_asyncio.apply()
+        return loop.run_until_complete(asyncio.wait_for(coro, timeout=timeout))
+    except RuntimeError:
+        # No running event loop
+        return asyncio.run(asyncio.wait_for(coro, timeout=timeout))
 
 # TODO extend repositories to handle bulk operations so that updates and deletes are not done one by one
 # TODO add caching to the repositories
@@ -101,9 +116,9 @@ class MSGraphAppointmentRepository(BaseAppointmentRepository):
                 else:
                     end_str = datetime.combine(end_date, time.max).isoformat()
                 logger.debug(f"MSGraphAppointmentRepository.alist_for_user: Querying calendar_view from {start_str} to {end_str}")
-                # Most robust and version-independent way: build the URL manually and use .with_url(url).get() on the calendar_view request builder
+                # Use absolute URL for MS Graph SDK compatibility
                 user_id = self.get_user_email()
-                url = f"/users/{user_id}/calendar/calendarView?startDateTime={start_str}&endDateTime={end_str}"
+                url = f"https://graph.microsoft.com/v1.0/users/{user_id}/calendar/calendarView?startDateTime={start_str}&endDateTime={end_str}"
                 logger.debug(f"Querying with URL: {url}")
                 # Paging support: fetch all pages using odata_next_link/@odata.nextLink
                 events = []
@@ -172,78 +187,175 @@ class MSGraphAppointmentRepository(BaseAppointmentRepository):
         """
         return str(self.user.email)
 
+    def to_json_safe_value(self, value):
+        """
+        Convert a value to a JSON-serializable form. For dicts/lists, recurse. For unknown types, use str().
+        """
+        import datetime
+        if isinstance(value, dict):
+            return {k: self.to_json_safe_value(v) for k, v in value.items() if isinstance(k, str)}
+        elif isinstance(value, (list, tuple, set)):
+            return [self.to_json_safe_value(v) for v in value]
+        elif isinstance(value, (str, int, float, bool)) or value is None:
+            return value
+        elif isinstance(value, datetime.datetime):
+            return value.isoformat()
+        elif hasattr(value, '__dict__'):
+            return self.to_json_safe_value(vars(value))
+        elif hasattr(value, '__slots__'):
+            return {slot: self.to_json_safe_value(getattr(value, slot)) for slot in value.__slots__ if hasattr(value, slot)}
+        else:
+            return str(value)
+
     def _map_api_to_model(self, data: Dict[str, Any]) -> Appointment:
         """
-        Map an MS Graph event dict to an Appointment model instance, including all relevant fields for round-trip safety.
+        Map an MS Graph event dict to an Appointment model instance, converting all fields to JSON-serializable types.
+        Non-serializable fields are converted to string. Lists of objects are converted to lists of strings/dicts.
         """
         start_dt = self._parse_msgraph_datetime(data.get('start'))
         end_dt = self._parse_msgraph_datetime(data.get('end'))
+        # Handle location: always assign a string
+        location_val = data.get('location')
+        if isinstance(location_val, dict):
+            location_str = location_val.get('displayName', '')
+        else:
+            location_str = location_val if isinstance(location_val, str) else ''
         return Appointment(
-            ms_event_id=data.get('id'),
+            ms_event_id=self.to_json_safe_value(data.get('id')),
             user_id=self.user.id,
             start_time=start_dt,
             end_time=end_dt,
-            subject=data.get('subject'),
-            show_as=data.get('showAs'),
-            sensitivity=data.get('sensitivity'),
-            location=(data.get('location', {}).get('displayName') if isinstance(data.get('location'), dict) else data.get('location')),
-            attendees=data.get('attendees'),
-            organizer=data.get('organizer'),
-            categories=data.get('categories'),
-            importance=data.get('importance'),
-            reminder_minutes_before_start=data.get('reminderMinutesBeforeStart'),
-            is_all_day=data.get('isAllDay'),
-            response_status=data.get('responseStatus'),
-            series_master_id=data.get('seriesMasterId'),
-            online_meeting=data.get('onlineMeeting'),
-            body_content=(data.get('body', {}).get('content') if isinstance(data.get('body'), dict) else None),
-            body_content_type=(data.get('body', {}).get('contentType') if isinstance(data.get('body'), dict) else None),
-            body_preview=data.get('bodyPreview'),
-            recurrence=data.get('recurrence'),
-            ms_event_data=data
+            subject=self.to_json_safe_value(data.get('subject')),
+            show_as=self.to_json_safe_value(data.get('showAs')),
+            sensitivity=self.to_json_safe_value(data.get('sensitivity')),
+            location=location_str,
+            attendees=self.to_json_safe_value(data.get('attendees')),
+            organizer=self.to_json_safe_value(data.get('organizer')),
+            categories=self.to_json_safe_value(data.get('categories')),
+            importance=self.to_json_safe_value(data.get('importance')),
+            reminder_minutes_before_start=self.to_json_safe_value(data.get('reminderMinutesBeforeStart')),
+            is_all_day=self.to_json_safe_value(data.get('isAllDay')),
+            response_status=self.to_json_safe_value(data.get('responseStatus')),
+            series_master_id=self.to_json_safe_value(data.get('seriesMasterId')),
+            online_meeting=self.to_json_safe_value(data.get('onlineMeeting')),
+            body_content=self.to_json_safe_value(data.get('body', {}).get('content') if isinstance(data.get('body'), dict) else None),
+            body_content_type=self.to_json_safe_value(data.get('body', {}).get('contentType') if isinstance(data.get('body'), dict) else None),
+            body_preview=self.to_json_safe_value(data.get('bodyPreview')),
+            recurrence=self.to_json_safe_value(data.get('recurrence')),
+            ms_event_data=self.to_json_safe_value(data)
         )
 
     def _map_model_to_api(self, appointment: Appointment) -> dict:
         """
-        Map an Appointment model instance to an MS Graph event dict, including all relevant fields for round-trip safety.
+        Convert an Appointment model instance to a dict suitable for the MS Graph API, mirroring the serialization logic of _map_api_to_model.
+        Fields that were stored as strings/dicts are converted back to the expected MS Graph format where possible.
         """
+        def from_json_safe_value(val):
+            # For now, just return as-is; further logic can be added if needed for MS Graph SDK compatibility
+            return val
         def to_msgraph_time(dt):
-            tz = dt.tzinfo.zone if dt.tzinfo and hasattr(dt.tzinfo, 'zone') else 'UTC'
+            import pytz
+            if not dt:
+                return None
+            tz = dt.tzinfo.zone if dt and hasattr(dt, 'tzinfo') and hasattr(dt.tzinfo, 'zone') else 'UTC'
             return {
-                'dateTime': dt.isoformat(),
+                'dateTime': dt.isoformat() if hasattr(dt, 'isoformat') else str(dt),
                 'timeZone': tz
             }
-        def safe_value(val):
+        # Helper to get a safe value (not a SQLAlchemy Column or subclass)
+        def safe_val(val, default):
+            if val is None:
+                return default
+            if isinstance(val, InstrumentedAttribute) or hasattr(val, 'expression'):
+                return default
+            if isinstance(val, (str, int, float, bool)):
+                return val
+            if isinstance(val, dict):
+                return {k: safe_val(v, '') for k, v in val.items()}
+            if isinstance(val, list):
+                return [safe_val(v, '') for v in val]
+            return str(val)
+        # Helper for lists
+        def safe_list(val):
+            if val is None or isinstance(val, InstrumentedAttribute) or hasattr(val, 'expression'):
+                return []
+            if isinstance(val, list):
+                return [safe_val(v, '') for v in val]
+            return [safe_val(val, '')]
+        # Helper for dict fields
+        def safe_dict(dct, keys):
+            if not isinstance(dct, dict):
+                return {k: '' for k in keys}
+            return {k: safe_val(dct.get(k), '') for k in keys}
+
+        def ensure_json_serializable(val, default=None):
             from sqlalchemy.orm.attributes import InstrumentedAttribute
-            if hasattr(val, 'expression') or isinstance(val, InstrumentedAttribute):
-                return None
-            return val
-        ms_event_data = getattr(appointment, 'ms_event_data', None)
-        base = dict(ms_event_data) if isinstance(ms_event_data, dict) else {}
-        base.update({
-            'id': safe_value(appointment.ms_event_id),
-            'subject': safe_value(appointment.subject),
-            'start': to_msgraph_time(safe_value(appointment.start_time)),
-            'end': to_msgraph_time(safe_value(appointment.end_time)),
-            'showAs': safe_value(appointment.show_as),
-            'sensitivity': safe_value(appointment.sensitivity),
-            'location': {'displayName': safe_value(appointment.location)} if appointment.location is not NoReturn else None,
-            'attendees': safe_value(appointment.attendees),
-            'organizer': safe_value(appointment.organizer),
-            'categories': safe_value(appointment.categories),
-            'importance': safe_value(appointment.importance),
-            'reminderMinutesBeforeStart': safe_value(appointment.reminder_minutes_before_start),
-            'isAllDay': safe_value(appointment.is_all_day),
-            'responseStatus': safe_value(appointment.response_status),
-            'seriesMasterId': safe_value(appointment.series_master_id),
-            'onlineMeeting': safe_value(appointment.online_meeting),
-            'body': {
-                'contentType': safe_value(appointment.body_content_type),
-                'content': safe_value(appointment.body_content)
-            },
-            'bodyPreview': safe_value(appointment.body_preview),
-            'recurrence': safe_value(getattr(appointment, 'recurrence', None)),
-        })
+            import datetime
+            if val is None:
+                return default
+            if isinstance(val, InstrumentedAttribute) or hasattr(val, 'expression'):
+                return default
+            if isinstance(val, bool):
+                return val
+            if isinstance(val, int):
+                return val
+            if isinstance(val, str):
+                return val
+            if isinstance(val, datetime.datetime):
+                return val.isoformat()
+            if isinstance(val, list):
+                return [ensure_json_serializable(v, default) for v in val if not isinstance(v, InstrumentedAttribute) and not hasattr(v, 'expression')]
+            if isinstance(val, dict):
+                return {str(k): ensure_json_serializable(v, default) for k, v in val.items() if not isinstance(v, InstrumentedAttribute) and not hasattr(v, 'expression')}
+            return str(val)
+
+        def to_bool(val, default=False):
+            try:
+                if isinstance(val, bool):
+                    return val
+                if isinstance(val, (int, float)):
+                    return bool(val)
+                if isinstance(val, str):
+                    return val.lower() in ("true", "1", "yes", "y")
+            except Exception:
+                pass
+            return default
+
+        def to_int(val, default=0):
+            try:
+                if isinstance(val, int):
+                    return val
+                if isinstance(val, str):
+                    return int(val)
+            except Exception:
+                pass
+            return default
+
+        api_dict = {}
+        api_dict['id'] = str(ensure_json_serializable(appointment.ms_event_id, ''))
+        api_dict['subject'] = str(ensure_json_serializable(appointment.subject, ''))
+        api_dict['start'] = ensure_json_serializable(to_msgraph_time(appointment.start_time), None)
+        api_dict['end'] = ensure_json_serializable(to_msgraph_time(appointment.end_time), None)
+        api_dict['showAs'] = str(ensure_json_serializable(appointment.show_as, ''))
+        api_dict['sensitivity'] = str(ensure_json_serializable(appointment.sensitivity, ''))
+        api_dict['location'] = {'displayName': str(ensure_json_serializable(appointment.location, ''))}
+        api_dict['attendees'] = ensure_json_serializable(appointment.attendees, [])
+        api_dict['categories'] = ensure_json_serializable(appointment.categories, [])
+        api_dict['organizer'] = str(ensure_json_serializable(appointment.organizer, ''))
+        api_dict['importance'] = str(ensure_json_serializable(appointment.importance, ''))
+        # reminderMinutesBeforeStart: must be int
+        api_dict['reminderMinutesBeforeStart'] = to_int(ensure_json_serializable(appointment.reminder_minutes_before_start, 0), 0)
+        api_dict['isAllDay'] = to_bool(ensure_json_serializable(appointment.is_all_day, False), False)
+        api_dict['responseStatus'] = str(ensure_json_serializable(appointment.response_status, ''))
+        api_dict['seriesMasterId'] = str(ensure_json_serializable(appointment.series_master_id, ''))
+        api_dict['onlineMeeting'] = str(ensure_json_serializable(appointment.online_meeting, ''))
+        api_dict['body'] = {
+            'contentType': str(ensure_json_serializable(appointment.body_content_type, '')),
+            'content': str(ensure_json_serializable(appointment.body_content, ''))
+        }
+        api_dict['bodyPreview'] = str(ensure_json_serializable(appointment.body_preview, ''))
+        api_dict['recurrence'] = ensure_json_serializable(getattr(appointment, 'recurrence', None), '')
+        # Remove readonly fields if present
         readonly_fields = [
             'webLink', 'onlineMeetingUrl', 'onlineMeeting',
             'changeKey', 'createdDateTime', 'lastModifiedDateTime', 'calendar',
@@ -252,47 +364,56 @@ class MSGraphAppointmentRepository(BaseAppointmentRepository):
             'cancelledOccurrences', 'seriesMasterId'
         ]
         for field in readonly_fields:
-            base.pop(field, None)
-        return base
+            api_dict.pop(field, None)
+        return api_dict
 
-    def _parse_msgraph_datetime(self, dt_dict: Optional[Dict[str, str]]):
+    def _parse_msgraph_datetime(self, dt_obj: Optional[object]):
         """
-        Parse a MS Graph API datetime dict to a timezone-aware datetime object.
-        :param dt_dict: Dict with 'dateTime' and 'timeZone' keys.
+        Parse a MS Graph API datetime dict or DateTimeTimeZone object to a timezone-aware datetime object.
+        :param dt_obj: Dict with 'dateTime' and 'timeZone' keys, or DateTimeTimeZone object.
         :return: timezone-aware datetime object or None.
         """
-        if not dt_dict or 'dateTime' not in dt_dict:
+        if dt_obj is None:
             return None
-        dt = parser.parse(dt_dict['dateTime'])
-        tz_name = dt_dict.get('timeZone', 'UTC')
+        # Handle dict (JSON) format
+        if isinstance(dt_obj, dict):
+            date_time = dt_obj.get('dateTime')
+            tz_name = dt_obj.get('timeZone', 'UTC')
+        # Handle MS Graph SDK object (DateTimeTimeZone)
+        else:
+            date_time = getattr(dt_obj, 'date_time', None)
+            tz_name = getattr(dt_obj, 'time_zone', 'UTC')
+        if not date_time:
+            return None
+        dt = parser.parse(date_time)
         try:
+            import pytz
             tz = pytz.timezone(tz_name)
             if dt.tzinfo is None:
                 dt = tz.localize(dt)
             else:
                 dt = dt.astimezone(tz)
         except Exception:
-            # Fallback to UTC if timezone is invalid
             dt = dt.replace(tzinfo=pytz.UTC)
-        return dt 
+        return dt
 
     # Synchronous wrappers for compatibility with sync interface (if needed)
     def get_by_id(self, ms_event_id: str) -> Optional[Appointment]:
         """Sync wrapper for aget_by_id."""
-        return asyncio.run(self.aget_by_id(ms_event_id))
+        return _run_async(self.aget_by_id(ms_event_id))
 
     def add(self, appointment: Appointment) -> None:
         """Sync wrapper for aadd."""
-        return asyncio.run(self.aadd(appointment))
+        return _run_async(self.aadd(appointment))
 
     def list_for_user(self, start_date=None, end_date=None) -> List[Appointment]:
         """Sync wrapper for alist_for_user."""
-        return asyncio.run(self.alist_for_user(start_date, end_date))
+        return _run_async(self.alist_for_user(start_date, end_date))
 
     def update(self, appointment: Appointment) -> None:
         """Sync wrapper for aupdate."""
-        return asyncio.run(self.aupdate(appointment))
+        return _run_async(self.aupdate(appointment))
 
     def delete(self, ms_event_id: str) -> None:
         """Sync wrapper for adelete."""
-        return asyncio.run(self.adelete(ms_event_id)) 
+        return _run_async(self.adelete(ms_event_id)) 

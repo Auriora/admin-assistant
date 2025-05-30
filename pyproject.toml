@@ -14,6 +14,7 @@ dependencies = [
 
 [project.scripts]
 admin-assistant = "cli.main:app"
+aa = "cli.main:app"
 
 [tool.setuptools.packages.find]
 include = ["cli*", "core*", "web*"]

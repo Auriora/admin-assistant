@@ -18,6 +18,18 @@ class CalendarArchiveOrchestrator:
     Orchestrator for archiving user appointments from MS Graph to an archive calendar,
     and logging overlaps and resolution tasks in the local database.
     """
+    def extract_msgraph_calendar_id(self, uri: str) -> str:
+        """
+        Extract the MS Graph calendar ID from a URI of the form 'msgraph://calendar' (primary) or 'msgraph://<id>'.
+        Returns an empty string for the primary calendar, or the calendar ID for others.
+        """
+        if not uri or not uri.startswith("msgraph://"):
+            return uri  # fallback: treat as raw ID
+        suffix = uri[len("msgraph://"):]
+        if suffix == "calendar":
+            return ""  # primary calendar
+        return suffix
+
     def archive_user_appointments(
         self,
         user: Any,
@@ -44,25 +56,52 @@ class CalendarArchiveOrchestrator:
             dict: Summary of the operation (archived_count, overlap_count, errors).
         """
         try:
+            print("[DEBUG] Parsing calendar URIs...")
+            source_calendar_id = self.extract_msgraph_calendar_id(source_calendar_uri)
+            archive_calendar_id = self.extract_msgraph_calendar_id(archive_calendar_id)
+            print(f"[DEBUG] Source calendar URI: {source_calendar_uri}, Archive calendar URI: {archive_calendar_id}")
             # 1. Fetch appointments from MS Graph (source calendar)
-            source_repo = MSGraphAppointmentRepository(msgraph_client, user, source_calendar_uri)
+            print("[DEBUG] Fetching appointments from MS Graph...")
+            source_repo = MSGraphAppointmentRepository(msgraph_client, user, source_calendar_id)
             appointments = source_repo.list_for_user(start_date, end_date)
+            print(f"[DEBUG] Fetched {len(appointments)} appointments.")
 
             # 2. Process: expand recurrences, deduplicate, detect overlaps
+            print("[DEBUG] Expanding recurring events...")
             expanded = expand_recurring_events_range(appointments, start_date, end_date)
+            print(f"[DEBUG] Expanded to {len(expanded)} events.")
+            print("[DEBUG] Deduplicating events...")
             deduped = merge_duplicates(expanded)
+            print(f"[DEBUG] Deduped to {len(deduped)} events.")
+            print("[DEBUG] Detecting overlaps...")
             overlap_groups = detect_overlaps(deduped)
             overlapping_appts = set(a for group in overlap_groups for a in group)
             non_overlapping = [a for a in deduped if a not in overlapping_appts]
+            print(f"[DEBUG] Found {len(overlap_groups)} overlap groups, {len(non_overlapping)} non-overlapping events.")
 
             # 3. Write non-overlapping to archive calendar (MS Graph)
-            archive_repo = MSGraphAppointmentRepository(msgraph_client, user, archive_calendar_id)
+            print("[DEBUG] Selecting archive repository based on URI...")
+            if archive_calendar_id.startswith("local://"):
+                from core.repositories.appointment_repository_sqlalchemy import SQLAlchemyAppointmentRepository
+                # Extract local calendar ID or name from URI
+                local_cal_id = archive_calendar_id[len("local://"):]
+                archive_repo = SQLAlchemyAppointmentRepository(user, local_cal_id, session=db_session)
+                print(f"[DEBUG] Using SQLAlchemyAppointmentRepository for local calendar: {local_cal_id}")
+            elif archive_calendar_id == "" or archive_calendar_id.startswith("msgraph://"):
+                # For msgraph://calendar (primary) or msgraph://<id>
+                msgraph_cal_id = self.extract_msgraph_calendar_id(archive_calendar_id)
+                archive_repo = MSGraphAppointmentRepository(msgraph_client, user, msgraph_cal_id)
+                print(f"[DEBUG] Using MSGraphAppointmentRepository for MS Graph calendar: {msgraph_cal_id}")
+            else:
+                raise ValueError(f"Unsupported archive calendar URI scheme: {archive_calendar_id}")
             archived_count = 0
             for appt in non_overlapping:
                 archive_repo.add(appt)
                 archived_count += 1
+            print(f"[DEBUG] Archived {archived_count} events.")
 
             # 4. Log overlaps and create resolution tasks in local DB
+            print("[DEBUG] Logging overlaps and creating resolution tasks...")
             action_log_repo = ActionLogRepository(db_session)
             assoc_helper = EntityAssociationHelper()
             overlap_count = 0
@@ -90,13 +129,16 @@ class CalendarArchiveOrchestrator:
                     )
                     assoc_helper.add(db_session, assoc)
                     overlap_count += 1
+            print(f"[DEBUG] Logged {overlap_count} overlaps. Committing to DB...")
             db_session.commit()
+            print("[DEBUG] DB commit complete.")
             return {
                 'archived_count': archived_count,
                 'overlap_count': overlap_count,
                 'errors': []
             }
         except Exception as e:
+            print(f"[DEBUG] Exception occurred: {e}")
             if logger:
                 logger.exception(f"Orchestration failed for user {getattr(user, 'email', None)} from {start_date} to {end_date}: {str(e)}")
             return {

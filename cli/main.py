@@ -51,7 +51,6 @@ import tzlocal
 app = typer.Typer(help="Admin Assistant CLI for running calendar and timesheet operations.")
 calendar_app = typer.Typer(help="Calendar operations")
 timesheet_app = typer.Typer(help="Timesheet operations")
-archive_app = typer.Typer(help="Archive operations")
 config_app = typer.Typer(help="Configuration operations")
 archive_config_app = typer.Typer(help="Calendar configuration operations")
 archive_archive_config_app = typer.Typer(help="Archive configuration management")
@@ -167,7 +166,7 @@ Examples:
     if ctx.invoked_subcommand is None:
         typer.echo(ctx.get_help())
 
-@archive_app.command("archive")
+@calendar_app.command("archive")
 def archive(
     date_option: str = typer.Option(
         "yesterday",
@@ -341,8 +340,6 @@ def delete_config(
     service.delete(config_id)
     typer.echo(f"Config {config_id} deleted.")
 
-calendar_app.add_typer(archive_app, name="archive")
-archive_config_app.add_typer(archive_archive_config_app, name="archive")
 config_app.add_typer(archive_config_app, name="calendar")
 
 timesheet_app.add_typer(timesheet_app, name="timesheet")

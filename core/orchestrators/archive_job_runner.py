@@ -62,9 +62,15 @@ class ArchiveJobRunner:
 
             # Fetch graph client and session internally
             from core.utilities import get_graph_client
+            from core.utilities.auth_utility import get_cached_access_token
+            access_token = get_cached_access_token()
+            if not access_token:
+                logger.error("No valid MS Graph token found. Please login with 'admin-assistant login msgraph'.")
+                return {"status": "error", "error": "No valid MS Graph token found. Please login with 'admin-assistant login msgraph'."}
+            graph_client = get_graph_client(user=user, access_token=access_token)
+
             from core.db import get_session
             session = get_session()
-            graph_client = get_graph_client(user=user, session=session)
 
             result = self.orchestrator.archive_user_appointments(
                 user=user,

@@ -26,3 +26,4 @@ pytz~=2024.1
 apprise~=1.7.5
 typer[all]~=0.16.0  # For CLI support
 rich~=14.0.0
+nest_asyncio~=1.6.0
