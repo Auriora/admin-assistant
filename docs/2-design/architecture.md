@@ -263,4 +263,79 @@ graph TD
 
 ## 10. Summary
 
-This architecture meets all functional and non-functional requirements, is modular, secure, and extensible for future needs, and supports robust error handling, auditability, and compliance. It is well-suited for a Python/Flask-based web application with multiple third-party integrations. 
+This architecture meets all functional and non-functional requirements, is modular, secure, and extensible for future needs, and supports robust error handling, auditability, and compliance. It is well-suited for a Python/Flask-based web application with multiple third-party integrations.
+
+## Key Components
+
+- **Orchestrators**
+  - **CalendarArchiveOrchestrator** (`core/orchestrators/calendar_archive_orchestrator.py`):
+    - The single entry point for all appointment archiving and overlap logging logic.
+    - Responsibilities:
+      - Fetch appointments from the user's Microsoft 365 calendar (via MS Graph).
+      - Expand recurring events, deduplicate, and detect overlaps.
+      - Archive non-overlapping appointments to the archive calendar (MS Graph).
+      - Log overlapping appointments and create resolution tasks in the local database (SQLAlchemy).
+    - All cross-entity and cross-backend logic is coordinated here.
+
+- **Service Layer**
+  - **calendar_archive_service.py**:
+    - Contains only pure logic utilities (e.g., recurrence expansion, overlap detection).
+    - No longer performs any database writes for overlaps or archiving.
+    - All side effects (DB writes, API calls) are handled by the orchestrator.
+
+- **Repositories**
+  - **MSGraphAppointmentRepository**: Handles all MS Graph calendar operations (fetch, add, update, delete appointments).
+  - **ActionLogRepository** and **EntityAssociationHelper**: Handle local logging and associations for overlap resolution tasks.
+
+- **Utilities**
+  - **calendar_recurrence_utility.py**: Expands recurring events.
+  - **calendar_overlap_utility.py**: Detects and merges overlapping appointments.
+
+## Workflow Overview
+
+1. **Archiving is triggered** (via UI, CLI, or scheduled job).
+2. **CalendarArchiveOrchestrator** is called with the user, MS Graph client, calendar IDs, date range, and DB session.
+3. The orchestrator:
+    - Fetches appointments from the source calendar (MS Graph).
+    - Expands recurrences, deduplicates, and detects overlaps.
+    - Archives non-overlapping appointments to the archive calendar (MS Graph).
+    - Logs overlaps and creates resolution tasks in the local DB.
+4. **Service layer** functions are used for pure logic only (no side effects).
+5. **UI or API** can query ActionLog and EntityAssociation for unresolved overlaps and present them to the user for manual resolution.
+
+## Example Usage
+
+```python
+from core.orchestrators.calendar_archive_orchestrator import CalendarArchiveOrchestrator
+
+result = CalendarArchiveOrchestrator().archive_user_appointments(
+    user=user,
+    msgraph_client=msgraph_client,
+    source_calendar_id=source_calendar_id,
+    archive_calendar_id=archive_calendar_id,
+    start_date=start_date,
+    end_date=end_date,
+    db_session=db.session,
+    logger=logger
+)
+```
+
+## Migration Notes
+
+- The old service methods `archive_appointments` and `rearchive_period` have been removed.
+- All archiving and overlap logging must now go through the orchestrator.
+- Any code or tests referencing the old service methods should be updated or removed.
+
+## Design Rationale
+
+- **Separation of Concerns:**
+  - The orchestrator coordinates all cross-entity and cross-backend logic.
+  - The service layer is pure and testable.
+  - All side effects (DB writes, API calls) are explicit and centralized.
+
+- **Extensibility:**
+  - New archiving rules, overlap logic, or integrations can be added in the orchestrator without affecting the service layer or repositories.
+
+- **Testability:**
+  - Pure logic in the service layer is easy to test in isolation.
+  - The orchestrator can be tested with mocks for all side-effecting components. 
