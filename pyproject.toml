@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "admin-assistant"
+version = "0.1.0"
+description = "Admin Assistant CLI and core"
+authors = [{ name = "Your Name", email = "your@email.com" }]
+dependencies = [
+    "typer[all]",
+    # add your other dependencies here
+]
+
+[project.scripts]
+admin-assistant = "cli.main:app"
+
+[tool.setuptools.packages.find]
+include = ["cli*", "core*", "web*"]
