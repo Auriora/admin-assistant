@@ -6,9 +6,6 @@ from core.utilities.time_utility import to_utc
 from core.models.appointment import Appointment
 from sqlalchemy.orm.attributes import InstrumentedAttribute
 from core.exceptions import CalendarServiceException
-from core.models.action_log import ActionLog
-from core.repositories.action_log_repository import ActionLogRepository
-from core.repositories.factory import get_appointment_repository
 import logging
 
 logger = logging.getLogger(__name__)
@@ -20,16 +17,17 @@ def prepare_appointments_for_archive(
     user=None,
     session=None,
     logger=None,
-    action_log_repository: 'Optional[ActionLogRepository]' = None
+    action_log_repository: 'Optional[Any]' = None  # Kept for backward compatibility, but not used
 ) -> Dict[str, Any]:
     """
     Process a list of Appointment model instances to prepare them for archiving.
     Handles time zones, recurring events, overlaps, and duplicates.
     Returns a dict with keys:
         - 'appointments': processed list of appointments ready for archiving
-        - 'status': 'ok' (always, now)
+        - 'status': 'ok' or 'overlap'
         - 'conflicts': list of conflicts if overlaps detected
         - 'errors': list of error messages
+    Note: This function no longer logs overlaps or writes to the DB. It only returns the detected overlaps.
     """
     result = {"appointments": [], "status": "ok", "conflicts": [], "errors": []}
     try:
@@ -50,33 +48,9 @@ def prepare_appointments_for_archive(
                 ]
                 for group in overlap_groups
             ]
-            # Log each overlap as an ActionLog entry and collect overlapping appts
-            if user is not None and action_log_repository is not None:
-                for group in overlap_groups:
-                    for appt in group:
-                        overlapping_appts.add(appt)
-                        # Prevent duplicate ActionLog entries
-                        existing_logs = action_log_repository.list_for_user(user.id)
-                        exists = any(
-                            getattr(log, 'event_id', None) == getattr(appt, 'ms_event_id', None) and
-                            getattr(log, 'action_type', None) == 'overlap' and
-                            getattr(log, 'status', None) == 'needs_user_action'
-                            for log in existing_logs
-                        )
-                        if not exists:
-                            log = ActionLog(
-                                user_id=user.id,
-                                event_type='overlap',
-                                state='needs_user_action',
-                                description=f"Overlapping event detected: {getattr(appt, 'subject', None)} ({getattr(appt, 'start_time', None)} - {getattr(appt, 'end_time', None)})",
-                                details={
-                                    'ms_event_id': getattr(appt, 'ms_event_id', None),
-                                    'subject': getattr(appt, 'subject', None),
-                                    'start_time': str(getattr(appt, 'start_time', None)),
-                                    'end_time': str(getattr(appt, 'end_time', None)),
-                                }
-                            )
-                            action_log_repository.add(log)
+            for group in overlap_groups:
+                for appt in group:
+                    overlapping_appts.add(appt)
         for appt in appts:
             if not isinstance(appt, Appointment):
                 continue
@@ -104,86 +78,10 @@ def prepare_appointments_for_archive(
         raise CalendarServiceException(f"Archiving preparation failed for range {start_date} to {end_date}") from e
     return result
 
-
 def make_appointments_immutable(appointments: List[Appointment], db_session):
     """
     Mark archived appointments as immutable (except for user).
     """
     for appt in appointments:
         setattr(appt, 'is_archived', True)  # type: ignore
-    db_session.commit()
-
-
-def archive_appointments(user, appointments, start_date, end_date, session, logger=None):
-    """
-    Archive appointments for a user, ensuring all action logging uses ActionLogRepository.
-    """
-    action_log_repository = ActionLogRepository(session=session)
-    result = prepare_appointments_for_archive(
-        appointments=appointments,
-        start_date=start_date,
-        end_date=end_date,
-        user=user,
-        session=session,
-        logger=logger,
-        action_log_repository=action_log_repository
-    )
-    # Before persisting appointments, ensure times are UTC
-    for appt in result["appointments"]:
-        appt.start_time = to_utc(appt.start_time)
-        appt.end_time = to_utc(appt.end_time)
-        # Ensure timezone-aware datetimes
-        assert appt.start_time.tzinfo is not None, "start_time must be timezone-aware"
-        assert appt.end_time.tzinfo is not None, "end_time must be timezone-aware"
-    # Persist archived appointments
-    try:
-        for appt in result["appointments"]:
-            session.add(appt)
-        session.commit()
-    except Exception as e:
-        if logger:
-            logger.exception(f"Failed to persist archived appointments for user {getattr(user, 'id', None)}: {str(e)}")
-        if hasattr(e, 'add_note'):
-            e.add_note(f"Error in archive_appointments for user {getattr(user, 'id', None)}")
-        raise CalendarServiceException(f"Failed to persist archived appointments for user {getattr(user, 'id', None)}") from e
-    return result
-
-def rearchive_period(user, archive_config, start_date, end_date, session, logger=None):
-    """
-    Re-archive (replace) all appointments for a specified period.
-    Deletes all appointments in the archive calendar for the period, then archives the current source appointments.
-    Args:
-        user: User model instance.
-        archive_config: ArchiveConfiguration instance (must have destination_calendar_id, source_calendar_id).
-        start_date: Start of the period (datetime/date).
-        end_date: End of the period (datetime/date).
-        session: SQLAlchemy session.
-        logger: Optional logger.
-    Returns:
-        dict: Summary of the operation (deleted_count, archived_count, errors).
-    """
-    from core.repositories.appointment_repository_sqlalchemy import SQLAlchemyAppointmentRepository
-    from core.repositories.factory import get_appointment_repository
-    import logging
-    logger = logger or logging.getLogger(__name__)
-    result = {"deleted_count": 0, "archived_count": 0, "errors": []}
-    try:
-        # 1. Delete all appointments in the archive calendar for the period
-        archive_repo = SQLAlchemyAppointmentRepository(user, archive_config.destination_calendar_id, session=session)
-        deleted_count = archive_repo.delete_for_period(start_date, end_date)
-        logger.info(f"Re-archiving: Deleted {deleted_count} appointments for user {user.id} in archive calendar {archive_config.destination_calendar_id} for period {start_date} to {end_date}.")
-        result["deleted_count"] = deleted_count
-        # 2. Fetch source appointments for the period
-        source_repo = get_appointment_repository(user, archive_config.source_calendar_id, session=session)
-        source_appointments = source_repo.list_for_user(start_date, end_date)
-        logger.info(f"Re-archiving: Fetched {len(source_appointments)} source appointments for user {user.id} from calendar {archive_config.source_calendar_id}.")
-        # 3. Archive them to the destination calendar
-        archive_result = archive_appointments(user, source_appointments, start_date, end_date, session, logger=logger)
-        archived_count = len(archive_result.get("appointments", []))
-        result["archived_count"] = archived_count
-        result["errors"] = archive_result.get("errors", [])
-        logger.info(f"Re-archiving: Archived {archived_count} appointments for user {user.id} to archive calendar {archive_config.destination_calendar_id}.")
-    except Exception as e:
-        logger.exception(f"Re-archiving failed for user {user.id} period {start_date} to {end_date}: {str(e)}")
-        result["errors"].append(str(e))
-    return result 
+    db_session.commit() 
