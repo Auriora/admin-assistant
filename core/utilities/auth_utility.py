@@ -1,83 +1,60 @@
 import os
-import base64
-import logging
-from cryptography.fernet import Fernet, InvalidToken
-from azure.identity import DeviceCodeCredential, TokenCachePersistenceOptions
+import msal
 from core.models.user import User
-from sqlalchemy.orm import Session
-from typing import Optional
 
-FERNET_KEY_ENV = os.getenv("FERNET_KEY")
-if not FERNET_KEY_ENV:
-    raise RuntimeError("FERNET_KEY environment variable must be set for encryption.")
-try:
-    # Fernet key must be bytes
-    FERNET_KEY: bytes = base64.urlsafe_b64decode(FERNET_KEY_ENV)
-except Exception as e:
-    raise RuntimeError("FERNET_KEY must be a valid base64-encoded key.") from e
+CACHE_DIR = os.path.join(os.path.expanduser("~"), ".cache", "admin-assistant")
+CACHE_PATH = os.path.join(CACHE_DIR, "ms_token.json")
+SCOPES = ["https://graph.microsoft.com/.default"]
 
-def get_fernet() -> Fernet:
-    """
-    Return a Fernet instance for encryption/decryption using the configured key.
-    """
-    return Fernet(FERNET_KEY)
 
-def get_token_cache(user: User) -> bytes:
-    """
-    Decrypt and return the user's token cache as bytes. Returns b'' if not set.
-    Raises ValueError if the token cache is invalid.
-    """
-    cache_value = getattr(user, "ms_token_cache", None)
-    if not cache_value:
-        return b''
-    try:
-        return get_fernet().decrypt(cache_value.encode())
-    except InvalidToken as e:
-        raise ValueError(f"Invalid token cache encryption for user {getattr(user, 'email', 'unknown')}") from e
-
-def set_token_cache(user: User, cache: bytes, session: Session) -> None:
-    """
-    Encrypt and store the user's token cache. Commits the session.
-    """
-    encrypted = get_fernet().encrypt(cache).decode()
-    setattr(user, "ms_token_cache", encrypted)
-    session.add(user)
-    session.commit()
-
-def get_device_code_credential(user: User, session: Session) -> DeviceCodeCredential:
-    """
-    Return a DeviceCodeCredential using the user's encrypted token cache.
-    The token cache is loaded from the user model and persisted back on update.
-    Raises RuntimeError if required environment variables are missing.
-    """
-    import tempfile
-    import uuid
-    # Validate required environment variables
-    ms_client_id = os.getenv('MS_CLIENT_ID')
-    ms_tenant_id = os.getenv('MS_TENANT_ID')
-    if not ms_client_id:
-        raise RuntimeError("MS_CLIENT_ID environment variable must be set.")
-    if not ms_tenant_id:
-        raise RuntimeError("MS_TENANT_ID environment variable must be set.")
-    # Write the decrypted cache to a temp file for use by DeviceCodeCredential
-    cache_bytes = get_token_cache(user)
-    temp_cache_path = os.path.join(tempfile.gettempdir(), f"msgraph_token_cache_{getattr(user, 'id', 'unknown')}_{uuid.uuid4().hex}.bin")
-    if cache_bytes:
-        with open(temp_cache_path, 'wb') as f:
-            f.write(cache_bytes)
-    cache_opts = TokenCachePersistenceOptions(
-        name=f"msgraph_token_cache_{getattr(user, 'id', 'unknown')}",
-        allow_unencrypted_storage=True,
-        path=temp_cache_path
+def get_msal_app():
+    client_id = os.getenv("MS_CLIENT_ID")
+    tenant_id = os.getenv("MS_TENANT_ID")
+    authority = f"https://login.microsoftonline.com/{tenant_id}"
+    if not os.path.exists(CACHE_DIR):
+        os.makedirs(CACHE_DIR, exist_ok=True)
+    cache = msal.SerializableTokenCache()
+    if os.path.exists(CACHE_PATH):
+        with open(CACHE_PATH, "r") as f:
+            cache.deserialize(f.read())
+    app = msal.PublicClientApplication(
+        client_id=client_id,
+        authority=authority,
+        token_cache=cache
     )
-    credential = DeviceCodeCredential(
-        client_id=ms_client_id,
-        tenant_id=ms_tenant_id,
-        cache_persistence_options=cache_opts
-    )
-    # NOTE: There is no public API to hook into the token cache update event in azure-identity.
-    # If you need to persist the updated cache back to the user model, you must do so manually
-    # after authentication or token acquisition, by reading the cache file and calling set_token_cache.
-    # Do NOT access private attributes like _cache._cache._write_cache, as this is not supported and
-    # will break with SDK updates.
-    return credential 
+    return app, cache
+
+
+def msal_login():
+    app, cache = get_msal_app()
+    accounts = app.get_accounts()
+    result = None
+    if accounts:
+        result = app.acquire_token_silent(SCOPES, account=accounts[0])
+    if not result:
+        flow = app.initiate_device_flow(scopes=SCOPES)
+        if "user_code" not in flow:
+            raise RuntimeError("Failed to create device flow")
+        print(flow["message"])
+        result = app.acquire_token_by_device_flow(flow)
+    # Save the cache
+    with open(CACHE_PATH, "w") as f:
+        f.write(cache.serialize())
+    if "access_token" not in result:
+        raise RuntimeError("Failed to acquire token: %s" % result.get("error_description"))
+    return result
+
+
+def msal_logout():
+    if os.path.exists(CACHE_PATH):
+        os.remove(CACHE_PATH)
+
+
+def get_cached_access_token():
+    app, cache = get_msal_app()
+    accounts = app.get_accounts()
+    if accounts:
+        result = app.acquire_token_silent(SCOPES, account=accounts[0])
+        if result and "access_token" in result:
+            return result["access_token"]
+    return None 

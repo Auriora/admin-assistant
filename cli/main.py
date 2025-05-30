@@ -38,6 +38,15 @@ from core.orchestrators.archive_job_runner import ArchiveJobRunner
 from core.utilities import get_graph_client
 from core.db import get_session
 import re
+from rich.table import Table
+from rich.console import Console
+from typing import List, Optional
+from sqlalchemy.orm.attributes import InstrumentedAttribute
+import os
+from core.utilities.auth_utility import get_cached_access_token
+from core.services import UserService
+from core.services.calendar_service import CalendarService
+import tzlocal
 
 app = typer.Typer(help="Admin Assistant CLI for running calendar and timesheet operations.")
 calendar_app = typer.Typer(help="Calendar operations")
@@ -46,6 +55,7 @@ archive_app = typer.Typer(help="Archive operations")
 config_app = typer.Typer(help="Configuration operations")
 archive_config_app = typer.Typer(help="Calendar configuration operations")
 archive_archive_config_app = typer.Typer(help="Archive configuration management")
+login_app = typer.Typer(help="Authentication commands")
 
 user_id_option = typer.Option(
     ...,
@@ -176,13 +186,16 @@ def archive(
         typer.echo(f"Error parsing date: {e}")
         raise typer.Exit(code=1)
     try:
-        from core.services import UserService
         user_service = UserService()
         user = user_service.get_by_id(user_id)
         if not user:
             typer.echo(f"No user found in user DB for user_id={user_id}.")
             raise typer.Exit(code=1)
-        graph_client = get_graph_client(user=user, session=session)
+        access_token = get_cached_access_token()
+        if not access_token:
+            typer.echo("[yellow]No valid MS Graph token found. Please login with 'admin-assistant login msgraph'.[/yellow]")
+            raise typer.Exit(code=1)
+        graph_client = get_graph_client(user, access_token)
         # If only one date is present, set both to the same value
         if start_dt and not end_dt:
             end_dt = start_dt
@@ -211,12 +224,27 @@ def list_configs(user_id: int = user_id_option):
     from core.services.archive_configuration_service import ArchiveConfigurationService
     service = ArchiveConfigurationService()
     configs = service.list_for_user(user_id)
+    console = Console()
     if not configs:
-        typer.echo(f"No archive configurations found for user_id={user_id}.")
+        console.print(f"[yellow]No archive configurations found for user_id={user_id}.[/yellow]")
         raise typer.Exit(code=0)
-    typer.echo(f"Archive Configurations for user_id={user_id}:")
+    table = Table(title=f"Archive Configurations for user_id={user_id}")
+    table.add_column("ID", style="cyan", no_wrap=True)
+    table.add_column("Name", style="green")
+    table.add_column("Source", style="magenta")
+    table.add_column("Dest", style="magenta")
+    table.add_column("Active", style="yellow")
+    table.add_column("TZ", style="blue")
     for c in configs:
-        typer.echo(f"ID: {getattr(c, 'id', None)} | Name: {getattr(c, 'name', None)} | Source: {getattr(c, 'source_calendar_uri', None)} | Dest: {getattr(c, 'destination_calendar_uri', None)} | Active: {getattr(c, 'is_active', None)} | TZ: {getattr(c, 'timezone', None)}")
+        table.add_row(
+            str(getattr(c, 'id', '')),
+            str(getattr(c, 'name', '')),
+            str(getattr(c, 'source_calendar_uri', '')),
+            str(getattr(c, 'destination_calendar_uri', '')),
+            "✔" if getattr(c, 'is_active', False) else "✗",
+            str(getattr(c, 'timezone', '')),
+        )
+    console.print(table)
 
 @archive_archive_config_app.command("create")
 def create_config(
@@ -230,6 +258,8 @@ def create_config(
     """Create a new archive configuration for a user."""
     from core.models.archive_configuration import ArchiveConfiguration
     from core.services.archive_configuration_service import ArchiveConfigurationService
+    # Get system timezone
+    system_timezone = tzlocal.get_localzone_name()
     # Prompt for missing fields
     if not name:
         name = typer.prompt("Name for the archive configuration")
@@ -238,7 +268,7 @@ def create_config(
     if not destination_calendar_uri:
         destination_calendar_uri = typer.prompt("Destination (archive) calendar URI (e.g., msgraph://id)")
     if not timezone:
-        timezone = typer.prompt("Timezone (IANA format, e.g., Europe/London)")
+        timezone = typer.prompt("Timezone (IANA format, e.g., Europe/London)", default=system_timezone)
     config = ArchiveConfiguration(
         user_id=user_id,
         name=name,
@@ -311,6 +341,7 @@ def delete_config(
     service.delete(config_id)
     typer.echo(f"Config {config_id} deleted.")
 
+calendar_app.add_typer(archive_app, name="archive")
 archive_config_app.add_typer(archive_archive_config_app, name="archive")
 config_app.add_typer(archive_config_app, name="calendar")
 
@@ -334,6 +365,274 @@ def upload(
 
 app.add_typer(calendar_app, name="calendar")
 app.add_typer(config_app, name="config")
+
+def uri_safe_name(name: str) -> str:
+    """
+    Convert a calendar name to a URI-safe string (lowercase, dashes for spaces, alphanumerics and dashes/underscores only).
+    """
+    if not name:
+        return ""
+    name = name.lower().strip()
+    name = re.sub(r"\s+", "-", name)
+    name = re.sub(r"[^a-z0-9\-_]", "", name)
+    return name
+
+def safe_str(val):
+    if hasattr(val, 'expression') or isinstance(val, InstrumentedAttribute):
+        return ''
+    return str(val) if val is not None else ''
+
+def safe_bool(val):
+    if isinstance(val, bool):
+        return val
+    elif isinstance(val, (int, float)):
+        return bool(val)
+    else:
+        raise ValueError("Invalid type for safe_bool")
+
+def is_msgraph_token_valid(user, session) -> bool:
+    """
+    Returns True if the user has a valid MS Graph token (cache present and not expired), False otherwise.
+    Attempts a silent token acquisition (no prompt).
+    """
+    try:
+        # Try silent token acquisition (no prompt)
+        try:
+            return True
+        except Exception:
+            return False
+    except Exception:
+        return False
+
+def get_calendars_for_user(user_id: int, datastore: str = "all", console: Optional[Console] = None) -> List[dict]:
+    """
+    Retrieve all calendars for a user from the specified datastore(s).
+    Args:
+        user_id (int): The user ID.
+        datastore (str): 'local', 'msgraph', or 'all'.
+    Returns:
+        List[dict]: List of calendar dicts with keys: id, ms_calendar_id, name, description, type, is_primary, is_active, source.
+    Raises:
+        Exception: If user not found or repository errors occur.
+    """
+    from core.repositories import SQLAlchemyCalendarRepository, MSGraphCalendarRepository
+    from core.utilities import get_graph_client
+    from core.db import get_session
+    from core.repositories.user_repository import UserRepository
+
+    session = get_session()
+    user_repo = UserRepository(session)
+    user = user_repo.get_by_id(user_id)
+    if not user:
+        raise ValueError(f"No user found for user_id={user_id}.")
+
+    calendars = []
+    if datastore in ("local", "all"):
+        local_repo = SQLAlchemyCalendarRepository(user, session=session)
+        for cal in local_repo.list():
+            name_str = safe_str(cal.name)
+            id_str = safe_str(cal.id)
+            uri = f"local://{uri_safe_name(name_str) or id_str}"
+            calendars.append({
+                "name": name_str,
+                "description": safe_str(cal.description),
+                "type": safe_str(cal.calendar_type),
+                "is_primary": cal.is_primary,
+                "is_active": cal.is_active,
+                "source": "Local Database",
+                "uri": uri
+            })
+    if datastore in ("msgraph", "all"):
+        try:
+            access_token = get_cached_access_token()
+            if not access_token:
+                if console:
+                    console.print("[yellow]No valid MS Graph token found. Please login with 'admin-assistant login msgraph'. Skipping Microsoft 365 calendars.[/yellow]")
+                else:
+                    print("No valid MS Graph token found. Please login with 'admin-assistant login msgraph'. Skipping Microsoft 365 calendars.")
+                return calendars
+            graph_client = get_graph_client(user, access_token)
+            ms_repo = MSGraphCalendarRepository(graph_client, user)
+            for cal in ms_repo.list():
+                name_str = safe_str(cal.name)
+                ms_id_str = safe_str(getattr(cal, 'ms_calendar_id', ''))
+                is_primary = safe_bool(cal.is_primary)
+                if is_primary:
+                    uri = "msgraph://calendar"
+                else:
+                    uri = f"msgraph://{uri_safe_name(name_str) or ms_id_str}"
+                calendars.append({
+                    "name": name_str,
+                    "description": safe_str(cal.description),
+                    "type": safe_str(getattr(cal, 'calendar_type', 'msgraph')),
+                    "is_primary": is_primary,
+                    "is_active": safe_bool(cal.is_active),
+                    "source": "Microsoft 365",
+                    "uri": uri
+                })
+        except Exception as e:
+            import traceback
+            if console:
+                console.print(f"[red]Failed to list MS Graph calendars: {e}[/red]")
+                console.print(traceback.format_exc())
+            else:
+                print(f"Failed to list MS Graph calendars: {e}")
+                print(traceback.format_exc())
+    return calendars
+
+def calendar_name_id_autocomplete(ctx: typer.Context, args: List[str], incomplete: str) -> List[str]:
+    """
+    Typer autocompletion callback for calendar names and IDs.
+    Returns matching names and IDs for the user and datastore.
+    """
+    user_id = None
+    datastore = "all"
+    for i, arg in enumerate(args):
+        if arg == "--user" and i + 1 < len(args):
+            user_id = args[i + 1]
+        if arg == "--datastore" and i + 1 < len(args):
+            datastore = args[i + 1]
+    if not user_id or not user_id.isdigit():
+        return []
+    try:
+        calendars = get_calendars_for_user(int(user_id), datastore)
+        completions = []
+        for cal in calendars:
+            if incomplete.lower() in str(cal["name"]).lower() or incomplete.lower() in str(cal["id"]).lower() or (cal["ms_calendar_id"] and incomplete.lower() in str(cal["ms_calendar_id"]).lower()):
+                completions.append(f"{cal['name']} ({cal['id'] or cal['ms_calendar_id']})")
+        return completions
+    except Exception:
+        return []
+
+@calendar_app.command("list")
+def list_calendars(
+    user_id: int = user_id_option,
+    datastore: str = typer.Option(
+        "all",
+        "--datastore",
+        help="Datastore to query: local, msgraph, or all.",
+        show_default=True,
+        case_sensitive=False,
+        autocompletion=lambda ctx, args, incomplete: [d for d in ["local", "msgraph", "all"] if d.startswith(incomplete.lower())],
+    ),
+):
+    """
+    List all calendars for a user across datastores (local, msgraph, or all).
+    """
+    console = Console()
+    try:
+        calendars = get_calendars_for_user(user_id, datastore, console=console)
+        if not calendars:
+            console.print(f"[yellow]No calendars found for user_id={user_id} in datastore '{datastore}'.[/yellow]")
+            raise typer.Exit(code=0)
+        table = Table(title=f"Calendars for user_id={user_id} (datastore: {datastore})")
+        table.add_column("Source", style="cyan", no_wrap=True)
+        table.add_column("Name", style="green")
+        table.add_column("Description", style="white")
+        table.add_column("Type", style="blue")
+        table.add_column("Primary", style="yellow")
+        table.add_column("Active", style="yellow")
+        table.add_column("URI", style="magenta")
+        for cal in calendars:
+            table.add_row(
+                str(cal["source"] or ""),
+                str(cal["name"] or ""),
+                str(cal["description"] or ""),
+                str(cal["type"] or ""),
+                "✔" if safe_bool(cal["is_primary"]) else "",
+                "✔" if safe_bool(cal["is_active"]) else "✗",
+                str(cal["uri"] or ""),
+            )
+        console.print(table)
+    except Exception as e:
+        import traceback
+        console.print(f"[red]Failed to list calendars: {e}[/red]")
+        console.print(traceback.format_exc())
+        raise typer.Exit(code=1)
+
+@login_app.command("msgraph")
+def login_msgraph(user_id: int = user_id_option):
+    """
+    Log in to Microsoft 365 (MS Graph) for the given user. Uses MSAL device code flow and caches token in ~/.cache/admin-assistant/ms_token.json.
+    """
+    from core.utilities.auth_utility import msal_login
+    try:
+        result = msal_login()
+        typer.echo("Microsoft 365 login successful. Token cached for future CLI use.")
+    except Exception as e:
+        typer.echo(f"Login failed: {e}")
+        raise typer.Exit(code=1)
+
+@login_app.command("logout")
+def logout_msgraph(user_id: int = user_id_option):
+    """
+    Log out from Microsoft 365 (MS Graph) for the given user. Removes the token cache file.
+    """
+    from core.utilities.auth_utility import msal_logout
+    msal_logout()
+    typer.echo("Microsoft 365 token removed. You are now logged out.")
+
+app.add_typer(login_app, name="login")
+
+@calendar_app.command("create")
+def create_calendar(
+    user_id: int = user_id_option,
+    store: str = typer.Option(..., "--store", help="Calendar store: local or msgraph", case_sensitive=False),
+    name: str = typer.Option(None, "--name", help="Name for the calendar (required)"),
+    description: str = typer.Option(None, "--description", help="Optional description for the calendar")
+):
+    """
+    Create a new calendar for a user in the selected store (local or msgraph).
+    """
+    from core.repositories import SQLAlchemyCalendarRepository, MSGraphCalendarRepository
+    from core.models.calendar import Calendar
+    from core.db import get_session
+    from core.utilities import get_graph_client
+    from core.utilities.auth_utility import get_cached_access_token
+    from rich.console import Console
+    console = Console()
+
+    store = store.lower().strip()
+    if store not in ("local", "msgraph"):
+        console.print("[red]Invalid store. Must be 'local' or 'msgraph'.[/red]")
+        raise typer.Exit(code=1)
+
+    # Prompt for missing required fields
+    if not name:
+        name = typer.prompt("Name for the calendar")
+
+    session = get_session() if store == "local" else None
+    user_service = UserService()
+    user = user_service.get_by_id(user_id)
+    if not user:
+        console.print(f"[red]No user found for user_id={user_id}.[/red]")
+        raise typer.Exit(code=1)
+
+    calendar = Calendar(
+        user_id=user_id,
+        name=name,
+        description=description,
+        calendar_type="real",  # default
+        is_primary=False,       # default
+        is_active=True          # default
+    )
+
+    try:
+        if store == "local":
+            repo = SQLAlchemyCalendarRepository(user, session=session)
+        else:
+            access_token = get_cached_access_token()
+            if not access_token:
+                console.print("[yellow]No valid MS Graph token found. Please login with 'admin-assistant login msgraph'.[/yellow]")
+                raise typer.Exit(code=1)
+            graph_client = get_graph_client(user, access_token)
+            repo = MSGraphCalendarRepository(graph_client, user)
+        service = CalendarService(repo)
+        service.create(calendar)
+        console.print(f"[green]Calendar '{name}' created successfully in {store} store.[/green]")
+    except Exception as e:
+        console.print(f"[red]Failed to create calendar: {e}[/red]")
+        raise typer.Exit(code=1)
 
 if __name__ == "__main__":
     app() 
