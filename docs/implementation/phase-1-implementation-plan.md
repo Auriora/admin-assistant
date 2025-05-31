@@ -244,8 +244,8 @@ Implement the documented archive processing rules:
 **File**: `cli/main.py`
 
 ```python
-@calendar_app.command("validate-categories")
-def validate_categories(
+@category_app.command("validate")
+def validate_category(
     user_id: int = user_id_option,
     start_date: str = typer.Option(None, help="Start date (YYYY-MM-DD)"),
     end_date: str = typer.Option(None, help="End date (YYYY-MM-DD)")

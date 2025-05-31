@@ -51,3 +51,5 @@ ms_token.json
 /.idea/modules.xml
 /.idea/vcs.xml
 /.coverage
+/.idea/dataSources.xml
+/.idea/sqldialects.xml

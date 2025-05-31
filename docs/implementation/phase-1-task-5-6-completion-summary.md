@@ -59,7 +59,7 @@ The CalendarArchiveOrchestrator now follows this enhanced workflow:
 Task 6 required adding CLI commands for category validation and overlap analysis. The implementation status:
 
 #### 6.1 Category Validation Command: ✅ ALREADY IMPLEMENTED
-- Command: `admin-assistant calendar categories validate`
+- Command: `admin-assistant category validate`
 - Location: `cli/main.py` lines 507-615
 - Features:
   - Flexible date range parsing
@@ -167,13 +167,13 @@ admin-assistant calendar analyze-overlaps --user 1 --no-details
 ### Category Validation
 ```bash
 # Validate categories for last 7 days
-admin-assistant calendar categories validate --user 1
+admin-assistant category validate --user 1
 
 # Validate specific date range
-admin-assistant calendar categories validate --user 1 --start-date 2024-12-01 --end-date 2024-12-19
+admin-assistant category validate --user 1 --start-date 2024-12-01 --end-date 2024-12-19
 
 # Show only statistics, hide issues
-admin-assistant calendar categories validate --user 1 --no-issues
+admin-assistant category validate --user 1 --no-issues
 ```
 
 ### Overlap Analysis

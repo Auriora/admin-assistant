@@ -4,25 +4,25 @@ Admin Assistant CLI
 
 Usage Examples:
 ---------------
+# Archive calendar events using a specific config
+admin-assistant calendar archive --user <USER_ID> --archive-config <CONFIG_ID> --date "last 7 days"
+
 # List all archive configs for a user
-admin-assistant config calendar archive config list --user <USER_ID>
+admin-assistant config calendar archive list --user <USER_ID>
 
 # Create a new archive config (interactive prompts for missing fields)
-admin-assistant config calendar archive config create --user <USER_ID>
+admin-assistant config calendar archive create --user <USER_ID>
 
 # Create a new archive config (all options provided)
-admin-assistant config calendar archive config create --user <USER_ID> --name "Work Archive" --source-uri "msgraph://source" --dest-uri "msgraph://dest" --timezone "Europe/London" --active
+admin-assistant config calendar archive create --user <USER_ID> --name "Work Archive" --source-uri "msgraph://source" --dest-uri "msgraph://dest" --timezone "Europe/London" --active
 
 # Activate/deactivate/delete a config
-admin-assistant config calendar archive config activate --user <USER_ID> --config-id <CONFIG_ID>
-admin-assistant config calendar archive config deactivate --user <USER_ID> --config-id <CONFIG_ID>
-admin-assistant config calendar archive config delete --user <USER_ID> --config-id <CONFIG_ID>
+admin-assistant config calendar archive activate --user <USER_ID> --config-id <CONFIG_ID>
+admin-assistant config calendar archive deactivate --user <USER_ID> --config-id <CONFIG_ID>
+admin-assistant config calendar archive delete --user <USER_ID> --config-id <CONFIG_ID>
 
 # Set a config as default (prints usage instructions)
-admin-assistant config calendar archive config set-default --user <USER_ID> --config-id <CONFIG_ID>
-
-# Archive calendar events using a specific config
-admin-assistant config calendar archive archive --user <USER_ID> --archive-config <CONFIG_ID> --date "last 7 days"
+admin-assistant config calendar archive set-default --user <USER_ID> --config-id <CONFIG_ID>
 
 All commands support --help for detailed options and descriptions.
 
@@ -50,7 +50,7 @@ import tzlocal
 
 app = typer.Typer(help="Admin Assistant CLI for running calendar and timesheet operations.")
 calendar_app = typer.Typer(help="Calendar operations")
-categories_app = typer.Typer(help="Category management operations")
+category_app = typer.Typer(help="Category management operations")
 timesheet_app = typer.Typer(help="Timesheet operations")
 config_app = typer.Typer(help="Configuration operations")
 archive_config_app = typer.Typer(help="Calendar configuration operations")
@@ -160,10 +160,10 @@ def main(ctx: typer.Context):
 Use --help on any command for details and options.
 
 Examples:
-  admin-assistant config calendar archive config list --user <USER_ID>
-  admin-assistant config calendar archive config create --user <USER_ID>
-  admin-assistant config calendar archive config activate --user <USER_ID> --config-id <CONFIG_ID>
-  admin-assistant config calendar archive archive --user <USER_ID> --archive-config <CONFIG_ID> --date "last 7 days"
+  admin-assistant calendar archive --user <USER_ID> --archive-config <CONFIG_ID> --date "last 7 days"
+  admin-assistant config calendar archive list --user <USER_ID>
+  admin-assistant config calendar archive create --user <USER_ID>
+  admin-assistant config calendar archive activate --user <USER_ID> --config-id <CONFIG_ID>
 """
     if ctx.invoked_subcommand is None:
         typer.echo(ctx.get_help())
@@ -219,9 +219,9 @@ def travel_auto_plan():
     """Auto-plan travel."""
     typer.echo("Auto-planning travel...")
 
-# Categories commands
-@categories_app.command("list")
-def list_categories(
+# Category commands
+@category_app.command("list")
+def list_category(
     user_id: int = user_id_option,
     store: str = typer.Option(
         "local",
@@ -296,7 +296,7 @@ def list_categories(
         console.print(f"[red]Error listing categories: {e}[/red]")
         raise typer.Exit(code=1)
 
-@categories_app.command("add")
+@category_app.command("add")
 def add_category(
     user_id: int = user_id_option,
     store: str = typer.Option(
@@ -367,7 +367,7 @@ def add_category(
         console.print(f"[red]Error creating category: {e}[/red]")
         raise typer.Exit(code=1)
 
-@categories_app.command("edit")
+@category_app.command("edit")
 def edit_category(
     user_id: int = user_id_option,
     store: str = typer.Option(
@@ -437,7 +437,7 @@ def edit_category(
         console.print(f"[red]Error updating category: {e}[/red]")
         raise typer.Exit(code=1)
 
-@categories_app.command("delete")
+@category_app.command("delete")
 def delete_category(
     user_id: int = user_id_option,
     store: str = typer.Option(
@@ -505,8 +505,8 @@ def delete_category(
         console.print(f"[red]Error deleting category: {e}[/red]")
         raise typer.Exit(code=1)
 
-@categories_app.command("validate")
-def validate_categories(
+@category_app.command("validate")
+def validate_category(
     user_id: int = user_id_option,
     start_date: str = typer.Option(None, help="Start date (YYYY-MM-DD or flexible format)"),
     end_date: str = typer.Option(None, help="End date (YYYY-MM-DD or flexible format)"),
@@ -891,6 +891,9 @@ def delete_config(
     service.delete(config_id)
     typer.echo(f"Config {config_id} deleted.")
 
+# Add archive config commands to archive_config_app as "archive" subcommand
+archive_config_app.add_typer(archive_archive_config_app, name="archive")
+# Add archive_config_app to config_app as "calendar" subcommand
 config_app.add_typer(archive_config_app, name="calendar")
 
 timesheet_app.add_typer(timesheet_app, name="timesheet")
@@ -911,7 +914,7 @@ def upload(
     """Upload timesheet."""
     typer.echo(f"Uploading timesheet to {destination} for user {user_id}")
 
-calendar_app.add_typer(categories_app, name="categories")
+app.add_typer(category_app, name="category")
 app.add_typer(calendar_app, name="calendar")
 app.add_typer(config_app, name="config")
 app.add_typer(jobs_app, name="jobs")

@@ -9,6 +9,9 @@ The Admin Assistant provides a powerful CLI for managing calendars, archives, an
 You can manage calendar archive configurations using the following commands:
 
 ```
+# Archive calendar events using a specific config
+admin-assistant calendar archive --user <USER_ID> --archive-config <CONFIG_ID> --date "last 7 days"
+
 # List all archive configs for a user
 admin-assistant config calendar archive list --user <USER_ID>
 

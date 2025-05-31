@@ -65,7 +65,7 @@ get_category_statistics(appointments: List[Appointment]) -> Dict[str, Any]
 4. Enhanced return data with category metrics
 
 ### 4. CLI Command Implementation
-**Command**: `admin-assistant calendar validate-categories`
+**Command**: `admin-assistant category validate`
 
 **Features**:
 - ✅ **Flexible Date Ranges**: Support for various date formats and ranges
@@ -76,13 +76,13 @@ get_category_statistics(appointments: List[Appointment]) -> Dict[str, Any]
 **Usage Examples**:
 ```bash
 # Validate last 7 days (default)
-admin-assistant calendar validate-categories --user 1
+admin-assistant category validate --user 1
 
 # Validate specific date range
-admin-assistant calendar validate-categories --user 1 --start-date 2024-12-01 --end-date 2024-12-19
+admin-assistant category validate --user 1 --start-date 2024-12-01 --end-date 2024-12-19
 
 # Show only statistics, hide issues
-admin-assistant calendar validate-categories --user 1 --no-issues
+admin-assistant category validate --user 1 --no-issues
 ```
 
 ### 5. Integration Testing
