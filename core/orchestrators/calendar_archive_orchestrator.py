@@ -1,5 +1,6 @@
 from datetime import date
 from typing import Any, Optional, Dict
+import time
 from core.models.appointment import Appointment
 from core.models.action_log import ActionLog
 from core.models.entity_association import EntityAssociation
@@ -12,6 +13,8 @@ from core.services.category_processing_service import CategoryProcessingService
 from core.services.enhanced_overlap_resolution_service import EnhancedOverlapResolutionService
 from core.services.meeting_modification_service import MeetingModificationService
 from core.services.calendar_archive_service import make_appointments_immutable
+from core.services.audit_log_service import AuditLogService
+from core.utilities.audit_logging_utility import AuditContext, AuditLogHelper
 from sqlalchemy.orm import Session
 import logging
 
@@ -62,196 +65,287 @@ class CalendarArchiveOrchestrator:
         Returns:
             dict: Summary of the operation (archived_count, overlap_count, errors).
         """
-        try:
-            print("[DEBUG] Parsing calendar URIs...")
-            source_calendar_id = self.extract_msgraph_calendar_id(source_calendar_uri)
-            archive_calendar_id = self.extract_msgraph_calendar_id(archive_calendar_id)
-            print(f"[DEBUG] Source calendar URI: {source_calendar_uri}, Archive calendar URI: {archive_calendar_id}")
-            # 1. Fetch appointments from MS Graph (source calendar)
-            print("[DEBUG] Fetching appointments from MS Graph...")
-            source_repo = MSGraphAppointmentRepository(msgraph_client, user, source_calendar_id)
-            appointments = source_repo.list_for_user(start_date, end_date)
-            print(f"[DEBUG] Fetched {len(appointments)} appointments.")
+        # Initialize audit logging
+        audit_service = AuditLogService()
+        correlation_id = audit_service.generate_correlation_id()
 
-            # 2. Process: expand recurrences, deduplicate, detect overlaps
-            print("[DEBUG] Expanding recurring events...")
-            expanded = expand_recurring_events_range(appointments, start_date, end_date)
-            print(f"[DEBUG] Expanded to {len(expanded)} events.")
+        # Create audit context for the entire archiving operation
+        with AuditContext(
+            audit_service=audit_service,
+            user_id=user.id,
+            action_type='archive',
+            operation='calendar_archive',
+            resource_type='calendar',
+            resource_id=source_calendar_uri,
+            correlation_id=correlation_id
+        ) as audit_ctx:
 
-            # 2a. Process categories and apply privacy automation
-            print("[DEBUG] Processing categories and applying privacy automation...")
-            category_service = CategoryProcessingService()
-            category_stats = category_service.get_category_statistics(expanded)
-            print(f"[DEBUG] Category stats: {category_stats['valid_categories']} valid, {category_stats['invalid_categories']} invalid, {category_stats['personal_appointments']} personal")
+            # Add operation parameters to audit log
+            audit_ctx.set_request_data({
+                'source_calendar_uri': source_calendar_uri,
+                'archive_calendar_id': archive_calendar_id,
+                'start_date': start_date.isoformat(),
+                'end_date': end_date.isoformat()
+            })
 
-            # Apply privacy flags to personal appointments
-            for appt in expanded:
-                if category_service.should_mark_private(appt):
-                    # Set sensitivity to Private for personal appointments
-                    if hasattr(appt, 'sensitivity'):
-                        appt.sensitivity = 'Private'
+            try:
+                print("[DEBUG] Parsing calendar URIs...")
+                source_calendar_id = self.extract_msgraph_calendar_id(source_calendar_uri)
+                archive_calendar_id = self.extract_msgraph_calendar_id(archive_calendar_id)
+                print(f"[DEBUG] Source calendar URI: {source_calendar_uri}, Archive calendar URI: {archive_calendar_id}")
 
-            # 2b. Process meeting modifications
-            print("[DEBUG] Processing meeting modifications...")
-            modification_service = MeetingModificationService()
-            processed_appointments = modification_service.process_modifications(expanded)
-            modification_count = len(expanded) - len(processed_appointments)
-            print(f"[DEBUG] Processed {modification_count} modification appointments, resulting in {len(processed_appointments)} appointments")
+                # Log the start of the operation
+                audit_ctx.add_detail('phase', 'initialization')
+                audit_ctx.add_detail('source_calendar_id', source_calendar_id)
+                audit_ctx.add_detail('archive_calendar_id', archive_calendar_id)
+                # 1. Fetch appointments from MS Graph (source calendar)
+                print("[DEBUG] Fetching appointments from MS Graph...")
+                audit_ctx.add_detail('phase', 'fetching_appointments')
 
-            print("[DEBUG] Deduplicating events...")
-            deduped = merge_duplicates(processed_appointments)
-            print(f"[DEBUG] Deduped to {len(deduped)} events.")
+                source_repo = MSGraphAppointmentRepository(msgraph_client, user, source_calendar_id)
+                appointments = source_repo.list_for_user(start_date, end_date)
+                print(f"[DEBUG] Fetched {len(appointments)} appointments.")
 
-            print("[DEBUG] Detecting overlaps...")
-            overlap_groups = detect_overlaps(deduped)
-            print(f"[DEBUG] Found {len(overlap_groups)} initial overlap groups.")
+                audit_ctx.add_detail('initial_appointment_count', len(appointments))
 
-            # Apply enhanced overlap resolution
-            print("[DEBUG] Applying enhanced overlap resolution...")
-            overlap_service = EnhancedOverlapResolutionService()
-            auto_resolved_appointments = []
-            remaining_conflicts = []
-            resolution_stats = {
-                'total_overlaps': len(overlap_groups),
-                'auto_resolved': 0,
-                'remaining_conflicts': 0,
-                'filtered_appointments': 0
-            }
+                # 2. Process: expand recurrences, deduplicate, detect overlaps
+                print("[DEBUG] Expanding recurring events...")
+                audit_ctx.add_detail('phase', 'processing_appointments')
 
-            for group in overlap_groups:
-                resolution_result = overlap_service.apply_automatic_resolution_rules(group)
+                expanded = expand_recurring_events_range(appointments, start_date, end_date)
+                print(f"[DEBUG] Expanded to {len(expanded)} events.")
 
-                # Add resolved appointments to archive list
-                auto_resolved_appointments.extend(resolution_result['resolved'])
+                audit_ctx.add_detail('expanded_appointment_count', len(expanded))
 
-                # Track remaining conflicts that need manual resolution
-                if resolution_result['conflicts']:
-                    remaining_conflicts.append(resolution_result['conflicts'])
+                # 2a. Process categories and apply privacy automation
+                print("[DEBUG] Processing categories and applying privacy automation...")
+                category_service = CategoryProcessingService()
+                category_stats = category_service.get_category_statistics(expanded)
+                print(f"[DEBUG] Category stats: {category_stats['valid_categories']} valid, {category_stats['invalid_categories']} invalid, {category_stats['personal_appointments']} personal")
 
-                # Update stats
-                if resolution_result['resolved']:
-                    resolution_stats['auto_resolved'] += 1
-                if resolution_result['conflicts']:
-                    resolution_stats['remaining_conflicts'] += 1
-                resolution_stats['filtered_appointments'] += len(resolution_result['filtered'])
+                audit_ctx.add_detail('category_stats', category_stats)
 
-                # Log resolution details
-                if resolution_result['resolution_log']:
-                    print(f"[DEBUG] Overlap resolution: {'; '.join(resolution_result['resolution_log'])}")
+                # Apply privacy flags to personal appointments
+                privacy_applied_count = 0
+                for appt in expanded:
+                    if category_service.should_mark_private(appt):
+                        # Set sensitivity to Private for personal appointments
+                        if hasattr(appt, 'sensitivity'):
+                            appt.sensitivity = 'Private'
+                            privacy_applied_count += 1
 
-            # Combine non-overlapping appointments with auto-resolved ones
-            overlapping_appts = set(a for group in overlap_groups for a in group)
-            non_overlapping = [a for a in deduped if a not in overlapping_appts]
-            appointments_to_archive = non_overlapping + auto_resolved_appointments
+                audit_ctx.add_detail('privacy_applied_count', privacy_applied_count)
 
-            print(f"[DEBUG] Resolution complete: {len(non_overlapping)} non-overlapping + {len(auto_resolved_appointments)} auto-resolved = {len(appointments_to_archive)} total to archive.")
-            print(f"[DEBUG] Remaining conflicts: {len(remaining_conflicts)} groups need manual resolution.")
+                # 2b. Process meeting modifications
+                print("[DEBUG] Processing meeting modifications...")
+                modification_service = MeetingModificationService()
+                processed_appointments = modification_service.process_modifications(expanded)
+                modification_count = len(expanded) - len(processed_appointments)
+                print(f"[DEBUG] Processed {modification_count} modification appointments, resulting in {len(processed_appointments)} appointments")
 
-            # 3. Write non-overlapping to archive calendar (MS Graph)
-            print("[DEBUG] Selecting archive repository based on URI...")
-            if archive_calendar_id.startswith("local://"):
-                from core.repositories.appointment_repository_sqlalchemy import SQLAlchemyAppointmentRepository
-                # Extract local calendar ID or name from URI
-                local_cal_id = archive_calendar_id[len("local://"):]
-                archive_repo = SQLAlchemyAppointmentRepository(user, local_cal_id, session=db_session)
-                print(f"[DEBUG] Using SQLAlchemyAppointmentRepository for local calendar: {local_cal_id}")
-            elif archive_calendar_id == "" or archive_calendar_id.startswith("msgraph://"):
-                # For msgraph://calendar (primary) or msgraph://<id>
-                msgraph_cal_id = self.extract_msgraph_calendar_id(archive_calendar_id)
-                archive_repo = MSGraphAppointmentRepository(msgraph_client, user, msgraph_cal_id)
-                print(f"[DEBUG] Using MSGraphAppointmentRepository for MS Graph calendar: {msgraph_cal_id}")
-            else:
-                # Default: treat as plain MS Graph calendar ID
-                archive_repo = MSGraphAppointmentRepository(msgraph_client, user, archive_calendar_id)
-                print(f"[DEBUG] Using MSGraphAppointmentRepository for plain calendar ID: {archive_calendar_id}")
-            archived_count = 0
-            for appt in appointments_to_archive:
-                archive_repo.add(appt)
-                archived_count += 1
-            print(f"[DEBUG] Archived {archived_count} events.")
+                audit_ctx.add_detail('modification_count', modification_count)
+                audit_ctx.add_detail('processed_appointment_count', len(processed_appointments))
 
-            # 3a. Mark archived appointments as immutable
-            print("[DEBUG] Marking archived appointments as immutable...")
-            if appointments_to_archive and archive_calendar_id.startswith("local://"):
-                # Only mark as immutable for local storage (SQLAlchemy)
-                # MS Graph appointments are inherently immutable once archived
-                make_appointments_immutable(appointments_to_archive, db_session)
-                print(f"[DEBUG] Marked {len(appointments_to_archive)} appointments as immutable.")
-            else:
-                print("[DEBUG] Skipping immutability marking for MS Graph storage (inherently immutable).")
+                print("[DEBUG] Deduplicating events...")
+                deduped = merge_duplicates(processed_appointments)
+                print(f"[DEBUG] Deduped to {len(deduped)} events.")
 
-            # 4. Log overlaps and category issues in local DB
-            print("[DEBUG] Logging overlaps and category issues...")
-            action_log_repo = ActionLogRepository(db_session)
-            assoc_helper = EntityAssociationHelper()
-            overlap_count = 0
+                audit_ctx.add_detail('deduped_appointment_count', len(deduped))
 
-            # Log only remaining conflicts that need manual resolution
-            for conflict_group in remaining_conflicts:
-                for appt in conflict_group:
-                    log = ActionLog(
-                        user_id=user.id,
-                        event_type='overlap',
-                        state='needs_user_action',
-                        description=f"Overlapping event (manual resolution needed): {getattr(appt, 'subject', None)}",
-                        details={
-                            'ms_event_id': getattr(appt, 'ms_event_id', None),
-                            'subject': getattr(appt, 'subject', None),
-                            'start_time': str(getattr(appt, 'start_time', None)),
-                            'end_time': str(getattr(appt, 'end_time', None)),
-                            'show_as': getattr(appt, 'show_as', None),
-                            'importance': getattr(appt, 'importance', None),
-                            'resolution_status': 'auto_resolution_failed'
-                        }
-                    )
-                    action_log_repo.add(log)
-                    assoc = EntityAssociation(
-                        source_type='action_log',
-                        source_id=log.id,
-                        target_type='appointment',
-                        target_id=getattr(appt, 'id', None) or getattr(appt, 'ms_event_id', None),
-                        association_type='overlap'
-                    )
-                    assoc_helper.add(db_session, assoc)
-                    overlap_count += 1
+                print("[DEBUG] Detecting overlaps...")
+                overlap_groups = detect_overlaps(deduped)
+                print(f"[DEBUG] Found {len(overlap_groups)} initial overlap groups.")
 
-            # Log category validation issues
-            category_issue_count = 0
-            if category_stats['issues']:
-                for issue in category_stats['issues'][:10]:  # Limit to first 10 issues
-                    log = ActionLog(
-                        user_id=user.id,
-                        event_type='category_validation',
-                        state='needs_user_action',
-                        description=f"Category validation issue: {issue}",
-                        details={
-                            'issue_type': 'category_format',
-                            'issue_description': issue,
-                            'date_range': f"{start_date} to {end_date}",
-                            'total_issues': len(category_stats['issues'])
-                        }
-                    )
-                    action_log_repo.add(log)
-                    category_issue_count += 1
+                audit_ctx.add_detail('initial_overlap_groups', len(overlap_groups))
 
-            print(f"[DEBUG] Logged {overlap_count} overlaps and {category_issue_count} category issues. Committing to DB...")
-            db_session.commit()
-            print("[DEBUG] DB commit complete.")
-            return {
-                'archived_count': archived_count,
-                'overlap_count': overlap_count,
-                'category_stats': category_stats,
-                'category_issue_count': category_issue_count,
-                'resolution_stats': resolution_stats,
-                'modification_count': modification_count,
-                'errors': []
-            }
-        except Exception as e:
-            print(f"[DEBUG] Exception occurred: {e}")
-            if logger:
-                logger.exception(f"Orchestration failed for user {getattr(user, 'email', None)} from {start_date} to {end_date}: {str(e)}")
-            return {
-                'archived_count': 0,
-                'overlap_count': 0,
-                'errors': [str(e)]
-            } 
+                # Apply enhanced overlap resolution
+                print("[DEBUG] Applying enhanced overlap resolution...")
+                audit_ctx.add_detail('phase', 'overlap_resolution')
+
+                overlap_service = EnhancedOverlapResolutionService()
+                auto_resolved_appointments = []
+                remaining_conflicts = []
+                resolution_stats = {
+                    'total_overlaps': len(overlap_groups),
+                    'auto_resolved': 0,
+                    'remaining_conflicts': 0,
+                    'filtered_appointments': 0
+                }
+
+                for group in overlap_groups:
+                    resolution_result = overlap_service.apply_automatic_resolution_rules(group)
+
+                    # Add resolved appointments to archive list
+                    auto_resolved_appointments.extend(resolution_result['resolved'])
+
+                    # Track remaining conflicts that need manual resolution
+                    if resolution_result['conflicts']:
+                        remaining_conflicts.append(resolution_result['conflicts'])
+
+                    # Update stats
+                    if resolution_result['resolved']:
+                        resolution_stats['auto_resolved'] += 1
+                    if resolution_result['conflicts']:
+                        resolution_stats['remaining_conflicts'] += 1
+                    resolution_stats['filtered_appointments'] += len(resolution_result['filtered'])
+
+                    # Log resolution details
+                    if resolution_result['resolution_log']:
+                        print(f"[DEBUG] Overlap resolution: {'; '.join(resolution_result['resolution_log'])}")
+
+                # Combine non-overlapping appointments with auto-resolved ones
+                overlapping_appts = set(a for group in overlap_groups for a in group)
+                non_overlapping = [a for a in deduped if a not in overlapping_appts]
+                appointments_to_archive = non_overlapping + auto_resolved_appointments
+
+                print(f"[DEBUG] Resolution complete: {len(non_overlapping)} non-overlapping + {len(auto_resolved_appointments)} auto-resolved = {len(appointments_to_archive)} total to archive.")
+                print(f"[DEBUG] Remaining conflicts: {len(remaining_conflicts)} groups need manual resolution.")
+
+                audit_ctx.add_detail('resolution_stats', resolution_stats)
+                audit_ctx.add_detail('appointments_to_archive_count', len(appointments_to_archive))
+                audit_ctx.add_detail('remaining_conflicts_count', len(remaining_conflicts))
+
+                # 3. Write non-overlapping to archive calendar (MS Graph)
+                print("[DEBUG] Selecting archive repository based on URI...")
+                audit_ctx.add_detail('phase', 'archiving')
+
+                if archive_calendar_id.startswith("local://"):
+                    from core.repositories.appointment_repository_sqlalchemy import SQLAlchemyAppointmentRepository
+                    # Extract local calendar ID or name from URI
+                    local_cal_id = archive_calendar_id[len("local://"):]
+                    archive_repo = SQLAlchemyAppointmentRepository(user, local_cal_id, session=db_session)
+                    print(f"[DEBUG] Using SQLAlchemyAppointmentRepository for local calendar: {local_cal_id}")
+                    audit_ctx.add_detail('archive_repository_type', 'SQLAlchemy')
+                elif archive_calendar_id == "" or archive_calendar_id.startswith("msgraph://"):
+                    # For msgraph://calendar (primary) or msgraph://<id>
+                    msgraph_cal_id = self.extract_msgraph_calendar_id(archive_calendar_id)
+                    archive_repo = MSGraphAppointmentRepository(msgraph_client, user, msgraph_cal_id)
+                    print(f"[DEBUG] Using MSGraphAppointmentRepository for MS Graph calendar: {msgraph_cal_id}")
+                    audit_ctx.add_detail('archive_repository_type', 'MSGraph')
+                else:
+                    # Default: treat as plain MS Graph calendar ID
+                    archive_repo = MSGraphAppointmentRepository(msgraph_client, user, archive_calendar_id)
+                    print(f"[DEBUG] Using MSGraphAppointmentRepository for plain calendar ID: {archive_calendar_id}")
+                    audit_ctx.add_detail('archive_repository_type', 'MSGraph')
+
+                archived_count = 0
+                archive_errors = []
+
+                for appt in appointments_to_archive:
+                    try:
+                        archive_repo.add(appt)
+                        archived_count += 1
+                    except Exception as e:
+                        archive_errors.append(f"Failed to archive appointment {getattr(appt, 'subject', 'Unknown')}: {str(e)}")
+
+                print(f"[DEBUG] Archived {archived_count} events.")
+                audit_ctx.add_detail('archived_count', archived_count)
+                audit_ctx.add_detail('archive_errors', archive_errors)
+
+                # 3a. Mark archived appointments as immutable
+                print("[DEBUG] Marking archived appointments as immutable...")
+                if appointments_to_archive and archive_calendar_id.startswith("local://"):
+                    # Only mark as immutable for local storage (SQLAlchemy)
+                    # MS Graph appointments are inherently immutable once archived
+                    make_appointments_immutable(appointments_to_archive, db_session)
+                    print(f"[DEBUG] Marked {len(appointments_to_archive)} appointments as immutable.")
+                    audit_ctx.add_detail('immutable_marked', True)
+                    audit_ctx.add_detail('immutable_count', len(appointments_to_archive))
+                else:
+                    print("[DEBUG] Skipping immutability marking for MS Graph storage (inherently immutable).")
+                    audit_ctx.add_detail('immutable_marked', False)
+                    audit_ctx.add_detail('immutable_reason', 'MS Graph storage inherently immutable')
+
+                # 4. Log overlaps and category issues in local DB
+                print("[DEBUG] Logging overlaps and category issues...")
+                audit_ctx.add_detail('phase', 'logging_issues')
+
+                action_log_repo = ActionLogRepository(db_session)
+                assoc_helper = EntityAssociationHelper()
+                overlap_count = 0
+
+                # Log only remaining conflicts that need manual resolution
+                for conflict_group in remaining_conflicts:
+                    for appt in conflict_group:
+                        log = ActionLog(
+                            user_id=user.id,
+                            event_type='overlap',
+                            state='needs_user_action',
+                            description=f"Overlapping event (manual resolution needed): {getattr(appt, 'subject', None)}",
+                            details={
+                                'ms_event_id': getattr(appt, 'ms_event_id', None),
+                                'subject': getattr(appt, 'subject', None),
+                                'start_time': str(getattr(appt, 'start_time', None)),
+                                'end_time': str(getattr(appt, 'end_time', None)),
+                                'show_as': getattr(appt, 'show_as', None),
+                                'importance': getattr(appt, 'importance', None),
+                                'resolution_status': 'auto_resolution_failed',
+                                'correlation_id': correlation_id  # Link to audit trail
+                            }
+                        )
+                        action_log_repo.add(log)
+                        assoc = EntityAssociation(
+                            source_type='action_log',
+                            source_id=log.id,
+                            target_type='appointment',
+                            target_id=getattr(appt, 'id', None) or getattr(appt, 'ms_event_id', None),
+                            association_type='overlap'
+                        )
+                        assoc_helper.add(db_session, assoc)
+                        overlap_count += 1
+
+                # Log category validation issues
+                category_issue_count = 0
+                if category_stats['issues']:
+                    for issue in category_stats['issues'][:10]:  # Limit to first 10 issues
+                        log = ActionLog(
+                            user_id=user.id,
+                            event_type='category_validation',
+                            state='needs_user_action',
+                            description=f"Category validation issue: {issue}",
+                            details={
+                                'issue_type': 'category_format',
+                                'issue_description': issue,
+                                'date_range': f"{start_date} to {end_date}",
+                                'total_issues': len(category_stats['issues']),
+                                'correlation_id': correlation_id  # Link to audit trail
+                            }
+                        )
+                        action_log_repo.add(log)
+                        category_issue_count += 1
+
+                print(f"[DEBUG] Logged {overlap_count} overlaps and {category_issue_count} category issues. Committing to DB...")
+                db_session.commit()
+                print("[DEBUG] DB commit complete.")
+
+                # Set final audit details and response data
+                audit_ctx.add_detail('overlap_count', overlap_count)
+                audit_ctx.add_detail('category_issue_count', category_issue_count)
+                audit_ctx.add_detail('phase', 'completed')
+
+                result = {
+                    'archived_count': archived_count,
+                    'overlap_count': overlap_count,
+                    'category_stats': category_stats,
+                    'category_issue_count': category_issue_count,
+                    'resolution_stats': resolution_stats,
+                    'modification_count': modification_count,
+                    'errors': archive_errors,
+                    'correlation_id': correlation_id  # Include correlation ID in response
+                }
+
+                audit_ctx.set_response_data(result)
+                return result
+
+            except Exception as e:
+                print(f"[DEBUG] Exception occurred: {e}")
+                if logger:
+                    logger.exception(f"Orchestration failed for user {getattr(user, 'email', None)} from {start_date} to {end_date}: {str(e)}")
+
+                # The AuditContext will automatically log the failure
+                return {
+                    'archived_count': 0,
+                    'overlap_count': 0,
+                    'errors': [str(e)],
+                    'correlation_id': correlation_id
+                }

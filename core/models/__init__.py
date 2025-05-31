@@ -6,6 +6,7 @@ from .category import Category
 from .timesheet import Timesheet
 from .appointment import Appointment
 from .action_log import ActionLog
+from .audit_log import AuditLog
 from .entity_association import EntityAssociation
 from .prompt import Prompt
-from .chat_session import ChatSession 
+from .chat_session import ChatSession

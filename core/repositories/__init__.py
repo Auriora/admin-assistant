@@ -11,5 +11,6 @@ from .category_repository_msgraph import MSGraphCategoryRepository
 from .category_repository_factory import CategoryRepositoryFactory, get_category_repository
 from .user_repository import UserRepository
 from .action_log_repository import ActionLogRepository
+from .audit_log_repository import AuditLogRepository
 from .prompt_repository import PromptRepository
 from .chat_session_repository import ChatSessionRepository
