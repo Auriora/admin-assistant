@@ -18,6 +18,40 @@ from core.utilities.audit_logging_utility import AuditContext, AuditLogHelper
 from sqlalchemy.orm import Session
 import logging
 
+# OpenTelemetry imports
+try:
+    from opentelemetry import trace, metrics
+    from opentelemetry.trace import Status, StatusCode
+    tracer = trace.get_tracer(__name__)
+    meter = metrics.get_meter(__name__)
+
+    # Create metrics
+    archive_operations_counter = meter.create_counter(
+        "archive_operations_total",
+        description="Total number of archive operations",
+        unit="1"
+    )
+    archive_duration_histogram = meter.create_histogram(
+        "archive_operation_duration_seconds",
+        description="Duration of archive operations",
+        unit="s"
+    )
+    archived_appointments_counter = meter.create_counter(
+        "archived_appointments_total",
+        description="Total number of appointments archived",
+        unit="1"
+    )
+    overlap_conflicts_counter = meter.create_counter(
+        "overlap_conflicts_total",
+        description="Total number of overlap conflicts detected",
+        unit="1"
+    )
+    OTEL_AVAILABLE = True
+except ImportError:
+    tracer = None
+    meter = None
+    OTEL_AVAILABLE = False
+
 logger = logging.getLogger(__name__)
 
 class CalendarArchiveOrchestrator:
@@ -65,9 +99,44 @@ class CalendarArchiveOrchestrator:
         Returns:
             dict: Summary of the operation (archived_count, overlap_count, errors).
         """
+        operation_start_time = time.time()
+
         # Initialize audit logging
         audit_service = AuditLogService()
         correlation_id = audit_service.generate_correlation_id()
+
+        # Start OpenTelemetry span
+        if OTEL_AVAILABLE and tracer:
+            with tracer.start_as_current_span(
+                "calendar_archive_orchestrator.archive_user_appointments",
+                attributes={
+                    "user.id": str(user.id),
+                    "user.email": getattr(user, 'email', ''),
+                    "source_calendar_uri": source_calendar_uri,
+                    "archive_calendar_id": archive_calendar_id,
+                    "start_date": start_date.isoformat(),
+                    "end_date": end_date.isoformat(),
+                    "correlation_id": correlation_id
+                }
+            ) as span:
+                return self._archive_user_appointments_impl(
+                    user, msgraph_client, source_calendar_uri, archive_calendar_id,
+                    start_date, end_date, db_session, logger, audit_service,
+                    correlation_id, operation_start_time, span
+                )
+        else:
+            return self._archive_user_appointments_impl(
+                user, msgraph_client, source_calendar_uri, archive_calendar_id,
+                start_date, end_date, db_session, logger, audit_service,
+                correlation_id, operation_start_time, None
+            )
+
+    def _archive_user_appointments_impl(
+        self, user, msgraph_client, source_calendar_uri, archive_calendar_id,
+        start_date, end_date, db_session, logger, audit_service,
+        correlation_id, operation_start_time, span
+    ) -> Dict[str, Any]:
+        """Implementation of archive_user_appointments with OpenTelemetry support."""
 
         # Create audit context for the entire archiving operation
         with AuditContext(
@@ -334,6 +403,38 @@ class CalendarArchiveOrchestrator:
                     'correlation_id': correlation_id  # Include correlation ID in response
                 }
 
+                # Record metrics and span attributes
+                operation_duration = time.time() - operation_start_time
+                if OTEL_AVAILABLE:
+                    # Record metrics
+                    archive_operations_counter.add(1, {
+                        "status": "success" if not archive_errors else "partial",
+                        "user_id": str(user.id)
+                    })
+                    archive_duration_histogram.record(operation_duration, {
+                        "status": "success" if not archive_errors else "partial",
+                        "user_id": str(user.id)
+                    })
+                    archived_appointments_counter.add(archived_count, {
+                        "user_id": str(user.id)
+                    })
+                    overlap_conflicts_counter.add(overlap_count, {
+                        "user_id": str(user.id)
+                    })
+
+                    # Update span attributes
+                    if span:
+                        span.set_attributes({
+                            "operation.duration_seconds": operation_duration,
+                            "operation.archived_count": archived_count,
+                            "operation.overlap_count": overlap_count,
+                            "operation.category_issue_count": category_issue_count,
+                            "operation.modification_count": modification_count,
+                            "operation.error_count": len(archive_errors),
+                            "operation.status": "success" if not archive_errors else "partial"
+                        })
+                        span.set_status(Status(StatusCode.OK))
+
                 audit_ctx.set_response_data(result)
                 return result
 
@@ -341,6 +442,29 @@ class CalendarArchiveOrchestrator:
                 print(f"[DEBUG] Exception occurred: {e}")
                 if logger:
                     logger.exception(f"Orchestration failed for user {getattr(user, 'email', None)} from {start_date} to {end_date}: {str(e)}")
+
+                # Record error metrics and span status
+                operation_duration = time.time() - operation_start_time
+                if OTEL_AVAILABLE:
+                    # Record error metrics
+                    archive_operations_counter.add(1, {
+                        "status": "error",
+                        "user_id": str(user.id)
+                    })
+                    archive_duration_histogram.record(operation_duration, {
+                        "status": "error",
+                        "user_id": str(user.id)
+                    })
+
+                    # Update span with error
+                    if span:
+                        span.set_attributes({
+                            "operation.duration_seconds": operation_duration,
+                            "operation.status": "error",
+                            "error.type": type(e).__name__,
+                            "error.message": str(e)
+                        })
+                        span.set_status(Status(StatusCode.ERROR, str(e)))
 
                 # The AuditContext will automatically log the failure
                 return {

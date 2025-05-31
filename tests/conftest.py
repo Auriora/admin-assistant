@@ -1,0 +1,223 @@
+"""
+Global test configuration and fixtures for the admin-assistant project.
+"""
+import pytest
+import os
+import tempfile
+from datetime import datetime, UTC
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from unittest.mock import MagicMock, AsyncMock
+
+# Set test environment
+os.environ['APP_ENV'] = 'testing'
+
+from core.db import Base
+from core.models.user import User
+from core.models.appointment import Appointment
+from core.models.location import Location
+from core.models.category import Category
+from core.models.calendar import Calendar
+from core.models.archive_configuration import ArchiveConfiguration
+from core.models.action_log import ActionLog
+from core.models.audit_log import AuditLog
+
+
+@pytest.fixture(scope="session")
+def test_db_engine():
+    """Create a test database engine for the session."""
+    engine = create_engine('sqlite:///:memory:', echo=False)
+    Base.metadata.create_all(engine)
+    yield engine
+    engine.dispose()
+
+
+@pytest.fixture(scope="function")
+def db_session(test_db_engine):
+    """Create a fresh database session for each test."""
+    Session = sessionmaker(bind=test_db_engine)
+    session = Session()
+    
+    # Start a transaction
+    connection = test_db_engine.connect()
+    transaction = connection.begin()
+    
+    # Bind the session to the transaction
+    session.bind = connection
+    
+    yield session
+    
+    # Rollback the transaction and close
+    session.close()
+    transaction.rollback()
+    connection.close()
+
+
+@pytest.fixture
+def test_user(db_session):
+    """Create a test user."""
+    user = User(
+        email="test@example.com",
+        name="Test User",
+        ms_user_id="test-ms-user-id"
+    )
+    db_session.add(user)
+    db_session.commit()
+    return user
+
+
+@pytest.fixture
+def test_location(db_session, test_user):
+    """Create a test location."""
+    location = Location(
+        user_id=test_user.id,
+        name="Test Office",
+        address="123 Test St, Test City",
+        latitude=40.7128,
+        longitude=-74.0060
+    )
+    db_session.add(location)
+    db_session.commit()
+    return location
+
+
+@pytest.fixture
+def test_category(db_session, test_user):
+    """Create a test category."""
+    category = Category(
+        user_id=test_user.id,
+        name="Test Category",
+        color="#FF0000",
+        is_private=False
+    )
+    db_session.add(category)
+    db_session.commit()
+    return category
+
+
+@pytest.fixture
+def test_calendar(db_session, test_user):
+    """Create a test calendar."""
+    calendar = Calendar(
+        user_id=test_user.id,
+        name="Test Calendar",
+        ms_calendar_id="test-calendar-id",
+        is_primary=True
+    )
+    db_session.add(calendar)
+    db_session.commit()
+    return calendar
+
+
+@pytest.fixture
+def test_appointment(db_session, test_user, test_calendar):
+    """Create a test appointment."""
+    appointment = Appointment(
+        user_id=test_user.id,
+        calendar_id=test_calendar.ms_calendar_id,
+        subject="Test Appointment",
+        start_time=datetime(2025, 6, 1, 9, 0, tzinfo=UTC),
+        end_time=datetime(2025, 6, 1, 10, 0, tzinfo=UTC),
+        is_archived=False
+    )
+    db_session.add(appointment)
+    db_session.commit()
+    return appointment
+
+
+@pytest.fixture
+def test_archive_config(db_session, test_user, test_calendar):
+    """Create a test archive configuration."""
+    config = ArchiveConfiguration(
+        user_id=test_user.id,
+        name="Test Archive Config",
+        source_calendar_uri=f"msgraph://{test_calendar.ms_calendar_id}",
+        archive_calendar_id="archive-calendar-id",
+        is_active=True
+    )
+    db_session.add(config)
+    db_session.commit()
+    return config
+
+
+@pytest.fixture
+def mock_msgraph_client():
+    """Create a mock MS Graph client."""
+    mock = MagicMock()
+    
+    # Setup nested async mocks for events
+    calendar = MagicMock()
+    events = MagicMock()
+    events.post = AsyncMock()
+    events.get = AsyncMock()
+    
+    # by_event_id returns an object with patch, delete, get as AsyncMock
+    by_event_id_mock = MagicMock()
+    by_event_id_mock.patch = AsyncMock()
+    by_event_id_mock.delete = AsyncMock()
+    by_event_id_mock.get = AsyncMock()
+    events.by_event_id = MagicMock(return_value=by_event_id_mock)
+    calendar.events = events
+    
+    # calendar_view for list_for_user
+    calendar_view = MagicMock()
+    calendar_view.with_url = MagicMock(return_value=MagicMock(get=AsyncMock()))
+    calendar.calendar_view = calendar_view
+    
+    mock.users.by_user_id.return_value.calendars.by_calendar_id.return_value = calendar
+    mock.users.by_user_id.return_value.calendar = calendar
+    
+    return mock
+
+
+@pytest.fixture
+def mock_msgraph_event():
+    """Create a mock MS Graph event object."""
+    mock_event = MagicMock()
+    mock_event.id = "test-event-id"
+    mock_event.subject = "Test Event"
+    mock_event.start = {'dateTime': '2025-06-01T09:00:00Z', 'timeZone': 'UTC'}
+    mock_event.end = {'dateTime': '2025-06-01T10:00:00Z', 'timeZone': 'UTC'}
+    mock_event.body = {'content': 'Test event body'}
+    mock_event.location = {'displayName': 'Test Location'}
+    mock_event.is_all_day = False
+    mock_event.show_as = 'busy'
+    mock_event.sensitivity = 'normal'
+    return mock_event
+
+
+@pytest.fixture
+def sample_appointments_data():
+    """Sample appointment data for testing."""
+    return [
+        {
+            'subject': 'Meeting 1',
+            'start_time': datetime(2025, 6, 1, 9, 0, tzinfo=UTC),
+            'end_time': datetime(2025, 6, 1, 10, 0, tzinfo=UTC),
+        },
+        {
+            'subject': 'Meeting 2',
+            'start_time': datetime(2025, 6, 1, 11, 0, tzinfo=UTC),
+            'end_time': datetime(2025, 6, 1, 12, 0, tzinfo=UTC),
+        },
+        {
+            'subject': 'Overlapping Meeting',
+            'start_time': datetime(2025, 6, 1, 9, 30, tzinfo=UTC),
+            'end_time': datetime(2025, 6, 1, 10, 30, tzinfo=UTC),
+        }
+    ]
+
+
+@pytest.fixture(autouse=True)
+def setup_test_logging():
+    """Setup logging for tests."""
+    import logging
+    logging.getLogger().setLevel(logging.DEBUG)
+
+
+@pytest.fixture
+def temp_file():
+    """Create a temporary file for testing."""
+    with tempfile.NamedTemporaryFile(delete=False) as f:
+        yield f.name
+    os.unlink(f.name)

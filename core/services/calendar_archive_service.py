@@ -8,6 +8,35 @@ from sqlalchemy.orm.attributes import InstrumentedAttribute
 from core.exceptions import CalendarServiceException
 import logging
 
+# OpenTelemetry imports
+try:
+    from opentelemetry import trace, metrics
+    from opentelemetry.trace import Status, StatusCode
+    tracer = trace.get_tracer(__name__)
+    meter = metrics.get_meter(__name__)
+
+    # Create metrics
+    appointment_preparation_counter = meter.create_counter(
+        "appointment_preparation_total",
+        description="Total number of appointment preparation operations",
+        unit="1"
+    )
+    appointments_processed_counter = meter.create_counter(
+        "appointments_processed_total",
+        description="Total number of appointments processed for archiving",
+        unit="1"
+    )
+    overlap_detection_counter = meter.create_counter(
+        "overlap_detection_total",
+        description="Total number of overlap detections",
+        unit="1"
+    )
+    OTEL_AVAILABLE = True
+except ImportError:
+    tracer = None
+    meter = None
+    OTEL_AVAILABLE = False
+
 logger = logging.getLogger(__name__)
 
 def prepare_appointments_for_archive(
@@ -29,6 +58,35 @@ def prepare_appointments_for_archive(
         - 'errors': list of error messages
     Note: This function no longer logs overlaps or writes to the DB. It only returns the detected overlaps.
     """
+    if OTEL_AVAILABLE and tracer:
+        with tracer.start_as_current_span(
+            "calendar_archive_service.prepare_appointments_for_archive",
+            attributes={
+                "input.appointment_count": len(appointments),
+                "input.start_date": start_date.isoformat(),
+                "input.end_date": end_date.isoformat(),
+                "user.id": str(getattr(user, 'id', '')) if user else ''
+            }
+        ) as span:
+            return _prepare_appointments_for_archive_impl(
+                appointments, start_date, end_date, user, session, logger, span
+            )
+    else:
+        return _prepare_appointments_for_archive_impl(
+            appointments, start_date, end_date, user, session, logger, None
+        )
+
+
+def _prepare_appointments_for_archive_impl(
+    appointments: List[Appointment],
+    start_date: date,
+    end_date: date,
+    user=None,
+    session=None,
+    logger=None,
+    span=None
+) -> Dict[str, Any]:
+    """Implementation of prepare_appointments_for_archive with OpenTelemetry support."""
     result = {"appointments": [], "status": "ok", "conflicts": [], "errors": []}
     try:
         appts = expand_recurring_events_range(appointments, start_date, end_date)
@@ -70,9 +128,48 @@ def prepare_appointments_for_archive(
             # Always use setattr for is_archived
             setattr(appt, 'is_archived', True)  # type: ignore
             result["appointments"].append(appt)
+
+        # Record metrics and span attributes
+        if OTEL_AVAILABLE:
+            appointment_preparation_counter.add(1, {
+                "status": result["status"],
+                "user_id": str(getattr(user, 'id', '')) if user else ''
+            })
+            appointments_processed_counter.add(len(result["appointments"]), {
+                "user_id": str(getattr(user, 'id', '')) if user else ''
+            })
+            if overlap_groups:
+                overlap_detection_counter.add(len(overlap_groups), {
+                    "user_id": str(getattr(user, 'id', '')) if user else ''
+                })
+
+            if span:
+                span.set_attributes({
+                    "output.processed_count": len(result["appointments"]),
+                    "output.overlap_count": len(overlap_groups),
+                    "output.error_count": len(result["errors"]),
+                    "output.status": result["status"]
+                })
+                span.set_status(Status(StatusCode.OK))
+
     except Exception as e:
         if logger:
             logger.exception(f"Archiving preparation failed for range {start_date} to {end_date}: {str(e)}")
+
+        # Record error metrics and span status
+        if OTEL_AVAILABLE:
+            appointment_preparation_counter.add(1, {
+                "status": "error",
+                "user_id": str(getattr(user, 'id', '')) if user else ''
+            })
+
+            if span:
+                span.set_attributes({
+                    "error.type": type(e).__name__,
+                    "error.message": str(e)
+                })
+                span.set_status(Status(StatusCode.ERROR, str(e)))
+
         if hasattr(e, 'add_note'):
             e.add_note(f"Error in prepare_appointments_for_archive for range {start_date} to {end_date}")
         raise CalendarServiceException(f"Archiving preparation failed for range {start_date} to {end_date}") from e
@@ -88,11 +185,42 @@ def make_appointments_immutable(appointments: List[Appointment], db_session):
         appointments: List of Appointment instances to mark as archived
         db_session: Database session for committing changes
     """
-    for appt in appointments:
-        # Set the is_archived flag to True to make the appointment immutable
-        setattr(appt, 'is_archived', True)  # type: ignore
+    if OTEL_AVAILABLE and tracer:
+        with tracer.start_as_current_span(
+            "calendar_archive_service.make_appointments_immutable",
+            attributes={
+                "appointment_count": len(appointments)
+            }
+        ) as span:
+            try:
+                for appt in appointments:
+                    # Set the is_archived flag to True to make the appointment immutable
+                    setattr(appt, 'is_archived', True)  # type: ignore
 
-    # Commit the changes to the database
-    db_session.commit()
+                # Commit the changes to the database
+                db_session.commit()
 
-    logger.info(f"Marked {len(appointments)} appointments as immutable (archived)")
+                span.set_attributes({
+                    "operation.status": "success",
+                    "appointments_marked_immutable": len(appointments)
+                })
+                span.set_status(Status(StatusCode.OK))
+
+                logger.info(f"Marked {len(appointments)} appointments as immutable (archived)")
+            except Exception as e:
+                span.set_attributes({
+                    "operation.status": "error",
+                    "error.type": type(e).__name__,
+                    "error.message": str(e)
+                })
+                span.set_status(Status(StatusCode.ERROR, str(e)))
+                raise
+    else:
+        for appt in appointments:
+            # Set the is_archived flag to True to make the appointment immutable
+            setattr(appt, 'is_archived', True)  # type: ignore
+
+        # Commit the changes to the database
+        db_session.commit()
+
+        logger.info(f"Marked {len(appointments)} appointments as immutable (archived)")
