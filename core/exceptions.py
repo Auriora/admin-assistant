@@ -32,4 +32,11 @@ class DuplicateAppointmentException(AppointmentRepositoryException):
     """
     Exception raised when attempting to add a duplicate appointment (same user, start_time, end_time, subject).
     """
-    pass 
+    pass
+
+class ImmutableAppointmentException(AppointmentRepositoryException):
+    """
+    Exception raised when attempting to modify an archived appointment that is immutable.
+    Archived appointments are immutable except for the user who owns them.
+    """
+    pass

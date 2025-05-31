@@ -44,12 +44,12 @@ This document outlines a detailed, step-by-step technical implementation plan fo
 - [X] **UserRepository**
     - [X] Implement a `UserRepository` for user data access, supporting future multi-user and role-based features.
 
-- [] **Core Archiving Service Logic**
-    - [ ] Implement/extend the Calendar Archiving Service to:
+- [X] **Core Archiving Service Logic**
+    - [X] Implement/extend the Calendar Archiving Service to:
         - [X] Fetch appointments from the configured source calendar.
         - [X] Copy appointments to the configured archive calendar.
         - [X] Handle time zones, recurring events, and duplicates.
-        - [ ] Enforce immutability of archived appointments (except for the user).
+        - [X] Enforce immutability of archived appointments (except for the user).
 
 - [X] **Re-Archiving (Replacement) Logic**
     - [X] Add logic and a service method to allow re-archiving (replacement) of appointments for a specified period, ensuring idempotency and safe replacement.
@@ -62,9 +62,17 @@ This document outlines a detailed, step-by-step technical implementation plan fo
     - [x] Implement business logic for associating, resolving, and tracking overlap actions.
     - [x] Orchestrator is now ready for API/UI integration and testing.
 
-- [ ] **Background Job Management (Scheduled/Manual Triggers)**
-    - [ ] Implement background job logic (using Flask-APScheduler or similar) to run archiving at scheduled intervals.
-    - [ ] Add manual trigger support (route and service method).
+- [x] **Background Job Management (Scheduled/Manual Triggers)**
+    - [x] Implement background job logic (using Flask-APScheduler or similar) to run archiving at scheduled intervals.
+    - [x] Add manual trigger support (route and service method).
+    - [x] Create BackgroundJobService for job scheduling and management.
+    - [x] Create ScheduledArchiveService for high-level schedule management.
+    - [x] Integrate Flask-APScheduler with Flask application.
+    - [x] Add web API routes for job management (/jobs/schedule, /jobs/trigger, /jobs/status, /jobs/remove, /jobs/health).
+    - [x] Add CLI commands for job management (admin-assistant jobs schedule/trigger/status/remove/health).
+    - [x] Implement comprehensive error handling and logging.
+    - [x] Add unit tests for BackgroundJobService.
+    - [x] Create implementation documentation.
 
 - [ ] **Audit Logging and Traceability**
     - [ ] Ensure all archiving actions, overlap resolutions, and re-archiving operations are logged for traceability and compliance.

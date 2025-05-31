@@ -61,6 +61,7 @@ class Appointment(Base):
     body_content_type = Column(String, nullable=True, doc="Body content type (text or html)")
     body_preview = Column(String, nullable=True, doc="Short preview of body content")
     calendar_id = Column(String, nullable=False, doc="ID of the calendar this appointment belongs to")
+    is_archived = Column(Boolean, nullable=False, default=False, doc="Whether this appointment has been archived and is immutable")
     # Relationships (optional, for completeness)
     # user = relationship('User', back_populates='appointments')
     # location = relationship('Location')
@@ -85,4 +86,57 @@ class Appointment(Base):
             if hasattr(val, 'expression') or isinstance(val, InstrumentedAttribute):
                 return ''
             return val or ''
-        return safe_str(self.show_as).lower() == 'oof' 
+        return safe_str(self.show_as).lower() == 'oof'
+
+    def is_immutable(self, current_user=None) -> bool:
+        """
+        Returns True if this appointment is immutable (archived and not modifiable).
+        Archived appointments are immutable except for the user who owns them.
+
+        Args:
+            current_user: The user attempting to modify the appointment (optional)
+
+        Returns:
+            bool: True if the appointment is immutable for the given user
+        """
+        from sqlalchemy.orm.attributes import InstrumentedAttribute
+
+        # Handle SQLAlchemy Column objects safely
+        def safe_bool(val):
+            if hasattr(val, 'expression') or isinstance(val, InstrumentedAttribute):
+                return False
+            return bool(val)
+
+        # If not archived, it's not immutable
+        if not safe_bool(self.is_archived):
+            return False
+
+        # If no current user provided, assume immutable
+        if current_user is None:
+            return True
+
+        # If current user is the owner, they can modify archived appointments
+        if hasattr(current_user, 'id') and hasattr(self, 'user_id'):
+            return current_user.id != self.user_id
+
+        # Default to immutable for safety
+        return True
+
+    def validate_modification_allowed(self, current_user=None) -> None:
+        """
+        Validates that modification is allowed for this appointment.
+        Raises an exception if the appointment is immutable for the current user.
+
+        Args:
+            current_user: The user attempting to modify the appointment (optional)
+
+        Raises:
+            ImmutableAppointmentException: If the appointment is immutable and cannot be modified
+        """
+        if self.is_immutable(current_user):
+            from core.exceptions import ImmutableAppointmentException
+            raise ImmutableAppointmentException(
+                f"Cannot modify archived appointment '{getattr(self, 'subject', 'Unknown')}' "
+                f"(ID: {getattr(self, 'id', 'Unknown')}). Archived appointments are immutable "
+                f"except for the original user."
+            )

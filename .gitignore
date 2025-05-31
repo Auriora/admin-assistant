@@ -50,3 +50,4 @@ ms_token.json
 /.idea/misc.xml
 /.idea/modules.xml
 /.idea/vcs.xml
+/.coverage

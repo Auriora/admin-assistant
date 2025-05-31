@@ -4,7 +4,7 @@ from typing import List, NoReturn, Optional, Dict, Any, TYPE_CHECKING
 from dateutil import parser
 import pytz
 import asyncio
-from core.exceptions import AppointmentRepositoryException
+from core.exceptions import AppointmentRepositoryException, ImmutableAppointmentException
 import logging
 import sys
 import nest_asyncio
@@ -149,6 +149,9 @@ class MSGraphAppointmentRepository(BaseAppointmentRepository):
         Async: Update an existing appointment in MS Graph for this user's calendar.
         :param appointment: Appointment model instance.
         """
+        # Check if appointment is immutable before updating
+        appointment.validate_modification_allowed(self.user)
+
         data = self._map_model_to_api(appointment)
         ms_event_id = appointment.ms_event_id
         if ms_event_id is None or not isinstance(ms_event_id, str):
@@ -173,6 +176,16 @@ class MSGraphAppointmentRepository(BaseAppointmentRepository):
         """
         if not ms_event_id or not isinstance(ms_event_id, str):
             raise ValueError("ms_event_id (Graph event id) must be provided as a string.")
+
+        # First get the appointment to check immutability
+        try:
+            appointment = await self.aget_by_id(ms_event_id)
+            if appointment:
+                appointment.validate_modification_allowed(self.user)
+        except Exception as e:
+            # If we can't get the appointment, log but continue with deletion attempt
+            logger.warning(f"Could not validate immutability for appointment {ms_event_id}: {e}")
+
         try:
             await self._get_calendar().events.by_event_id(ms_event_id).delete()
         except Exception as e:
@@ -436,8 +449,10 @@ class MSGraphAppointmentRepository(BaseAppointmentRepository):
 
     def update(self, appointment: Appointment) -> None:
         """Sync wrapper for aupdate."""
+        # Check immutability before async call for better error handling
+        appointment.validate_modification_allowed(self.user)
         return _run_async(self.aupdate(appointment))
 
     def delete(self, ms_event_id: str) -> None:
         """Sync wrapper for adelete."""
-        return _run_async(self.adelete(ms_event_id)) 
+        return _run_async(self.adelete(ms_event_id))

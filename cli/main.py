@@ -56,6 +56,7 @@ config_app = typer.Typer(help="Configuration operations")
 archive_config_app = typer.Typer(help="Calendar configuration operations")
 archive_archive_config_app = typer.Typer(help="Archive configuration management")
 login_app = typer.Typer(help="Authentication commands")
+jobs_app = typer.Typer(help="Background job management")
 
 user_id_option = typer.Option(
     ...,
@@ -913,6 +914,291 @@ def upload(
 calendar_app.add_typer(categories_app, name="categories")
 app.add_typer(calendar_app, name="calendar")
 app.add_typer(config_app, name="config")
+app.add_typer(jobs_app, name="jobs")
+
+
+# --- Background Job Management Commands ---
+
+@jobs_app.command("schedule")
+def schedule_archive_job(
+    user_id: int = user_id_option,
+    schedule_type: str = typer.Option("daily", "--type", help="Schedule type: daily or weekly"),
+    hour: int = typer.Option(23, "--hour", help="Hour to run (0-23)"),
+    minute: int = typer.Option(59, "--minute", help="Minute to run (0-59)"),
+    day_of_week: Optional[int] = typer.Option(None, "--day", help="Day of week for weekly jobs (0=Monday, 6=Sunday)"),
+    archive_config_id: Optional[int] = typer.Option(None, "--config", help="Archive configuration ID (uses active if not specified)")
+):
+    """Schedule a recurring archive job for a user."""
+    from core.services.background_job_service import BackgroundJobService
+    from core.services.scheduled_archive_service import ScheduledArchiveService
+    from flask_apscheduler import APScheduler
+    from rich.console import Console
+
+    console = Console()
+
+    try:
+        # Initialize services (without Flask app context)
+        scheduler = APScheduler()
+        background_job_service = BackgroundJobService(scheduler)
+        scheduled_archive_service = ScheduledArchiveService(background_job_service)
+
+        # Validate parameters
+        if schedule_type not in ['daily', 'weekly']:
+            console.print("[red]Invalid schedule type. Must be 'daily' or 'weekly'.[/red]")
+            raise typer.Exit(code=1)
+
+        if not (0 <= hour <= 23):
+            console.print("[red]Hour must be between 0 and 23.[/red]")
+            raise typer.Exit(code=1)
+
+        if not (0 <= minute <= 59):
+            console.print("[red]Minute must be between 0 and 59.[/red]")
+            raise typer.Exit(code=1)
+
+        if schedule_type == 'weekly' and day_of_week is not None and not (0 <= day_of_week <= 6):
+            console.print("[red]Day of week must be between 0 (Monday) and 6 (Sunday).[/red]")
+            raise typer.Exit(code=1)
+
+        # Schedule the job
+        result = scheduled_archive_service.update_user_schedule(
+            user_id=user_id,
+            schedule_type=schedule_type,
+            hour=hour,
+            minute=minute,
+            day_of_week=day_of_week
+        )
+
+        if result['failed_jobs']:
+            console.print("[yellow]Some jobs failed to schedule:[/yellow]")
+            for failed in result['failed_jobs']:
+                console.print(f"  - Config {failed['config_id']}: {failed['error']}")
+
+        if result['updated_jobs']:
+            console.print("[green]Successfully scheduled jobs:[/green]")
+            for job in result['updated_jobs']:
+                console.print(f"  - Job ID: {job['job_id']}")
+                console.print(f"    Config: {job['config_name']} (ID: {job['config_id']})")
+                console.print(f"    Schedule: {job['schedule_type']}")
+
+        if not result['updated_jobs'] and not result['failed_jobs']:
+            console.print("[yellow]No active archive configurations found for user.[/yellow]")
+
+    except Exception as e:
+        console.print(f"[red]Failed to schedule archive job: {e}[/red]")
+        raise typer.Exit(code=1)
+
+
+@jobs_app.command("trigger")
+def trigger_manual_archive(
+    user_id: int = user_id_option,
+    start_date: Optional[str] = typer.Option(None, "--start", help="Start date (YYYY-MM-DD)"),
+    end_date: Optional[str] = typer.Option(None, "--end", help="End date (YYYY-MM-DD)"),
+    archive_config_id: Optional[int] = typer.Option(None, "--config", help="Archive configuration ID (uses active if not specified)")
+):
+    """Trigger a manual archive job immediately."""
+    from core.services.background_job_service import BackgroundJobService
+    from flask_apscheduler import APScheduler
+    from rich.console import Console
+    from datetime import datetime, date, timedelta
+
+    console = Console()
+
+    try:
+        # Parse dates
+        start_dt = None
+        end_dt = None
+        if start_date:
+            start_dt = datetime.strptime(start_date, '%Y-%m-%d').date()
+        if end_date:
+            end_dt = datetime.strptime(end_date, '%Y-%m-%d').date()
+
+        # Initialize services (without Flask app context)
+        scheduler = APScheduler()
+        background_job_service = BackgroundJobService(scheduler)
+
+        # Trigger the job
+        job_id = background_job_service.trigger_manual_archive(
+            user_id=user_id,
+            archive_config_id=archive_config_id or 0,  # Will use active config if 0
+            start_date=start_dt,
+            end_date=end_dt
+        )
+
+        console.print(f"[green]Manual archive job triggered successfully.[/green]")
+        console.print(f"Job ID: {job_id}")
+
+        if start_dt and end_dt:
+            console.print(f"Date range: {start_dt} to {end_dt}")
+        else:
+            console.print("Date range: Yesterday (default)")
+
+    except Exception as e:
+        console.print(f"[red]Failed to trigger manual archive: {e}[/red]")
+        raise typer.Exit(code=1)
+
+
+@jobs_app.command("status")
+def get_job_status(
+    user_id: int = user_id_option
+):
+    """Get job status for a user."""
+    from core.services.scheduled_archive_service import ScheduledArchiveService
+    from core.services.background_job_service import BackgroundJobService
+    from flask_apscheduler import APScheduler
+    from rich.console import Console
+    from rich.table import Table
+
+    console = Console()
+
+    try:
+        # Initialize services (without Flask app context)
+        scheduler = APScheduler()
+        background_job_service = BackgroundJobService(scheduler)
+        scheduled_archive_service = ScheduledArchiveService(background_job_service)
+
+        # Get status
+        status = scheduled_archive_service.get_user_schedule_status(user_id)
+
+        console.print(f"[bold]Job Status for User {user_id}[/bold]")
+        console.print(f"Has Schedule: {'✓' if status['has_schedule'] else '✗'}")
+
+        # Show active configurations
+        if status['active_configs']:
+            console.print("\n[bold]Active Archive Configurations:[/bold]")
+            config_table = Table()
+            config_table.add_column("ID", style="cyan")
+            config_table.add_column("Name", style="green")
+            config_table.add_column("Source", style="blue")
+            config_table.add_column("Destination", style="blue")
+
+            for config in status['active_configs']:
+                config_table.add_row(
+                    str(config['id']),
+                    config['name'],
+                    config['source_calendar_uri'],
+                    config['destination_calendar_uri']
+                )
+            console.print(config_table)
+
+        # Show scheduled jobs
+        if status['scheduled_jobs']:
+            console.print("\n[bold]Scheduled Jobs:[/bold]")
+            job_table = Table()
+            job_table.add_column("Job ID", style="cyan")
+            job_table.add_column("Trigger", style="green")
+            job_table.add_column("Next Run", style="yellow")
+
+            for job in status['scheduled_jobs']:
+                next_run = str(job['next_run_time']) if job['next_run_time'] else 'Not scheduled'
+                job_table.add_row(
+                    job['job_id'],
+                    job['trigger'],
+                    next_run
+                )
+            console.print(job_table)
+        else:
+            console.print("\n[yellow]No scheduled jobs found.[/yellow]")
+
+        if 'error' in status:
+            console.print(f"\n[red]Error: {status['error']}[/red]")
+
+    except Exception as e:
+        console.print(f"[red]Failed to get job status: {e}[/red]")
+        raise typer.Exit(code=1)
+
+
+@jobs_app.command("remove")
+def remove_scheduled_jobs(
+    user_id: int = user_id_option,
+    confirm: bool = typer.Option(False, "--confirm", help="Skip confirmation prompt")
+):
+    """Remove all scheduled jobs for a user."""
+    from core.services.scheduled_archive_service import ScheduledArchiveService
+    from core.services.background_job_service import BackgroundJobService
+    from flask_apscheduler import APScheduler
+    from rich.console import Console
+
+    console = Console()
+
+    if not confirm:
+        confirm = typer.confirm(f"Are you sure you want to remove all scheduled jobs for user {user_id}?")
+        if not confirm:
+            console.print("[yellow]Operation cancelled.[/yellow]")
+            raise typer.Exit(code=0)
+
+    try:
+        # Initialize services (without Flask app context)
+        scheduler = APScheduler()
+        background_job_service = BackgroundJobService(scheduler)
+        scheduled_archive_service = ScheduledArchiveService(background_job_service)
+
+        # Remove jobs
+        result = scheduled_archive_service.remove_user_schedule(user_id)
+
+        if result['removed_jobs']:
+            console.print("[green]Successfully removed jobs:[/green]")
+            for job_id in result['removed_jobs']:
+                console.print(f"  - {job_id}")
+
+        if result['failed_removals']:
+            console.print("[yellow]Failed to remove some jobs:[/yellow]")
+            for failed in result['failed_removals']:
+                console.print(f"  - {failed['job_id']}: {failed['error']}")
+
+        if not result['removed_jobs'] and not result['failed_removals']:
+            console.print("[yellow]No scheduled jobs found for user.[/yellow]")
+
+    except Exception as e:
+        console.print(f"[red]Failed to remove scheduled jobs: {e}[/red]")
+        raise typer.Exit(code=1)
+
+
+@jobs_app.command("health")
+def job_health_check():
+    """Perform health check on the job scheduling system."""
+    from core.services.scheduled_archive_service import ScheduledArchiveService
+    from core.services.background_job_service import BackgroundJobService
+    from flask_apscheduler import APScheduler
+    from rich.console import Console
+    from rich.table import Table
+
+    console = Console()
+
+    try:
+        # Initialize services (without Flask app context)
+        scheduler = APScheduler()
+        background_job_service = BackgroundJobService(scheduler)
+        scheduled_archive_service = ScheduledArchiveService(background_job_service)
+
+        # Perform health check
+        health = scheduled_archive_service.health_check()
+
+        # Display results
+        status_color = {
+            'healthy': 'green',
+            'warning': 'yellow',
+            'unhealthy': 'red',
+            'error': 'red'
+        }.get(health['status'], 'white')
+
+        console.print(f"[bold]Job Scheduler Health Check[/bold]")
+        console.print(f"Status: [{status_color}]{health['status'].upper()}[/{status_color}]")
+        console.print(f"Timestamp: {health['timestamp']}")
+        console.print(f"Total Jobs: {health['total_jobs']}")
+        console.print(f"Active Jobs: {health['active_jobs']}")
+        console.print(f"Failed Jobs: {health['failed_jobs']}")
+
+        if health['issues']:
+            console.print("\n[bold]Issues Found:[/bold]")
+            for issue in health['issues']:
+                console.print(f"  - [red]{issue}[/red]")
+        else:
+            console.print("\n[green]No issues found.[/green]")
+
+    except Exception as e:
+        console.print(f"[red]Health check failed: {e}[/red]")
+        raise typer.Exit(code=1)
+
 
 def uri_safe_name(name: str) -> str:
     """

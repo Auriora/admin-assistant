@@ -6,7 +6,8 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager
 from flask_apscheduler import APScheduler
-# from core.services.scheduled_archive_job import scheduled_archive_job
+from core.services.background_job_service import BackgroundJobService
+from core.services.scheduled_archive_service import ScheduledArchiveService
 from web.app.services import msgraph
 try:
     from opentelemetry import trace
@@ -58,14 +59,24 @@ def create_app():
     scheduler = APScheduler()
     scheduler.init_app(app)
     scheduler.start()
-    # Schedule the archive job to run daily at 23:59 UTC
-    # scheduler.add_job(
-    #     id='daily_archive',
-    #     func=lambda: scheduled_archive_job(db, db.models['User'], msgraph.get_authenticated_session_for_user, app.logger),
-    #     trigger='cron',
-    #     hour=23,
-    #     minute=59
-    # )
+
+    # Initialize background job services
+    background_job_service = BackgroundJobService(scheduler)
+    scheduled_archive_service = ScheduledArchiveService(background_job_service)
+
+    # Store services in app context for access in routes
+    app.background_job_service = background_job_service
+    app.scheduled_archive_service = scheduled_archive_service
+
+    # Auto-schedule jobs for all active users on startup (optional)
+    # Uncomment the following lines to enable automatic scheduling on startup
+    # try:
+    #     with app.app_context():
+    #         scheduled_archive_service.schedule_all_active_users(schedule_type='daily', hour=23, minute=59)
+    #         app.logger.info("Auto-scheduled archive jobs for all active users")
+    # except Exception as e:
+    #     app.logger.error(f"Failed to auto-schedule archive jobs: {e}")
+
     # --- End Scheduler Setup ---
 
     # Logging setup

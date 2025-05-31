@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, redirect, request, session, url_for, flash, jsonify
 from web.app.services import msgraph
 from web.app.models import db, User
-from datetime import datetime, timedelta, UTC
+from datetime import datetime, timedelta, UTC, date
 from web.app.services.msgraph import MsAuthError
 from flask import current_app
 from flask_login import login_user, logout_user, login_required, current_user
@@ -168,4 +168,222 @@ def archive_now():
 @main_bp.route('/settings')
 @login_required
 def settings():
-    return render_template('home/settings.html', user=current_user) 
+    return render_template('home/settings.html', user=current_user)
+
+
+# --- Background Job Management Routes ---
+
+@main_bp.route('/jobs/schedule', methods=['POST'])
+@login_required
+def schedule_archive_job():
+    """
+    Schedule a recurring archive job for the current user.
+    Accepts JSON with schedule_type, hour, minute, day_of_week, archive_config_id.
+    """
+    user = cast(User, current_user)
+    current_app.logger.info(f"Schedule archive job requested by {user.email}")
+
+    try:
+        data = request.get_json() or {}
+        schedule_type = data.get('schedule_type', 'daily')
+        hour = int(data.get('hour', 23))
+        minute = int(data.get('minute', 59))
+        day_of_week = data.get('day_of_week')
+        archive_config_id = data.get('archive_config_id')
+
+        # Validate parameters
+        if schedule_type not in ['daily', 'weekly']:
+            return jsonify({"status": "error", "message": "Invalid schedule_type. Must be 'daily' or 'weekly'."}), 400
+
+        if not (0 <= hour <= 23):
+            return jsonify({"status": "error", "message": "Hour must be between 0 and 23."}), 400
+
+        if not (0 <= minute <= 59):
+            return jsonify({"status": "error", "message": "Minute must be between 0 and 59."}), 400
+
+        if schedule_type == 'weekly' and day_of_week is not None:
+            day_of_week = int(day_of_week)
+            if not (0 <= day_of_week <= 6):
+                return jsonify({"status": "error", "message": "Day of week must be between 0 (Monday) and 6 (Sunday)."}), 400
+
+        # Get archive configuration
+        if archive_config_id:
+            archive_config_service = ArchiveConfigurationService()
+            archive_config = archive_config_service.get_by_id(int(archive_config_id))
+            if not archive_config or archive_config.user_id != user.id:
+                return jsonify({"status": "error", "message": "Archive configuration not found or not owned by user."}), 400
+        else:
+            # Use active configuration
+            archive_config_service = ArchiveConfigurationService()
+            archive_config = archive_config_service.get_active_for_user(user.id)
+            if not archive_config:
+                return jsonify({"status": "error", "message": "No active archive configuration found for user."}), 400
+            archive_config_id = archive_config.id
+
+        # Schedule the job
+        scheduled_archive_service = current_app.scheduled_archive_service
+        if schedule_type == 'daily':
+            result = scheduled_archive_service.update_user_schedule(
+                user_id=user.id,
+                schedule_type='daily',
+                hour=hour,
+                minute=minute
+            )
+        else:  # weekly
+            result = scheduled_archive_service.update_user_schedule(
+                user_id=user.id,
+                schedule_type='weekly',
+                hour=hour,
+                minute=minute,
+                day_of_week=day_of_week
+            )
+
+        if result['failed_jobs']:
+            return jsonify({
+                "status": "partial_success",
+                "message": "Some jobs failed to schedule.",
+                "updated_jobs": result['updated_jobs'],
+                "failed_jobs": result['failed_jobs']
+            }), 207
+        else:
+            return jsonify({
+                "status": "success",
+                "message": f"Archive job scheduled successfully ({schedule_type}).",
+                "updated_jobs": result['updated_jobs']
+            })
+
+    except Exception as e:
+        current_app.logger.exception(f"Schedule archive job exception: {str(e)}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@main_bp.route('/jobs/trigger', methods=['POST'])
+@login_required
+def trigger_manual_archive_job():
+    """
+    Trigger a manual archive job for the current user.
+    Accepts JSON with optional start_date, end_date, archive_config_id.
+    """
+    user = cast(User, current_user)
+    current_app.logger.info(f"Manual archive job trigger requested by {user.email}")
+
+    try:
+        data = request.get_json() or {}
+        start_date_str = data.get('start_date')
+        end_date_str = data.get('end_date')
+        archive_config_id = data.get('archive_config_id')
+
+        # Parse dates
+        start_date = None
+        end_date = None
+        if start_date_str:
+            start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+        if end_date_str:
+            end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+
+        # Get archive configuration
+        if archive_config_id:
+            archive_config_service = ArchiveConfigurationService()
+            archive_config = archive_config_service.get_by_id(int(archive_config_id))
+            if not archive_config or archive_config.user_id != user.id:
+                return jsonify({"status": "error", "message": "Archive configuration not found or not owned by user."}), 400
+        else:
+            # Use active configuration
+            archive_config_service = ArchiveConfigurationService()
+            archive_config = archive_config_service.get_active_for_user(user.id)
+            if not archive_config:
+                return jsonify({"status": "error", "message": "No active archive configuration found for user."}), 400
+            archive_config_id = archive_config.id
+
+        # Trigger the job
+        background_job_service = current_app.background_job_service
+        job_id = background_job_service.trigger_manual_archive(
+            user_id=user.id,
+            archive_config_id=archive_config_id,
+            start_date=start_date,
+            end_date=end_date
+        )
+
+        return jsonify({
+            "status": "success",
+            "message": "Manual archive job triggered successfully.",
+            "job_id": job_id
+        })
+
+    except Exception as e:
+        current_app.logger.exception(f"Manual archive job trigger exception: {str(e)}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@main_bp.route('/jobs/status')
+@login_required
+def get_job_status():
+    """
+    Get job status for the current user.
+    """
+    user = cast(User, current_user)
+
+    try:
+        scheduled_archive_service = current_app.scheduled_archive_service
+        status = scheduled_archive_service.get_user_schedule_status(user.id)
+
+        return jsonify({
+            "status": "success",
+            "data": status
+        })
+
+    except Exception as e:
+        current_app.logger.exception(f"Get job status exception: {str(e)}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@main_bp.route('/jobs/remove', methods=['POST'])
+@login_required
+def remove_scheduled_jobs():
+    """
+    Remove all scheduled jobs for the current user.
+    """
+    user = cast(User, current_user)
+    current_app.logger.info(f"Remove scheduled jobs requested by {user.email}")
+
+    try:
+        scheduled_archive_service = current_app.scheduled_archive_service
+        result = scheduled_archive_service.remove_user_schedule(user.id)
+
+        if result['failed_removals']:
+            return jsonify({
+                "status": "partial_success",
+                "message": "Some jobs failed to remove.",
+                "removed_jobs": result['removed_jobs'],
+                "failed_removals": result['failed_removals']
+            }), 207
+        else:
+            return jsonify({
+                "status": "success",
+                "message": "All scheduled jobs removed successfully.",
+                "removed_jobs": result['removed_jobs']
+            })
+
+    except Exception as e:
+        current_app.logger.exception(f"Remove scheduled jobs exception: {str(e)}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@main_bp.route('/jobs/health')
+@login_required
+def job_health_check():
+    """
+    Perform health check on the job scheduling system.
+    """
+    try:
+        scheduled_archive_service = current_app.scheduled_archive_service
+        health = scheduled_archive_service.health_check()
+
+        return jsonify({
+            "status": "success",
+            "data": health
+        })
+
+    except Exception as e:
+        current_app.logger.exception(f"Job health check exception: {str(e)}")
+        return jsonify({"status": "error", "message": str(e)}), 500

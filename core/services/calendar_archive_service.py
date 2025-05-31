@@ -81,7 +81,18 @@ def prepare_appointments_for_archive(
 def make_appointments_immutable(appointments: List[Appointment], db_session):
     """
     Mark archived appointments as immutable (except for user).
+    This function properly sets the is_archived flag to True, making the appointments
+    immutable for all users except the owner.
+
+    Args:
+        appointments: List of Appointment instances to mark as archived
+        db_session: Database session for committing changes
     """
     for appt in appointments:
+        # Set the is_archived flag to True to make the appointment immutable
         setattr(appt, 'is_archived', True)  # type: ignore
-    db_session.commit() 
+
+    # Commit the changes to the database
+    db_session.commit()
+
+    logger.info(f"Marked {len(appointments)} appointments as immutable (archived)")

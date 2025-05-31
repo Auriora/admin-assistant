@@ -11,6 +11,7 @@ from core.utilities.calendar_overlap_utility import merge_duplicates, detect_ove
 from core.services.category_processing_service import CategoryProcessingService
 from core.services.enhanced_overlap_resolution_service import EnhancedOverlapResolutionService
 from core.services.meeting_modification_service import MeetingModificationService
+from core.services.calendar_archive_service import make_appointments_immutable
 from sqlalchemy.orm import Session
 import logging
 
@@ -168,6 +169,16 @@ class CalendarArchiveOrchestrator:
                 archive_repo.add(appt)
                 archived_count += 1
             print(f"[DEBUG] Archived {archived_count} events.")
+
+            # 3a. Mark archived appointments as immutable
+            print("[DEBUG] Marking archived appointments as immutable...")
+            if appointments_to_archive and archive_calendar_id.startswith("local://"):
+                # Only mark as immutable for local storage (SQLAlchemy)
+                # MS Graph appointments are inherently immutable once archived
+                make_appointments_immutable(appointments_to_archive, db_session)
+                print(f"[DEBUG] Marked {len(appointments_to_archive)} appointments as immutable.")
+            else:
+                print("[DEBUG] Skipping immutability marking for MS Graph storage (inherently immutable).")
 
             # 4. Log overlaps and category issues in local DB
             print("[DEBUG] Logging overlaps and category issues...")

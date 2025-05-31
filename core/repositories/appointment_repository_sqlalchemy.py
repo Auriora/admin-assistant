@@ -2,7 +2,7 @@ from core.repositories.appointment_repository_base import BaseAppointmentReposit
 from core.models.appointment import Appointment
 from typing import List, Optional
 from core.db import SessionLocal
-from core.exceptions import DuplicateAppointmentException
+from core.exceptions import DuplicateAppointmentException, ImmutableAppointmentException
 import json
 import logging
 
@@ -111,6 +111,9 @@ class SQLAlchemyAppointmentRepository(BaseAppointmentRepository):
         return query.all()
 
     def update(self, appointment: Appointment) -> None:
+        # Check if appointment is immutable before updating
+        appointment.validate_modification_allowed(self.user)
+
         appointment.calendar_id = self.safe_str(self.calendar_id)  # type: ignore
         appointment = self._sanitize_appointment_json_fields(appointment)
         self.session.merge(appointment)
@@ -120,24 +123,41 @@ class SQLAlchemyAppointmentRepository(BaseAppointmentRepository):
         appt = self.get_by_id(appointment_id)
         # Only delete if appt is not None and calendar_id matches
         if appt is not None and self.safe_str(appt.calendar_id) == self.safe_str(self.calendar_id):
+            # Check if appointment is immutable before deleting
+            appt.validate_modification_allowed(self.user)
+
             self.session.delete(appt)
             self.session.commit()
 
     def delete_for_period(self, start_date, end_date) -> int:
         """
         Delete all appointments for the current user in the given period.
+        Respects immutability - only deletes non-archived appointments or archived appointments
+        owned by the current user.
+
         Args:
             start_date (datetime/date): Start of the period (inclusive).
             end_date (datetime/date): End of the period (inclusive).
         Returns:
             int: Number of deleted appointments.
         """
-        query = self.session.query(Appointment).filter(
+        # Get appointments to check immutability
+        appointments = self.session.query(Appointment).filter(
             Appointment.user_id == self.user.id,
             Appointment.start_time >= start_date,
             Appointment.end_time <= end_date
-        )
-        count = query.count()
-        query.delete(synchronize_session=False)
+        ).all()
+
+        deleted_count = 0
+        for appt in appointments:
+            try:
+                # Check if appointment can be deleted (respects immutability)
+                appt.validate_modification_allowed(self.user)
+                self.session.delete(appt)
+                deleted_count += 1
+            except ImmutableAppointmentException:
+                # Skip immutable appointments
+                continue
+
         self.session.commit()
-        return count 
+        return deleted_count
