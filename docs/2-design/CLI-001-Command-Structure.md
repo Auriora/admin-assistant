@@ -4,7 +4,7 @@
 - **Document ID**: CLI-001
 - **Last Updated**: 2024-12-19
 - **Status**: CURRENT
-- **Related Documents**: [Consolidated Action Plan](../Consolidated-Action-Plan.md), [System Architecture](architecture.md)
+- **Related Documents**: [Consolidated Action Plan](../CAP-001-Consolidated-Action-Plan.md), [System Architecture](ARCH-001-System-Architecture.md)
 
 This document provides a comprehensive overview of the Admin Assistant CLI command structure and organization. All commands documented here are implemented and tested in `cli/main.py`.
 
@@ -55,7 +55,7 @@ admin-assistant
     └── logout                 # Logout (remove cached tokens)
 ```
 
-**Note**: Timesheet commands are implemented but functionality is in development. See [Consolidated Action Plan](../Consolidated-Action-Plan.md) for implementation status.
+**Note**: Timesheet commands are implemented but functionality is in development. See [Consolidated Action Plan](../CAP-001-Consolidated-Action-Plan.md) for implementation status.
 
 ## Calendar Operations (`admin-assistant calendar`)
 
@@ -189,7 +189,7 @@ Validate appointment categories for a user and date range, showing statistics an
 
 ## Timesheet Operations (`admin-assistant timesheet`)
 
-**Status**: Commands implemented, functionality in development. See [Consolidated Action Plan](../Consolidated-Action-Plan.md) for implementation roadmap.
+**Status**: Commands implemented, functionality in development. See [Consolidated Action Plan](../CAP-001-Consolidated-Action-Plan.md) for implementation roadmap.
 
 ### Export Timesheet
 ```bash

@@ -3,10 +3,18 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.8+](https://img.shields.io/badge/Python-3.8+-blue.svg?logo=python&logoColor=white)](https://www.python.org/downloads/)
 [![Status: Development](https://img.shields.io/badge/Status-Development-orange.svg)]()
+[![GitHub release](https://img.shields.io/github/v/release/bcherrington/admin-assistant?include_prereleases)](https://github.com/bcherrington/admin-assistant/releases)
+
 [![Flask](https://img.shields.io/badge/Flask-2.3+-green.svg?logo=flask&logoColor=white)](https://flask.palletsprojects.com/)
 [![Microsoft Graph](https://img.shields.io/badge/Microsoft-Graph%20API-blue.svg?logo=microsoft&logoColor=white)](https://docs.microsoft.com/en-us/graph/)
 [![Test Coverage](https://img.shields.io/badge/Coverage-95%25+-brightgreen.svg)]()
 [![Code Style: Black](https://img.shields.io/badge/Code%20Style-Black-black.svg)](https://github.com/psf/black)
+
+[//]: # ([![GitHub stars]&#40;https://img.shields.io/github/stars/bcherrington/admin-assistant?style=social&#41;]&#40;https://github.com/bcherrington/admin-assistant/stargazers&#41;)
+[![GitHub issues](https://img.shields.io/github/issues/bcherrington/admin-assistant)](https://github.com/bcherrington/admin-assistant/issues)
+[![GitHub last commit](https://img.shields.io/github/last-commit/bcherrington/admin-assistant)](https://github.com/bcherrington/admin-assistant/commits/main)
+[![GitHub workflow status](https://img.shields.io/github/actions/workflow/status/bcherrington/admin-assistant/tests.yml?branch=main&label=tests)](https://github.com/bcherrington/admin-assistant/actions)
+[![Platform: Linux](https://img.shields.io/badge/Platform-Linux-blue.svg?logo=linux&logoColor=white)](https://www.linux.org/)
 
 A comprehensive calendar management and timesheet automation system for Microsoft 365 users. Admin Assistant automates calendar archiving, appointment categorization, overlap resolution, privacy management, and timesheet generation for professional service providers.
 
@@ -19,15 +27,15 @@ A comprehensive calendar management and timesheet automation system for Microsof
 - 🔄 **In Progress**: PDF timesheet generation, travel detection, Xero integration
 - 📋 **Next**: Enhanced web interface, email notifications, client communications
 
-For detailed status and implementation roadmap, see [Consolidated Action Plan](docs/Consolidated-Action-Plan.md).
+For detailed status and implementation roadmap, see [Consolidated Action Plan](docs/CAP-001-Consolidated-Action-Plan.md).
 
 ## 📚 Documentation
 
 ### Quick Start Documents
-- **[Consolidated Action Plan](docs/Consolidated-Action-Plan.md)** - Current status and implementation roadmap
-- **[Current Implementation Status](docs/Current-Implementation-Status.md)** - Detailed feature completion status
-- **[CLI Command Structure](docs/2-design/CLI-Command-Structure.md)** - Complete CLI reference
-- **[System Architecture](docs/2-design/architecture.md)** - Technical architecture overview
+- **[Consolidated Action Plan](docs/CAP-001-Consolidated-Action-Plan.md)** - Current status and implementation roadmap
+- **[Current Implementation Status](docs/CIS-001-Current-Implementation-Status.md)** - Detailed feature completion status
+- **[CLI Command Structure](docs/2-design/CLI-001-Command-Structure.md)** - Complete CLI reference
+- **[System Architecture](docs/2-design/ARCH-001-System-Architecture.md)** - Technical architecture overview
 
 ### Complete Documentation Structure
 ```
@@ -37,7 +45,7 @@ docs/
 ├── 3-implementation/       # Implementation guides
 ├── 4-testing/             # Test cases and plans
 ├── guidelines/            # Development guidelines
-└── Consolidated-Action-Plan.md  # Main project roadmap
+└── CAP-001-Consolidated-Action-Plan.md  # Main project roadmap
 ```
 
 ## 🛠️ CLI Usage
@@ -129,7 +137,7 @@ admin-assistant jobs status --user <USER_ID>
 admin-assistant jobs trigger --user <USER_ID> --config <CONFIG_ID>
 ```
 
-For complete CLI documentation, see [CLI Command Structure](docs/2-design/CLI-Command-Structure.md).
+For complete CLI documentation, see [CLI Command Structure](docs/2-design/CLI-001-Command-Structure.md).
 
 ## 🏗️ Architecture
 
@@ -148,7 +156,7 @@ Key architectural patterns:
 - Orchestrator pattern for complex workflows
 - Generic entity associations for extensibility
 
-See [System Architecture](docs/2-design/architecture.md) for detailed technical documentation.
+See [System Architecture](docs/2-design/ARCH-001-System-Architecture.md) for detailed technical documentation.
 
 ## 🚀 Getting Started
 
@@ -229,7 +237,7 @@ See [Development Guidelines](docs/guidelines/) for detailed coding standards.
 
 This project follows the [Solo-Developer-AI-Process](docs/Solo-Developer-AI-Process.md) framework for AI-assisted development.
 
-For implementation tasks, see [AI Implementation Prompts](docs/AI-Implementation-Prompts.md) for ready-to-use development prompts.
+For implementation tasks, see [AI Implementation Prompts](docs/AIP-001-AI-Implementation-Prompts.md) for ready-to-use development prompts.
 
 ## 📄 License
 

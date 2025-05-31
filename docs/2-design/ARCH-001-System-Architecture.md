@@ -4,7 +4,7 @@
 - **Document ID**: ARCH-001
 - **Last Updated**: 2024-12-19
 - **Status**: CURRENT
-- **Related Documents**: [Consolidated Action Plan](../Consolidated-Action-Plan.md), [Current Implementation Status](../Current-Implementation-Status.md)
+- **Related Documents**: [Consolidated Action Plan](../CAP-001-Consolidated-Action-Plan.md), [Current Implementation Status](../CIS-001-Current-Implementation-Status.md)
 
 ## 1. High-Level Overview
 
@@ -12,7 +12,7 @@ Admin Assistant is a modular, service-oriented web application designed to autom
 
 In addition to the web UI, the system provides a command-line interface (CLI) in the `cli/` directory for administrative, automation, and scripting tasks.
 
-**Current Implementation Status**: Core infrastructure complete (80%), Phase 1 workflows implemented, timesheet generation and travel management in development. See [Current Implementation Status](../Current-Implementation-Status.md) for detailed progress.
+**Current Implementation Status**: Core infrastructure complete (80%), Phase 1 workflows implemented, timesheet generation and travel management in development. See [Current Implementation Status](../CIS-001-Current-Implementation-Status.md) for detailed progress.
 
 ---
 

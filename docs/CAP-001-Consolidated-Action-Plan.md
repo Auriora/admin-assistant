@@ -286,9 +286,9 @@ Include comprehensive error handling, retry logic, and unit tests.
 
 ### ✅ COMPLETED DOCUMENTATION UPDATES
 - **Consolidated Action Plan** - This document (CAP-001)
-- **Documentation Review Analysis** - Comprehensive gap analysis (DRA-001)
-- **Current Implementation Status** - Single source of truth (CIS-001)
-- **AI Implementation Prompts** - Ready-to-use development prompts (AIP-001)
+- **Documentation Review Analysis** - Comprehensive gap analysis (DRA-001-Documentation-Review-Analysis.md)
+- **Current Implementation Status** - Single source of truth (CIS-001-Current-Implementation-Status.md)
+- **AI Implementation Prompts** - Ready-to-use development prompts (AIP-001-AI-Implementation-Prompts.md)
 - **Solo-Developer-AI-Process.md** - Updated for Admin Assistant project
 
 ### 📋 RECOMMENDED DOCUMENTATION CLEANUP
@@ -307,7 +307,7 @@ Include comprehensive error handling, retry logic, and unit tests.
 
 ### 🎯 NEXT STEPS FOR IMPLEMENTATION
 
-**Immediate Actions** (Use AI-Implementation-Prompts.md):
+**Immediate Actions** (Use AIP-001-AI-Implementation-Prompts.md):
 1. Execute Prompt 1: PDF Timesheet Generation Service
 2. Execute Prompt 2: Travel Detection Service
 3. Execute Prompt 3: Xero Integration Service
