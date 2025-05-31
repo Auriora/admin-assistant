@@ -57,4 +57,16 @@ class ArchiveConfigurationService:
             Optional[ArchiveConfiguration]: The active configuration, or None if not found.
         """
         configs = self.list_for_user(user_id)
-        return next((c for c in configs if getattr(c, 'is_active', False)), None) 
+        return next((c for c in configs if getattr(c, 'is_active', False)), None)
+
+    def list(self, user_id: Optional[int] = None) -> List[ArchiveConfiguration]:
+        """List all ArchiveConfigurations, optionally filtered by user."""
+        return self.repository.list(user_id=user_id)
+
+    def list_active(self, user_id: Optional[int] = None) -> List[ArchiveConfiguration]:
+        """List all active ArchiveConfigurations, optionally filtered by user."""
+        return self.repository.list_active(user_id=user_id)
+
+    def get_all_active(self) -> List[ArchiveConfiguration]:
+        """Get all active ArchiveConfigurations across all users."""
+        return self.repository.list_active()

@@ -32,4 +32,18 @@ class ArchiveConfigurationRepository:
         config = self.get_by_id(config_id)
         if config:
             self.session.delete(config)
-            self.session.commit() 
+            self.session.commit()
+
+    def list(self, user_id: Optional[int] = None) -> List[ArchiveConfiguration]:
+        """List all ArchiveConfigurations, optionally filtered by user."""
+        query = self.session.query(ArchiveConfiguration)
+        if user_id is not None:
+            query = query.filter_by(user_id=user_id)
+        return query.all()
+
+    def list_active(self, user_id: Optional[int] = None) -> List[ArchiveConfiguration]:
+        """List all active ArchiveConfigurations, optionally filtered by user."""
+        query = self.session.query(ArchiveConfiguration).filter_by(is_active=True)
+        if user_id is not None:
+            query = query.filter_by(user_id=user_id)
+        return query.all()

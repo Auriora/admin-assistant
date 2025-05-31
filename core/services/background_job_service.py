@@ -22,7 +22,6 @@ from flask_apscheduler import APScheduler
 from core.services.user_service import UserService
 from core.services.archive_configuration_service import ArchiveConfigurationService
 from core.services.job_configuration_service import JobConfigurationService
-from core.orchestrators.archive_job_runner import ArchiveJobRunner
 import logging
 
 logger = logging.getLogger(__name__)
@@ -42,11 +41,19 @@ class BackgroundJobService:
         self.user_service = UserService()
         self.archive_config_service = ArchiveConfigurationService()
         self.job_config_service = JobConfigurationService()
-        self.archive_runner = ArchiveJobRunner()
+        self._archive_runner = None
         
     def set_scheduler(self, scheduler: APScheduler):
         """Set the scheduler instance (used when initializing from Flask app)."""
         self.scheduler = scheduler
+
+    @property
+    def archive_runner(self):
+        """Lazy initialization of ArchiveJobRunner to avoid circular imports."""
+        if self._archive_runner is None:
+            from core.orchestrators.archive_job_runner import ArchiveJobRunner
+            self._archive_runner = ArchiveJobRunner()
+        return self._archive_runner
         
     def schedule_daily_archive_job(self, user_id: int, archive_config_id: int, 
                                  hour: int = 23, minute: int = 59) -> str:
