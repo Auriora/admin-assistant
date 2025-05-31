@@ -5,6 +5,10 @@ from .archive_configuration_repository import ArchiveConfigurationRepository
 from .calendar_repository_base import BaseCalendarRepository
 from .calendar_repository_sqlalchemy import SQLAlchemyCalendarRepository
 from .calendar_repository_msgraph import MSGraphCalendarRepository
+from .category_repository_base import BaseCategoryRepository
+from .category_repository import SQLAlchemyCategoryRepository
+from .category_repository_msgraph import MSGraphCategoryRepository
+from .category_repository_factory import CategoryRepositoryFactory, get_category_repository
 from .user_repository import UserRepository
 from .action_log_repository import ActionLogRepository
 from .prompt_repository import PromptRepository

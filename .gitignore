@@ -42,3 +42,11 @@ logs/
 *.log
 tests/data/ms365_calendar_*_to_*.json
 ms_token.json
+/.idea/inspectionProfiles/profiles_settings.xml
+/.idea/.gitignore
+/.idea/admin-assistant.iml
+/.idea/AugmentWebviewStateStore.xml
+/.idea/aws.xml
+/.idea/misc.xml
+/.idea/modules.xml
+/.idea/vcs.xml

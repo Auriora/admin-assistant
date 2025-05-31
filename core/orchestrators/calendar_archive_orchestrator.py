@@ -8,6 +8,7 @@ from core.repositories.action_log_repository import ActionLogRepository
 from core.repositories.entity_association_repository import EntityAssociationHelper
 from core.utilities.calendar_recurrence_utility import expand_recurring_events_range
 from core.utilities.calendar_overlap_utility import merge_duplicates, detect_overlaps
+from core.services.category_processing_service import CategoryProcessingService
 from sqlalchemy.orm import Session
 import logging
 
@@ -70,6 +71,20 @@ class CalendarArchiveOrchestrator:
             print("[DEBUG] Expanding recurring events...")
             expanded = expand_recurring_events_range(appointments, start_date, end_date)
             print(f"[DEBUG] Expanded to {len(expanded)} events.")
+
+            # 2a. Process categories and apply privacy automation
+            print("[DEBUG] Processing categories and applying privacy automation...")
+            category_service = CategoryProcessingService()
+            category_stats = category_service.get_category_statistics(expanded)
+            print(f"[DEBUG] Category stats: {category_stats['valid_categories']} valid, {category_stats['invalid_categories']} invalid, {category_stats['personal_appointments']} personal")
+
+            # Apply privacy flags to personal appointments
+            for appt in expanded:
+                if category_service.should_mark_private(appt):
+                    # Set sensitivity to Private for personal appointments
+                    if hasattr(appt, 'sensitivity'):
+                        appt.sensitivity = 'Private'
+
             print("[DEBUG] Deduplicating events...")
             deduped = merge_duplicates(expanded)
             print(f"[DEBUG] Deduped to {len(deduped)} events.")
@@ -100,11 +115,13 @@ class CalendarArchiveOrchestrator:
                 archived_count += 1
             print(f"[DEBUG] Archived {archived_count} events.")
 
-            # 4. Log overlaps and create resolution tasks in local DB
-            print("[DEBUG] Logging overlaps and creating resolution tasks...")
+            # 4. Log overlaps and category issues in local DB
+            print("[DEBUG] Logging overlaps and category issues...")
             action_log_repo = ActionLogRepository(db_session)
             assoc_helper = EntityAssociationHelper()
             overlap_count = 0
+
+            # Log overlaps
             for group in overlap_groups:
                 for appt in group:
                     log = ActionLog(
@@ -129,12 +146,34 @@ class CalendarArchiveOrchestrator:
                     )
                     assoc_helper.add(db_session, assoc)
                     overlap_count += 1
-            print(f"[DEBUG] Logged {overlap_count} overlaps. Committing to DB...")
+
+            # Log category validation issues
+            category_issue_count = 0
+            if category_stats['issues']:
+                for issue in category_stats['issues'][:10]:  # Limit to first 10 issues
+                    log = ActionLog(
+                        user_id=user.id,
+                        event_type='category_validation',
+                        state='needs_user_action',
+                        description=f"Category validation issue: {issue}",
+                        details={
+                            'issue_type': 'category_format',
+                            'issue_description': issue,
+                            'date_range': f"{start_date} to {end_date}",
+                            'total_issues': len(category_stats['issues'])
+                        }
+                    )
+                    action_log_repo.add(log)
+                    category_issue_count += 1
+
+            print(f"[DEBUG] Logged {overlap_count} overlaps and {category_issue_count} category issues. Committing to DB...")
             db_session.commit()
             print("[DEBUG] DB commit complete.")
             return {
                 'archived_count': archived_count,
                 'overlap_count': overlap_count,
+                'category_stats': category_stats,
+                'category_issue_count': category_issue_count,
                 'errors': []
             }
         except Exception as e:
