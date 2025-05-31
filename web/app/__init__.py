@@ -98,6 +98,34 @@ def create_app():
     app.logger.addHandler(file_handler)
     app.logger.addHandler(console_handler)
 
+    # Security headers middleware
+    @app.after_request
+    def add_security_headers(response):
+        """Add security headers to all responses."""
+        # Content Security Policy
+        response.headers['Content-Security-Policy'] = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
+            "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
+            "img-src 'self' data: https:; "
+            "font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
+            "connect-src 'self' https://graph.microsoft.com; "
+            "frame-ancestors 'none';"
+        )
+
+        # Security headers
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        response.headers['X-Frame-Options'] = 'DENY'
+        response.headers['X-XSS-Protection'] = '1; mode=block'
+        response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+        response.headers['Permissions-Policy'] = 'geolocation=(), microphone=(), camera=()'
+
+        # HTTPS enforcement in production
+        if not request.is_secure and os.environ.get('APP_ENV') == 'production':
+            response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+
+        return response
+
     # Log request info
     @app.before_request
     def log_request_info():

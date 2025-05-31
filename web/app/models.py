@@ -7,10 +7,32 @@ from datetime import datetime, date, UTC
 from sqlalchemy_utils import EncryptedType, StringEncryptedType
 from sqlalchemy_utils.types.encrypted.encrypted_type import AesEngine
 import os
+import secrets
 from flask_login import UserMixin
 
-# Key for encryption (should be stored securely in production)
-ENCRYPTION_KEY = os.environ.get('ENCRYPTION_KEY', 'devkeydevkeydevkeydevkey')
+def get_encryption_key():
+    """
+    Get encryption key from environment with security validation.
+    Generates a secure key for development if not provided.
+    """
+    key = os.environ.get('ENCRYPTION_KEY')
+
+    if not key:
+        # In development, generate a secure random key
+        if os.environ.get('APP_ENV') == 'development':
+            key = secrets.token_urlsafe(32)[:32]  # 32 bytes for AES-256
+            print("WARNING: Using generated encryption key for development. Set ENCRYPTION_KEY environment variable for production.")
+        else:
+            raise ValueError("ENCRYPTION_KEY environment variable is required for production")
+
+    # Validate key length (minimum 32 characters for AES-256)
+    if len(key) < 32:
+        raise ValueError("ENCRYPTION_KEY must be at least 32 characters long")
+
+    return key
+
+# Secure encryption key with validation
+ENCRYPTION_KEY = get_encryption_key()
 
 class User(UserMixin, db.Model):
     __tablename__ = 'users'

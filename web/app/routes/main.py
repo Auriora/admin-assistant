@@ -61,16 +61,48 @@ def ms365_auth_callback():
     user.ms_refresh_token = token.get('refresh_token')
     expires_in = token.get('expires_in', 3600)
     user.ms_token_expires_at = datetime.now(UTC) + timedelta(seconds=expires_in)
-    # Fetch and store profile photo
+    # Fetch and store profile photo securely
     photo_url = None
     try:
         photo_resp = requests.get('https://graph.microsoft.com/v1.0/me/photo/$value', headers=headers)
         if photo_resp.status_code == 200:
-            photo_path = f'static/assets/img/team/profile-photo-{user.id}.jpg'
-            with open(photo_path, 'wb') as f:
-                f.write(photo_resp.content)
-            user.profile_photo_url = photo_path.replace('static/', '')
-            photo_url = user.profile_photo_url
+            # Validate content type
+            content_type = photo_resp.headers.get('content-type', '')
+            if not content_type.startswith('image/'):
+                current_app.logger.warning(f"Invalid content type for profile photo: {content_type}")
+                user.profile_photo_url = None
+            else:
+                # Validate file size (max 5MB)
+                content_length = len(photo_resp.content)
+                if content_length > 5 * 1024 * 1024:
+                    current_app.logger.warning(f"Profile photo too large: {content_length} bytes")
+                    user.profile_photo_url = None
+                else:
+                    # Secure file path construction
+                    import os
+                    import uuid
+
+                    # Generate secure filename
+                    file_extension = '.jpg'  # Default to jpg for MS Graph photos
+                    secure_filename = f'profile-{user.id}-{uuid.uuid4().hex[:8]}{file_extension}'
+
+                    # Ensure directory exists and is secure
+                    photo_dir = os.path.join(current_app.static_folder, 'assets', 'img', 'team')
+                    os.makedirs(photo_dir, mode=0o755, exist_ok=True)
+
+                    # Construct secure file path
+                    photo_path = os.path.join(photo_dir, secure_filename)
+
+                    # Write file securely
+                    with open(photo_path, 'wb') as f:
+                        f.write(photo_resp.content)
+
+                    # Set secure file permissions
+                    os.chmod(photo_path, 0o644)
+
+                    # Store relative URL
+                    user.profile_photo_url = f'assets/img/team/{secure_filename}'
+                    photo_url = user.profile_photo_url
         else:
             user.profile_photo_url = None
     except Exception as e:
