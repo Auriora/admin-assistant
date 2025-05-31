@@ -9,6 +9,7 @@ from core.repositories.entity_association_repository import EntityAssociationHel
 from core.utilities.calendar_recurrence_utility import expand_recurring_events_range
 from core.utilities.calendar_overlap_utility import merge_duplicates, detect_overlaps
 from core.services.category_processing_service import CategoryProcessingService
+from core.services.enhanced_overlap_resolution_service import EnhancedOverlapResolutionService
 from sqlalchemy.orm import Session
 import logging
 
@@ -88,11 +89,51 @@ class CalendarArchiveOrchestrator:
             print("[DEBUG] Deduplicating events...")
             deduped = merge_duplicates(expanded)
             print(f"[DEBUG] Deduped to {len(deduped)} events.")
+
             print("[DEBUG] Detecting overlaps...")
             overlap_groups = detect_overlaps(deduped)
+            print(f"[DEBUG] Found {len(overlap_groups)} initial overlap groups.")
+
+            # Apply enhanced overlap resolution
+            print("[DEBUG] Applying enhanced overlap resolution...")
+            overlap_service = EnhancedOverlapResolutionService()
+            auto_resolved_appointments = []
+            remaining_conflicts = []
+            resolution_stats = {
+                'total_overlaps': len(overlap_groups),
+                'auto_resolved': 0,
+                'remaining_conflicts': 0,
+                'filtered_appointments': 0
+            }
+
+            for group in overlap_groups:
+                resolution_result = overlap_service.apply_automatic_resolution_rules(group)
+
+                # Add resolved appointments to archive list
+                auto_resolved_appointments.extend(resolution_result['resolved'])
+
+                # Track remaining conflicts that need manual resolution
+                if resolution_result['conflicts']:
+                    remaining_conflicts.append(resolution_result['conflicts'])
+
+                # Update stats
+                if resolution_result['resolved']:
+                    resolution_stats['auto_resolved'] += 1
+                if resolution_result['conflicts']:
+                    resolution_stats['remaining_conflicts'] += 1
+                resolution_stats['filtered_appointments'] += len(resolution_result['filtered'])
+
+                # Log resolution details
+                if resolution_result['resolution_log']:
+                    print(f"[DEBUG] Overlap resolution: {'; '.join(resolution_result['resolution_log'])}")
+
+            # Combine non-overlapping appointments with auto-resolved ones
             overlapping_appts = set(a for group in overlap_groups for a in group)
             non_overlapping = [a for a in deduped if a not in overlapping_appts]
-            print(f"[DEBUG] Found {len(overlap_groups)} overlap groups, {len(non_overlapping)} non-overlapping events.")
+            appointments_to_archive = non_overlapping + auto_resolved_appointments
+
+            print(f"[DEBUG] Resolution complete: {len(non_overlapping)} non-overlapping + {len(auto_resolved_appointments)} auto-resolved = {len(appointments_to_archive)} total to archive.")
+            print(f"[DEBUG] Remaining conflicts: {len(remaining_conflicts)} groups need manual resolution.")
 
             # 3. Write non-overlapping to archive calendar (MS Graph)
             print("[DEBUG] Selecting archive repository based on URI...")
@@ -110,7 +151,7 @@ class CalendarArchiveOrchestrator:
             else:
                 raise ValueError(f"Unsupported archive calendar URI scheme: {archive_calendar_id}")
             archived_count = 0
-            for appt in non_overlapping:
+            for appt in appointments_to_archive:
                 archive_repo.add(appt)
                 archived_count += 1
             print(f"[DEBUG] Archived {archived_count} events.")
@@ -121,19 +162,22 @@ class CalendarArchiveOrchestrator:
             assoc_helper = EntityAssociationHelper()
             overlap_count = 0
 
-            # Log overlaps
-            for group in overlap_groups:
-                for appt in group:
+            # Log only remaining conflicts that need manual resolution
+            for conflict_group in remaining_conflicts:
+                for appt in conflict_group:
                     log = ActionLog(
                         user_id=user.id,
                         event_type='overlap',
                         state='needs_user_action',
-                        description=f"Overlapping event: {getattr(appt, 'subject', None)}",
+                        description=f"Overlapping event (manual resolution needed): {getattr(appt, 'subject', None)}",
                         details={
                             'ms_event_id': getattr(appt, 'ms_event_id', None),
                             'subject': getattr(appt, 'subject', None),
                             'start_time': str(getattr(appt, 'start_time', None)),
                             'end_time': str(getattr(appt, 'end_time', None)),
+                            'show_as': getattr(appt, 'show_as', None),
+                            'importance': getattr(appt, 'importance', None),
+                            'resolution_status': 'auto_resolution_failed'
                         }
                     )
                     action_log_repo.add(log)
@@ -174,6 +218,7 @@ class CalendarArchiveOrchestrator:
                 'overlap_count': overlap_count,
                 'category_stats': category_stats,
                 'category_issue_count': category_issue_count,
+                'resolution_stats': resolution_stats,
                 'errors': []
             }
         except Exception as e:

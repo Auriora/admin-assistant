@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Dict, Any
 from core.models.appointment import Appointment
 from datetime import datetime
 
@@ -45,4 +45,35 @@ def detect_overlaps(appointments: List[Appointment]) -> List[List[Appointment]]:
                 current_group = [appt]
     if len(current_group) > 1:
         overlaps.append(current_group)
-    return overlaps 
+    return overlaps
+
+def detect_overlaps_with_metadata(appointments: List[Appointment]) -> List[Dict[str, Any]]:
+    """
+    Enhanced overlap detection that includes metadata for resolution.
+    Returns list of overlap groups with resolution metadata.
+
+    Returns:
+        List of dicts with keys:
+        - 'appointments': List of overlapping appointments
+        - 'metadata': Dict with resolution-relevant info (show_as values, importance, etc.)
+    """
+    overlap_groups = detect_overlaps(appointments)
+
+    result = []
+    for group in overlap_groups:
+        metadata = {
+            'show_as_values': [getattr(appt, 'show_as', None) for appt in group],
+            'importance_values': [getattr(appt, 'importance', None) for appt in group],
+            'sensitivity_values': [getattr(appt, 'sensitivity', None) for appt in group],
+            'subjects': [getattr(appt, 'subject', None) for appt in group],
+            'start_times': [getattr(appt, 'start_time', None) for appt in group],
+            'end_times': [getattr(appt, 'end_time', None) for appt in group],
+            'group_size': len(group)
+        }
+
+        result.append({
+            'appointments': group,
+            'metadata': metadata
+        })
+
+    return result
