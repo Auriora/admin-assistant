@@ -3,6 +3,7 @@ Unit tests for the overlap analysis CLI command
 """
 
 import pytest
+import os
 from unittest.mock import Mock, patch, MagicMock
 from datetime import date, datetime, timezone, timedelta
 from typer.testing import CliRunner
@@ -15,6 +16,8 @@ class TestOverlapAnalysisCLI:
     def setup_method(self):
         """Set up test fixtures"""
         self.runner = CliRunner()
+        # Set up in-memory database for tests
+        os.environ['CORE_DATABASE_URL'] = 'sqlite:///:memory:'
     
     def _create_mock_appointment(self, subject, start_time, end_time, show_as="busy", importance="normal", categories=None):
         """Create a mock appointment for testing"""
@@ -28,13 +31,15 @@ class TestOverlapAnalysisCLI:
         appointment.ms_event_id = f"test-{subject.replace(' ', '-').lower()}"
         return appointment
     
-    @patch('cli.main.get_session')
+    @patch('core.db.get_session')
+    @patch('core.db.SessionLocal')
     @patch('cli.main.UserService')
-    def test_analyze_overlaps_no_appointments(self, mock_user_service, mock_get_session):
+    def test_analyze_overlaps_no_appointments(self, mock_user_service, mock_session_local, mock_get_session):
         """Test analyze-overlaps command when no appointments are found"""
         # Mock database session and user service
         mock_session = Mock()
         mock_get_session.return_value = mock_session
+        mock_session_local.return_value = mock_session
 
         mock_user = Mock()
         mock_user.id = 1
@@ -47,29 +52,34 @@ class TestOverlapAnalysisCLI:
         mock_filter.all.return_value = []
         mock_query.filter.return_value = mock_filter
         mock_session.query.return_value = mock_query
-        
+
         # Run the command
         result = self.runner.invoke(app, [
-            'calendar', 'analyze-overlaps', 
+            'calendar', 'analyze-overlaps',
             '--user', '1',
             '--start-date', '2024-01-01',
             '--end-date', '2024-01-02'
         ])
-        
+
         # Verify the command executed successfully
+        print(f"Exit code: {result.exit_code}")
+        print(f"Stdout: {result.stdout}")
+        print(f"Exception: {result.exception}")
         assert result.exit_code == 0
         assert "No appointments found" in result.stdout
     
-    @patch('cli.main.get_session')
+    @patch('core.db.get_session')
+    @patch('core.db.SessionLocal')
     @patch('cli.main.UserService')
     @patch('core.utilities.calendar_recurrence_utility.expand_recurring_events_range')
     @patch('core.utilities.calendar_overlap_utility.detect_overlaps')
     def test_analyze_overlaps_no_overlaps_found(self, mock_detect_overlaps, mock_expand_recurring,
-                                               mock_user_service, mock_get_session):
+                                               mock_user_service, mock_session_local, mock_get_session):
         """Test analyze-overlaps command when no overlaps are found"""
         # Mock database session and user service
         mock_session = Mock()
         mock_get_session.return_value = mock_session
+        mock_session_local.return_value = mock_session
 
         mock_user = Mock()
         mock_user.id = 1
@@ -106,16 +116,18 @@ class TestOverlapAnalysisCLI:
         assert "No overlapping appointments found" in result.stdout
         assert "✓" in result.stdout
     
-    @patch('cli.main.get_session')
+    @patch('core.db.get_session')
+    @patch('core.db.SessionLocal')
     @patch('cli.main.UserService')
     @patch('core.utilities.calendar_recurrence_utility.expand_recurring_events_range')
     @patch('core.utilities.calendar_overlap_utility.detect_overlaps')
     def test_analyze_overlaps_with_overlaps_no_auto_resolve(self, mock_detect_overlaps, mock_expand_recurring,
-                                                           mock_user_service, mock_get_session):
+                                                           mock_user_service, mock_session_local, mock_get_session):
         """Test analyze-overlaps command when overlaps are found but auto-resolve is not enabled"""
         # Mock database session and user service
         mock_session = Mock()
         mock_get_session.return_value = mock_session
+        mock_session_local.return_value = mock_session
 
         mock_user = Mock()
         mock_user.id = 1
@@ -154,17 +166,19 @@ class TestOverlapAnalysisCLI:
         assert "Meeting 1" in result.stdout
         assert "Meeting 2" in result.stdout
     
-    @patch('cli.main.get_session')
+    @patch('core.db.get_session')
+    @patch('core.db.SessionLocal')
     @patch('cli.main.UserService')
     @patch('core.utilities.calendar_recurrence_utility.expand_recurring_events_range')
     @patch('core.utilities.calendar_overlap_utility.detect_overlaps')
     @patch('core.services.enhanced_overlap_resolution_service.EnhancedOverlapResolutionService')
     def test_analyze_overlaps_with_auto_resolve(self, mock_overlap_service_class, mock_detect_overlaps,
-                                               mock_expand_recurring, mock_user_service, mock_get_session):
+                                               mock_expand_recurring, mock_user_service, mock_session_local, mock_get_session):
         """Test analyze-overlaps command with auto-resolve enabled"""
         # Mock database session and user service
         mock_session = Mock()
         mock_get_session.return_value = mock_session
+        mock_session_local.return_value = mock_session
 
         mock_user = Mock()
         mock_user.id = 1
@@ -227,14 +241,16 @@ class TestOverlapAnalysisCLI:
         assert result.exit_code != 0
         assert "Missing option" in result.stdout or "required" in result.stdout.lower()
     
-    @patch('cli.main.get_session')
+    @patch('core.db.get_session')
+    @patch('core.db.SessionLocal')
     @patch('cli.main.UserService')
-    def test_analyze_overlaps_user_not_found(self, mock_user_service, mock_get_session):
+    def test_analyze_overlaps_user_not_found(self, mock_user_service, mock_session_local, mock_get_session):
         """Test analyze-overlaps command when user is not found"""
         # Mock database session and user service
         mock_session = Mock()
         mock_get_session.return_value = mock_session
-        
+        mock_session_local.return_value = mock_session
+
         # Mock user not found
         mock_user_service.return_value.get_by_id.return_value = None
         

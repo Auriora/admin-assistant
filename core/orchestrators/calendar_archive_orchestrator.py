@@ -25,8 +25,11 @@ class CalendarArchiveOrchestrator:
         """
         Extract the MS Graph calendar ID from a URI of the form 'msgraph://calendar' (primary) or 'msgraph://<id>'.
         Returns an empty string for the primary calendar, or the calendar ID for others.
+        For plain IDs without scheme, returns the ID as-is.
         """
-        if not uri or not uri.startswith("msgraph://"):
+        if not uri:
+            return ""
+        if not uri.startswith("msgraph://"):
             return uri  # fallback: treat as raw ID
         suffix = uri[len("msgraph://"):]
         if suffix == "calendar":
@@ -157,7 +160,9 @@ class CalendarArchiveOrchestrator:
                 archive_repo = MSGraphAppointmentRepository(msgraph_client, user, msgraph_cal_id)
                 print(f"[DEBUG] Using MSGraphAppointmentRepository for MS Graph calendar: {msgraph_cal_id}")
             else:
-                raise ValueError(f"Unsupported archive calendar URI scheme: {archive_calendar_id}")
+                # Default: treat as plain MS Graph calendar ID
+                archive_repo = MSGraphAppointmentRepository(msgraph_client, user, archive_calendar_id)
+                print(f"[DEBUG] Using MSGraphAppointmentRepository for plain calendar ID: {archive_calendar_id}")
             archived_count = 0
             for appt in appointments_to_archive:
                 archive_repo.add(appt)

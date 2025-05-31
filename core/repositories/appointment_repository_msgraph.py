@@ -187,23 +187,47 @@ class MSGraphAppointmentRepository(BaseAppointmentRepository):
         """
         return str(self.user.email)
 
-    def to_json_safe_value(self, value):
+    def to_json_safe_value(self, value, _seen=None):
         """
         Convert a value to a JSON-serializable form. For dicts/lists, recurse. For unknown types, use str().
+        Includes cycle detection to prevent infinite recursion.
         """
         import datetime
+        if _seen is None:
+            _seen = set()
+
+        # Prevent infinite recursion by tracking seen objects
+        if id(value) in _seen:
+            return f"<circular reference to {type(value).__name__}>"
+
         if isinstance(value, dict):
-            return {k: self.to_json_safe_value(v) for k, v in value.items() if isinstance(k, str)}
+            _seen.add(id(value))
+            try:
+                return {k: self.to_json_safe_value(v, _seen) for k, v in value.items() if isinstance(k, str)}
+            finally:
+                _seen.discard(id(value))
         elif isinstance(value, (list, tuple, set)):
-            return [self.to_json_safe_value(v) for v in value]
+            _seen.add(id(value))
+            try:
+                return [self.to_json_safe_value(v, _seen) for v in value]
+            finally:
+                _seen.discard(id(value))
         elif isinstance(value, (str, int, float, bool)) or value is None:
             return value
         elif isinstance(value, datetime.datetime):
             return value.isoformat()
         elif hasattr(value, '__dict__'):
-            return self.to_json_safe_value(vars(value))
+            _seen.add(id(value))
+            try:
+                return self.to_json_safe_value(vars(value), _seen)
+            finally:
+                _seen.discard(id(value))
         elif hasattr(value, '__slots__'):
-            return {slot: self.to_json_safe_value(getattr(value, slot)) for slot in value.__slots__ if hasattr(value, slot)}
+            _seen.add(id(value))
+            try:
+                return {slot: self.to_json_safe_value(getattr(value, slot), _seen) for slot in value.__slots__ if hasattr(value, slot)}
+            finally:
+                _seen.discard(id(value))
         else:
             return str(value)
 

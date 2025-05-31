@@ -100,7 +100,7 @@ class MockCalendars:
         self._calendars = {}
         self.get_called = False
         self.post_called = False
-    def get(self):
+    async def get(self):
         self.get_called = True
         print("[MOCK DEBUG] MockCalendars.get() called.")
         # Return a mock response with a 'value' attribute (list of calendars)
@@ -114,7 +114,7 @@ class MockCalendars:
                 })()
             ]
         })()
-    def post(self, body):
+    async def post(self, body):
         self.post_called = True
         print(f"[MOCK DEBUG] MockCalendars.post() called with body={body}")
         # Simulate adding a calendar

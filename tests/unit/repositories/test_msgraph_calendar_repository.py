@@ -2,7 +2,10 @@ import pytest
 from core.repositories.calendar_repository_msgraph import MSGraphCalendarRepository
 from core.models.calendar import Calendar
 from types import SimpleNamespace
-from tests.mocks.msgraph_mocks import MockMSGraphClient
+try:
+    from tests.mocks.msgraph_mocks import MockMSGraphClient
+except ImportError:
+    from mocks.msgraph_mocks import MockMSGraphClient
 from unittest.mock import MagicMock
 
 class MockUser:
@@ -46,8 +49,9 @@ def test_get_by_id_returns_calendar_or_none(repo):
     assert result is None or isinstance(result, Calendar)
 
 def test_add_calls_msgraph(mock_user):
+    from unittest.mock import AsyncMock
     client = MagicMock()
-    client.users.by_user_id.return_value.calendars.post = MagicMock()
+    client.users.by_user_id.return_value.calendars.post = AsyncMock()
     repo = MSGraphCalendarRepository(client, mock_user)
     cal = make_calendar(user_id=mock_user.id)
     repo.add(cal)

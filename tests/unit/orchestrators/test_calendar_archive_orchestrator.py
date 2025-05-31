@@ -120,10 +120,13 @@ def test_archive_user_appointments(user, msgraph_client, db_session, appointment
 
     # Overlaps should be logged in the DB
     logs = db_session.query(ActionLog).all()
-    assert len(logs) == 2
-    assert all(log.event_type == "overlap" for log in logs)
+    overlap_logs = [log for log in logs if log.event_type == "overlap"]
+    category_logs = [log for log in logs if log.event_type == "category_validation"]
+    assert len(overlap_logs) == 2
+    assert len(category_logs) == 3  # Category validation issues are also logged
+    assert len(logs) == 5  # Total logs
 
-    # Associations should be created
+    # Associations should be created (only for overlaps)
     assocs = db_session.query(EntityAssociation).all()
     assert len(assocs) == 2
     assert all(assoc.source_type == "action_log" and assoc.target_type == "appointment" for assoc in assocs)
