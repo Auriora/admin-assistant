@@ -1,6 +1,12 @@
 # Admin Assistant CLI Command Structure
 
-This document provides a comprehensive overview of the Admin Assistant CLI command structure and organization.
+## Document Information
+- **Document ID**: CLI-001
+- **Last Updated**: 2024-12-19
+- **Status**: CURRENT
+- **Related Documents**: [Consolidated Action Plan](../Consolidated-Action-Plan.md), [System Architecture](architecture.md)
+
+This document provides a comprehensive overview of the Admin Assistant CLI command structure and organization. All commands documented here are implemented and tested in `cli/main.py`.
 
 ## Command Hierarchy Overview
 
@@ -35,6 +41,9 @@ admin-assistant
 │           ├── deactivate     # Deactivate configuration
 │           ├── delete         # Delete configuration
 │           └── set-default    # Set default configuration
+├── timesheet                  # Timesheet operations (in development)
+│   ├── export                 # Export timesheet data
+│   └── upload                 # Upload timesheet to external systems
 ├── jobs                       # Background job management
 │   ├── schedule               # Schedule recurring archive jobs
 │   ├── trigger                # Trigger manual archive job
@@ -45,6 +54,8 @@ admin-assistant
     ├── msgraph                # Login to Microsoft 365
     └── logout                 # Logout (remove cached tokens)
 ```
+
+**Note**: Timesheet commands are implemented but functionality is in development. See [Consolidated Action Plan](../Consolidated-Action-Plan.md) for implementation status.
 
 ## Calendar Operations (`admin-assistant calendar`)
 
@@ -70,9 +81,9 @@ admin-assistant calendar archive --user <USER_ID> --archive-config <CONFIG_ID> [
 
 ### List Calendars
 ```bash
-admin-assistant calendar list --user <USER_ID> [--datastore <STORE>]
+admin-assistant calendar list --user <USER_ID> [--store <STORE>]
 ```
-List all calendars for a user across datastores (local, msgraph, or all).
+List all calendars for a user across stores (local, msgraph, or all).
 
 ### Create Calendar
 ```bash
@@ -175,6 +186,24 @@ admin-assistant category validate --user <USER_ID> [--start-date <DATE>] [--end-
 Validate appointment categories for a user and date range, showing statistics and validation issues.
 
 **Store Options**: `local` (default) or `msgraph`
+
+## Timesheet Operations (`admin-assistant timesheet`)
+
+**Status**: Commands implemented, functionality in development. See [Consolidated Action Plan](../Consolidated-Action-Plan.md) for implementation roadmap.
+
+### Export Timesheet
+```bash
+admin-assistant timesheet export --user <USER_ID> [--output <FORMAT>]
+```
+Export timesheet data for a user. Options:
+- `--output`: Output format (PDF or CSV, default: PDF)
+
+### Upload Timesheet
+```bash
+admin-assistant timesheet upload --user <USER_ID> --destination <DEST>
+```
+Upload timesheet to external systems. Options:
+- `--destination`: Upload destination (e.g., Xero)
 
 ## Background Job Management (`admin-assistant jobs`)
 

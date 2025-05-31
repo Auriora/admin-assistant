@@ -1,10 +1,18 @@
 # Admin Assistant System Architecture
 
+## Document Information
+- **Document ID**: ARCH-001
+- **Last Updated**: 2024-12-19
+- **Status**: CURRENT
+- **Related Documents**: [Consolidated Action Plan](../Consolidated-Action-Plan.md), [Current Implementation Status](../Current-Implementation-Status.md)
+
 ## 1. High-Level Overview
 
 Admin Assistant is a modular, service-oriented web application designed to automate and streamline calendar management, timesheet extraction, billing, and travel calculation for professionals using Microsoft 365 Calendar. The system is built for single-user operation initially, with provisions for future multi-user and role-based support. It integrates with Microsoft 365 Calendar, OneDrive, Xero, Google Directions API, and OpenAI.
 
 In addition to the web UI, the system provides a command-line interface (CLI) in the `cli/` directory for administrative, automation, and scripting tasks.
+
+**Current Implementation Status**: Core infrastructure complete (80%), Phase 1 workflows implemented, timesheet generation and travel management in development. See [Current Implementation Status](../Current-Implementation-Status.md) for detailed progress.
 
 ---
 
