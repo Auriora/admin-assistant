@@ -10,6 +10,7 @@ from core.utilities.calendar_recurrence_utility import expand_recurring_events_r
 from core.utilities.calendar_overlap_utility import merge_duplicates, detect_overlaps
 from core.services.category_processing_service import CategoryProcessingService
 from core.services.enhanced_overlap_resolution_service import EnhancedOverlapResolutionService
+from core.services.meeting_modification_service import MeetingModificationService
 from sqlalchemy.orm import Session
 import logging
 
@@ -86,8 +87,15 @@ class CalendarArchiveOrchestrator:
                     if hasattr(appt, 'sensitivity'):
                         appt.sensitivity = 'Private'
 
+            # 2b. Process meeting modifications
+            print("[DEBUG] Processing meeting modifications...")
+            modification_service = MeetingModificationService()
+            processed_appointments = modification_service.process_modifications(expanded)
+            modification_count = len(expanded) - len(processed_appointments)
+            print(f"[DEBUG] Processed {modification_count} modification appointments, resulting in {len(processed_appointments)} appointments")
+
             print("[DEBUG] Deduplicating events...")
-            deduped = merge_duplicates(expanded)
+            deduped = merge_duplicates(processed_appointments)
             print(f"[DEBUG] Deduped to {len(deduped)} events.")
 
             print("[DEBUG] Detecting overlaps...")
@@ -219,6 +227,7 @@ class CalendarArchiveOrchestrator:
                 'category_stats': category_stats,
                 'category_issue_count': category_issue_count,
                 'resolution_stats': resolution_stats,
+                'modification_count': modification_count,
                 'errors': []
             }
         except Exception as e:
