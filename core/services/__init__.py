@@ -4,3 +4,4 @@ from .user_service import UserService
 from .entity_association_service import EntityAssociationService
 from .prompt_service import PromptService
 from .chat_session_service import ChatSessionService
+from .privacy_automation_service import PrivacyAutomationService
