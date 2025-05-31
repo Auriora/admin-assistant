@@ -21,6 +21,7 @@ from datetime import datetime, date, timedelta
 from flask_apscheduler import APScheduler
 from core.services.user_service import UserService
 from core.services.archive_configuration_service import ArchiveConfigurationService
+from core.services.job_configuration_service import JobConfigurationService
 from core.orchestrators.archive_job_runner import ArchiveJobRunner
 import logging
 
@@ -33,13 +34,14 @@ class BackgroundJobService:
     def __init__(self, scheduler: Optional[APScheduler] = None):
         """
         Initialize the background job service.
-        
+
         Args:
             scheduler: Flask-APScheduler instance (optional, will be set later if not provided)
         """
         self.scheduler = scheduler
         self.user_service = UserService()
         self.archive_config_service = ArchiveConfigurationService()
+        self.job_config_service = JobConfigurationService()
         self.archive_runner = ArchiveJobRunner()
         
     def set_scheduler(self, scheduler: APScheduler):
@@ -274,25 +276,38 @@ class BackgroundJobService:
     def _run_scheduled_archive(self, user_id: int, archive_config_id: int):
         """
         Internal method to run scheduled archive job.
-        Archives the previous day's appointments.
+        Archives appointments based on JobConfiguration settings.
         """
         try:
-            yesterday = date.today() - timedelta(days=1)
-            
-            logger.info(f"Starting scheduled archive for user {user_id}, config {archive_config_id}, date {yesterday}")
-            
+            # Get job configuration to determine archive window
+            job_config = None
+            job_configs = self.job_config_service.get_by_archive_config_id(archive_config_id)
+            if job_configs:
+                # Find the active job config for this user
+                job_config = next((jc for jc in job_configs if jc.user_id == user_id and jc.is_active), None)
+
+            # Determine archive window (default to 1 day if no job config found)
+            archive_window_days = job_config.archive_window_days if job_config else 1
+
+            # Calculate date range
+            end_date = date.today() - timedelta(days=1)  # Yesterday
+            start_date = end_date - timedelta(days=archive_window_days - 1)
+
+            logger.info(f"Starting scheduled archive for user {user_id}, config {archive_config_id}, "
+                       f"dates {start_date} to {end_date} (window: {archive_window_days} days)")
+
             result = self.archive_runner.run_archive_job(
                 user_id=user_id,
                 archive_config_id=archive_config_id,
-                start_date=yesterday,
-                end_date=yesterday
+                start_date=start_date,
+                end_date=end_date
             )
-            
+
             if result.get('status') == 'error':
                 logger.error(f"Scheduled archive failed for user {user_id}: {result.get('error')}")
             else:
                 logger.info(f"Scheduled archive completed for user {user_id}: {result.get('archived_count', 0)} appointments archived")
-                
+
         except Exception as e:
             logger.exception(f"Scheduled archive job failed for user {user_id}, config {archive_config_id}: {e}")
             
@@ -318,3 +333,169 @@ class BackgroundJobService:
                 
         except Exception as e:
             logger.exception(f"Manual archive job failed for user {user_id}, config {archive_config_id}: {e}")
+
+    def schedule_job_from_configuration(self, job_config_id: int) -> str:
+        """
+        Schedule a job based on a JobConfiguration.
+
+        Args:
+            job_config_id: ID of the JobConfiguration to schedule
+
+        Returns:
+            Job ID for the scheduled job
+
+        Raises:
+            ValueError: If job configuration not found or invalid
+        """
+        job_config = self.job_config_service.get_by_id(job_config_id)
+        if not job_config:
+            raise ValueError(f"JobConfiguration with ID {job_config_id} not found")
+
+        if not job_config.is_active:
+            raise ValueError(f"JobConfiguration {job_config_id} is not active")
+
+        if job_config.schedule_type == 'daily':
+            return self.schedule_daily_archive_job(
+                user_id=job_config.user_id,
+                archive_config_id=job_config.archive_configuration_id,
+                hour=job_config.schedule_hour,
+                minute=job_config.schedule_minute
+            )
+        elif job_config.schedule_type == 'weekly':
+            return self.schedule_weekly_archive_job(
+                user_id=job_config.user_id,
+                archive_config_id=job_config.archive_configuration_id,
+                day_of_week=job_config.schedule_day_of_week,
+                hour=job_config.schedule_hour,
+                minute=job_config.schedule_minute
+            )
+        elif job_config.schedule_type == 'manual':
+            # Manual jobs are not scheduled, they are triggered on demand
+            raise ValueError("Manual job configurations cannot be scheduled")
+        else:
+            raise ValueError(f"Unknown schedule type: {job_config.schedule_type}")
+
+    def schedule_all_job_configurations(self, user_id: Optional[int] = None) -> Dict[str, Any]:
+        """
+        Schedule jobs for all active JobConfigurations.
+
+        Args:
+            user_id: Optional user ID to filter by (if None, schedules for all users)
+
+        Returns:
+            Dictionary with scheduling results
+        """
+        results = {
+            'scheduled_jobs': [],
+            'failed_jobs': [],
+            'skipped_jobs': [],
+            'total_configs': 0
+        }
+
+        # Get job configurations to schedule
+        if user_id:
+            job_configs = self.job_config_service.get_active_by_user_id(user_id)
+        else:
+            job_configs = self.job_config_service.get_scheduled_configs()
+
+        results['total_configs'] = len(job_configs)
+
+        for job_config in job_configs:
+            try:
+                if job_config.schedule_type == 'manual':
+                    results['skipped_jobs'].append({
+                        'job_config_id': job_config.id,
+                        'user_id': job_config.user_id,
+                        'reason': 'Manual job configurations are not scheduled'
+                    })
+                    continue
+
+                job_id = self.schedule_job_from_configuration(job_config.id)
+                results['scheduled_jobs'].append({
+                    'job_id': job_id,
+                    'job_config_id': job_config.id,
+                    'user_id': job_config.user_id,
+                    'archive_config_id': job_config.archive_configuration_id,
+                    'schedule_type': job_config.schedule_type,
+                    'schedule_description': job_config.get_schedule_description()
+                })
+
+            except Exception as e:
+                logger.error(f"Failed to schedule job for configuration {job_config.id}: {e}")
+                results['failed_jobs'].append({
+                    'job_config_id': job_config.id,
+                    'user_id': job_config.user_id,
+                    'error': str(e)
+                })
+
+        return results
+
+    def remove_jobs_for_user(self, user_id: int) -> Dict[str, Any]:
+        """
+        Remove all scheduled jobs for a user.
+
+        Args:
+            user_id: User ID to remove jobs for
+
+        Returns:
+            Dictionary with removal results
+        """
+        results = {
+            'removed_jobs': [],
+            'failed_removals': []
+        }
+
+        if not self.scheduler:
+            raise ValueError("Scheduler not initialized")
+
+        # Get all jobs and filter by user
+        all_jobs = self.scheduler.get_jobs()
+        user_jobs = [job for job in all_jobs if f"user_{user_id}" in job.id]
+
+        for job in user_jobs:
+            try:
+                self.scheduler.remove_job(job.id)
+                results['removed_jobs'].append({
+                    'job_id': job.id,
+                    'user_id': user_id
+                })
+                logger.info(f"Removed job {job.id} for user {user_id}")
+            except Exception as e:
+                logger.error(f"Failed to remove job {job.id} for user {user_id}: {e}")
+                results['failed_removals'].append({
+                    'job_id': job.id,
+                    'user_id': user_id,
+                    'error': str(e)
+                })
+
+        return results
+
+    def get_jobs_for_user(self, user_id: int) -> List[Dict[str, Any]]:
+        """
+        Get all scheduled jobs for a user.
+
+        Args:
+            user_id: User ID to get jobs for
+
+        Returns:
+            List of job status dictionaries for the user
+        """
+        if not self.scheduler:
+            raise ValueError("Scheduler not initialized")
+
+        all_jobs = self.scheduler.get_jobs()
+        user_jobs = [job for job in all_jobs if f"user_{user_id}" in job.id]
+
+        jobs = []
+        for job in user_jobs:
+            jobs.append({
+                'id': job.id,
+                'name': job.name,
+                'func': str(job.func),
+                'trigger': str(job.trigger),
+                'next_run_time': job.next_run_time,
+                'args': job.args,
+                'kwargs': job.kwargs
+            })
+
+        return jobs

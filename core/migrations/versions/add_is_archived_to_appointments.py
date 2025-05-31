@@ -18,12 +18,12 @@ depends_on = None
 
 def upgrade():
     """Add is_archived column to appointments table."""
-    # Add the is_archived column with default value False
-    op.add_column('appointments', sa.Column('is_archived', sa.Boolean(), nullable=False, default=False))
-    
-    # Update existing records to have is_archived = False (already the default)
-    # This is redundant but explicit for clarity
-    op.execute("UPDATE appointments SET is_archived = FALSE WHERE is_archived IS NULL")
+    # Add the column as nullable with default False
+    # SQLite doesn't support adding NOT NULL columns with defaults easily
+    op.add_column('appointments', sa.Column('is_archived', sa.Boolean(), nullable=True, default=False))
+
+    # Update existing records to have is_archived = False
+    op.execute("UPDATE appointments SET is_archived = 0 WHERE is_archived IS NULL")
 
 
 def downgrade():

@@ -37,6 +37,7 @@ class ArchiveConfiguration(Base):
     updated_at = Column(UTCDateTime(), default=datetime.now(UTC), onupdate=datetime.now(UTC), nullable=False)
 
     user = relationship("User", back_populates="archive_configurations")
+    job_configurations = relationship("JobConfiguration", back_populates="archive_configuration")
 
     def __repr__(self) -> str:
         return f"<ArchiveConfiguration name={self.name} user_id={self.user_id} source={self.source_calendar_uri} dest={self.destination_calendar_uri} active={self.is_active}>" 

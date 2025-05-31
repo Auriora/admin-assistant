@@ -14,3 +14,4 @@ from .action_log_repository import ActionLogRepository
 from .audit_log_repository import AuditLogRepository
 from .prompt_repository import PromptRepository
 from .chat_session_repository import ChatSessionRepository
+from .job_configuration_repository import JobConfigurationRepository

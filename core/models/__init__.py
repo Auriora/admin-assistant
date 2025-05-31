@@ -10,3 +10,4 @@ from .audit_log import AuditLog
 from .entity_association import EntityAssociation
 from .prompt import Prompt
 from .chat_session import ChatSession
+from .job_configuration import JobConfiguration

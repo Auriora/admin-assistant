@@ -18,4 +18,6 @@ class User(Base):
     # Relationship to ArchiveConfiguration
     archive_configurations = relationship("ArchiveConfiguration", back_populates="user")
     # Relationship to Calendar
-    calendars = relationship("Calendar", back_populates="user") 
+    calendars = relationship("Calendar", back_populates="user")
+    # Relationship to JobConfiguration
+    job_configurations = relationship("JobConfiguration", back_populates="user")

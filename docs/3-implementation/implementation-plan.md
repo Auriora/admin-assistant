@@ -102,11 +102,11 @@ This document outlines a detailed, step-by-step technical implementation plan fo
     - [X] Enforced 80% minimum code coverage requirement
     - [X] Added comprehensive documentation for testing and observability implementation
 
-- [ ] **Job Configuration Table, Repository, and Service**
-    - [ ] Design and create a database table to store job scheduling parameters (e.g., archive_window_days, schedule, archive_configuration_id as FK).
-    - [ ] Implement `JobConfigurationRepository` in `core/repositories/` for CRUD operations.
-    - [ ] Implement `JobConfigurationService` in `core/services/` for business logic and validation.
-    - [ ] Integrate job configuration into background job scheduling and archiving logic.
+- [x] **Job Configuration Table, Repository, and Service**
+    - [x] Design and create a database table to store job scheduling parameters (e.g., archive_window_days, schedule, archive_configuration_id as FK).
+    - [x] Implement `JobConfigurationRepository` in `core/repositories/` for CRUD operations.
+    - [x] Implement `JobConfigurationService` in `core/services/` for business logic and validation.
+    - [x] Integrate job configuration into background job scheduling and archiving logic.
 
 **Parked for future implementation:**
 - Notifications (to be handled in a separate module)
