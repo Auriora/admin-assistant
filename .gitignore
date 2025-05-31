@@ -53,3 +53,4 @@ ms_token.json
 /.coverage
 /.idea/dataSources.xml
 /.idea/sqldialects.xml
+/htmlcov/
