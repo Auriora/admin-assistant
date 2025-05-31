@@ -615,6 +615,157 @@ def validate_categories(
         raise typer.Exit(code=1)
 
 
+@calendar_app.command("analyze-overlaps")
+def analyze_overlaps(
+    user_id: int = user_id_option,
+    start_date: str = typer.Option(None, help="Start date (YYYY-MM-DD or flexible format)"),
+    end_date: str = typer.Option(None, help="End date (YYYY-MM-DD or flexible format)"),
+    auto_resolve: bool = typer.Option(False, "--auto-resolve", help="Apply automatic resolution rules"),
+    show_details: bool = typer.Option(True, "--details/--no-details", help="Show detailed overlap information")
+):
+    """Analyze overlapping appointments and optionally auto-resolve."""
+    from core.services.enhanced_overlap_resolution_service import EnhancedOverlapResolutionService
+    from core.utilities.calendar_overlap_utility import detect_overlaps
+    from core.utilities.calendar_recurrence_utility import expand_recurring_events_range
+    from core.services import UserService
+    from core.models.appointment import Appointment
+    from rich.console import Console
+    from rich.table import Table
+
+    console = Console()
+
+    try:
+        # Parse date range
+        if start_date or end_date:
+            if start_date and end_date:
+                start_dt = parse_flexible_date(start_date)
+                end_dt = parse_flexible_date(end_date)
+            elif start_date:
+                start_dt = end_dt = parse_flexible_date(start_date)
+            else:
+                start_dt = end_dt = parse_flexible_date(end_date)
+        else:
+            # Default to last 7 days
+            start_dt, end_dt = parse_date_range("last 7 days")
+
+        console.print(f"[blue]Analyzing overlaps for user {user_id} from {start_dt} to {end_dt}[/blue]")
+
+        # Get appointments directly from database for all calendars
+        session = get_session()
+        user_service = UserService()
+        user = user_service.get_by_id(user_id)
+
+        if not user:
+            console.print(f"[red]No user found for user_id={user_id}.[/red]")
+            raise typer.Exit(code=1)
+
+        # Query appointments for the user within the date range
+        from datetime import datetime, timezone
+        start_datetime = datetime.combine(start_dt, datetime.min.time()).replace(tzinfo=timezone.utc)
+        end_datetime = datetime.combine(end_dt, datetime.max.time()).replace(tzinfo=timezone.utc)
+
+        appointments = session.query(Appointment).filter(
+            Appointment.user_id == user_id,
+            Appointment.start_time >= start_datetime,
+            Appointment.end_time <= end_datetime
+        ).all()
+
+        if not appointments:
+            console.print("[yellow]No appointments found for the specified date range.[/yellow]")
+            return
+
+        # Expand recurring events
+        expanded_appointments = expand_recurring_events_range(appointments, start_dt, end_dt)
+        console.print(f"[blue]Expanded {len(appointments)} appointments to {len(expanded_appointments)} instances[/blue]")
+
+        # Detect overlaps
+        overlap_groups = detect_overlaps(expanded_appointments)
+
+        if not overlap_groups:
+            console.print("[green]No overlapping appointments found! ✓[/green]")
+            return
+
+        console.print(f"[yellow]Found {len(overlap_groups)} overlap groups[/yellow]")
+
+        # Apply automatic resolution if requested
+        if auto_resolve:
+            overlap_service = EnhancedOverlapResolutionService()
+            resolved_count = 0
+            remaining_conflicts = []
+
+            for group in overlap_groups:
+                resolution_result = overlap_service.apply_automatic_resolution_rules(group)
+
+                if resolution_result['resolved']:
+                    resolved_count += 1
+
+                if resolution_result['conflicts']:
+                    remaining_conflicts.append(resolution_result['conflicts'])
+
+                if show_details and resolution_result['resolution_log']:
+                    console.print(f"[blue]Resolution: {'; '.join(resolution_result['resolution_log'])}[/blue]")
+
+            # Display resolution summary
+            summary_table = Table(title="Overlap Resolution Summary")
+            summary_table.add_column("Metric", style="cyan")
+            summary_table.add_column("Value", style="green")
+
+            summary_table.add_row("Total Overlap Groups", str(len(overlap_groups)))
+            summary_table.add_row("Auto-Resolved", str(resolved_count))
+            summary_table.add_row("Remaining Conflicts", str(len(remaining_conflicts)))
+
+            console.print(summary_table)
+
+            if remaining_conflicts:
+                console.print(f"\n[red]{len(remaining_conflicts)} overlap groups still need manual resolution[/red]")
+                overlap_groups = remaining_conflicts  # Show only unresolved conflicts
+            else:
+                console.print("\n[green]All overlaps resolved automatically! ✓[/green]")
+                return
+
+        # Display overlap details
+        if show_details and overlap_groups:
+            for i, group in enumerate(overlap_groups[:10], 1):  # Limit to first 10 groups
+                overlap_table = Table(title=f"Overlap Group {i}")
+                overlap_table.add_column("Subject", style="green")
+                overlap_table.add_column("Start Time", style="blue")
+                overlap_table.add_column("End Time", style="blue")
+                overlap_table.add_column("Show As", style="yellow")
+                overlap_table.add_column("Importance", style="magenta")
+                overlap_table.add_column("Categories", style="cyan")
+
+                for appt in group:
+                    categories = getattr(appt, 'categories', [])
+                    if isinstance(categories, list):
+                        categories_str = ', '.join(categories) if categories else 'None'
+                    else:
+                        categories_str = str(categories) if categories else 'None'
+
+                    overlap_table.add_row(
+                        str(getattr(appt, 'subject', 'No Subject')),
+                        str(getattr(appt, 'start_time', 'Unknown')),
+                        str(getattr(appt, 'end_time', 'Unknown')),
+                        str(getattr(appt, 'show_as', 'Unknown')),
+                        str(getattr(appt, 'importance', 'Unknown')),
+                        categories_str
+                    )
+
+                console.print(overlap_table)
+                console.print()  # Add spacing between groups
+
+            if len(overlap_groups) > 10:
+                console.print(f"[yellow]... and {len(overlap_groups) - 10} more overlap groups[/yellow]")
+
+        # Final summary
+        if not auto_resolve:
+            console.print(f"\n[yellow]Found {len(overlap_groups)} overlap groups that need attention.[/yellow]")
+            console.print("[blue]Use --auto-resolve to apply automatic resolution rules.[/blue]")
+
+    except Exception as e:
+        console.print(f"[red]Error analyzing overlaps: {e}[/red]")
+        raise typer.Exit(code=1)
+
+
 
 @archive_archive_config_app.command("list")
 def list_configs(user_id: int = user_id_option):
