@@ -31,7 +31,7 @@ dependencies = [
     # Web Framework
     "Flask~=3.1.1",
     "Flask-SQLAlchemy~=3.1.1",
-    "Flask-Migrate~=4.0.5",
+    "Flask-Migrate~=4.1.0",
     "Flask-Login~=0.6.3",
     "Flask-APScheduler~=1.13.1",
 
