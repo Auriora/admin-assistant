@@ -1,11 +1,14 @@
 from typing import List, Optional
-from core.models.action_log import ActionLog
+
 from core.db import SessionLocal
+from core.models.action_log import ActionLog
+
 
 class ActionLogRepository:
     """
     Repository for managing ActionLog entities.
     """
+
     def __init__(self, session=None):
         self.session = session or SessionLocal()
 
@@ -53,4 +56,4 @@ class ActionLogRepository:
         if log:
             # Ensure recommendations is JSON-serializable
             log.recommendations = recommendations  # type: ignore
-            self.session.commit() 
+            self.session.commit()

@@ -1,11 +1,15 @@
 from typing import List, Optional
+
 from core.models.archive_configuration import ArchiveConfiguration
-from core.repositories.archive_configuration_repository import ArchiveConfigurationRepository
+from core.repositories.archive_configuration_repository import \
+    ArchiveConfigurationRepository
+
 
 class ArchiveConfigurationService:
     """
     Service for business logic related to ArchiveConfiguration.
     """
+
     def __init__(self, repository: Optional[ArchiveConfigurationRepository] = None):
         self.repository = repository or ArchiveConfigurationRepository()
 
@@ -35,10 +39,10 @@ class ArchiveConfigurationService:
         """
         Validate ArchiveConfiguration fields. Raises ValueError if invalid.
         """
-        name = getattr(config, 'name', None)
-        source_calendar_uri = getattr(config, 'source_calendar_uri', None)
-        destination_calendar_uri = getattr(config, 'destination_calendar_uri', None)
-        timezone = getattr(config, 'timezone', None)
+        name = getattr(config, "name", None)
+        source_calendar_uri = getattr(config, "source_calendar_uri", None)
+        destination_calendar_uri = getattr(config, "destination_calendar_uri", None)
+        timezone = getattr(config, "timezone", None)
         if not name or not str(name).strip():
             raise ValueError("Archive configuration name is required.")
         if not source_calendar_uri or not destination_calendar_uri:
@@ -57,7 +61,7 @@ class ArchiveConfigurationService:
             Optional[ArchiveConfiguration]: The active configuration, or None if not found.
         """
         configs = self.list_for_user(user_id)
-        return next((c for c in configs if getattr(c, 'is_active', False)), None)
+        return next((c for c in configs if getattr(c, "is_active", False)), None)
 
     def list(self, user_id: Optional[int] = None) -> List[ArchiveConfiguration]:
         """List all ArchiveConfigurations, optionally filtered by user."""

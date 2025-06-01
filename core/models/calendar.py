@@ -1,8 +1,11 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
+from datetime import UTC, datetime
+
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
+
 from core.db import Base
-from datetime import datetime, UTC
 from core.models.appointment import UTCDateTime
+
 
 class Calendar(Base):
     """
@@ -20,20 +23,26 @@ class Calendar(Base):
         updated_at (datetime): Last update timestamp.
         user (User): Relationship to User.
     """
-    __tablename__ = 'calendars'
+
+    __tablename__ = "calendars"
 
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey('users.id'), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     ms_calendar_id = Column(String(255), nullable=True, doc="MS Graph calendar id")
     name = Column(String(100), nullable=False)
     description = Column(String(255), nullable=True)
-    calendar_type = Column(String(32), nullable=False, default='real')
+    calendar_type = Column(String(32), nullable=False, default="real")
     is_primary = Column(Boolean, default=False, nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(UTCDateTime(), default=datetime.now(UTC), nullable=False)
-    updated_at = Column(UTCDateTime(), default=datetime.now(UTC), onupdate=datetime.now(UTC), nullable=False)
+    updated_at = Column(
+        UTCDateTime(),
+        default=datetime.now(UTC),
+        onupdate=datetime.now(UTC),
+        nullable=False,
+    )
 
     user = relationship("User", back_populates="calendars")
 
     def __repr__(self) -> str:
-        return f"<Calendar id={self.id} user_id={self.user_id} name={self.name} ms_calendar_id={self.ms_calendar_id} type={self.calendar_type} primary={self.is_primary} active={self.is_active}>" 
+        return f"<Calendar id={self.id} user_id={self.user_id} name={self.name} ms_calendar_id={self.ms_calendar_id} type={self.calendar_type} primary={self.is_primary} active={self.is_active}>"

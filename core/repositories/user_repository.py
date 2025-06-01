@@ -1,11 +1,14 @@
 from typing import List, Optional
-from core.models.user import User
+
 from core.db import SessionLocal
+from core.models.user import User
+
 
 class UserRepository:
     """
     Repository for managing User entities.
     """
+
     def __init__(self, session=None):
         self.session = session or SessionLocal()
 
@@ -39,4 +42,4 @@ class UserRepository:
         user = self.get_by_id(user_id)
         if user:
             self.session.delete(user)
-            self.session.commit() 
+            self.session.commit()

@@ -1,8 +1,11 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, func
-from sqlalchemy.types import JSON
 from datetime import datetime
+
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, func
+from sqlalchemy.types import JSON
+
 from core.db import Base
 from core.models.appointment import UTCDateTime
+
 
 class ActionLog(Base):
     """
@@ -12,13 +15,16 @@ class ActionLog(Base):
     - details: JSON for additional context.
     - recommendations: JSON for serialized AI recommendations.
     """
-    __tablename__ = 'action_log'
+
+    __tablename__ = "action_log"
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     event_type = Column(String, nullable=False)
-    state = Column(String, nullable=False, default='open')
+    state = Column(String, nullable=False, default="open")
     description = Column(String, nullable=True)
     details = Column(JSON, nullable=True)
     recommendations = Column(JSON, nullable=True)
     created_at = Column(UTCDateTime(), default=datetime.now, nullable=False)
-    updated_at = Column(UTCDateTime(), default=datetime.now, onupdate=datetime.now, nullable=False) 
+    updated_at = Column(
+        UTCDateTime(), default=datetime.now, onupdate=datetime.now, nullable=False
+    )

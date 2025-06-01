@@ -1,11 +1,14 @@
 from typing import List, Optional
+
 from core.models.calendar import Calendar
 from core.repositories.calendar_repository_base import BaseCalendarRepository
+
 
 class CalendarService:
     """
     Service for business logic related to Calendar entities.
     """
+
     def __init__(self, repository: BaseCalendarRepository):
         self.repository = repository
 
@@ -35,7 +38,7 @@ class CalendarService:
         """
         Validate Calendar fields. Raises ValueError if invalid.
         """
-        name = getattr(calendar, 'name', None)
+        name = getattr(calendar, "name", None)
         if not name or not str(name).strip():
             raise ValueError("Calendar name is required.")
-        # Add further validation as needed 
+        # Add further validation as needed

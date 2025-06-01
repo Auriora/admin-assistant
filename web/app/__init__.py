@@ -1,22 +1,27 @@
-import os
 import logging
+import os
 from logging.handlers import RotatingFileHandler
+
 from flask import Flask, request
-from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
-from flask_login import LoginManager
 from flask_apscheduler import APScheduler
+from flask_login import LoginManager
+from flask_migrate import Migrate
+from flask_sqlalchemy import SQLAlchemy
+
 from core.services.background_job_service import BackgroundJobService
 from core.services.scheduled_archive_service import ScheduledArchiveService
 from web.app.services import msgraph
+
 try:
+    import opentelemetry.sdk.trace as sdk_trace
     from opentelemetry import trace
+    from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import \
+        OTLPSpanExporter
+    from opentelemetry.instrumentation.flask import FlaskInstrumentor
     from opentelemetry.sdk.resources import SERVICE_NAME, Resource
     from opentelemetry.sdk.trace import TracerProvider
     from opentelemetry.sdk.trace.export import BatchSpanProcessor
-    from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
-    from opentelemetry.instrumentation.flask import FlaskInstrumentor
-    import opentelemetry.sdk.trace as sdk_trace
+
     OTEL_AVAILABLE = True
 except ImportError:
     OTEL_AVAILABLE = False
@@ -26,20 +31,21 @@ db = SQLAlchemy()
 migrate = Migrate()
 login_manager = LoginManager()
 
+
 def create_app():
     app = Flask(__name__)
-    env = os.environ.get('APP_ENV', 'development').lower()
-    if env == 'production':
-        app.config.from_object('web.app.config.ProductionConfig')
-    elif env == 'testing':
-        app.config.from_object('web.app.config.TestingConfig')
+    env = os.environ.get("APP_ENV", "development").lower()
+    if env == "production":
+        app.config.from_object("web.app.config.ProductionConfig")
+    elif env == "testing":
+        app.config.from_object("web.app.config.TestingConfig")
     else:
-        app.config.from_object('web.app.config.DevelopmentConfig')
+        app.config.from_object("web.app.config.DevelopmentConfig")
 
     db.init_app(app)
     migrate.init_app(app, db)
     login_manager.init_app(app)
-    login_manager.login_view = 'main.login'  # type: ignore[attr-defined]
+    login_manager.login_view = "main.login"  # type: ignore[attr-defined]
 
     # --- OpenTelemetry Tracing Setup ---
     if OTEL_AVAILABLE:
@@ -80,19 +86,25 @@ def create_app():
     # --- End Scheduler Setup ---
 
     # Logging setup
-    log_level = app.config.get('LOG_LEVEL', 'WARNING').upper()
-    log_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'logs')
+    log_level = app.config.get("LOG_LEVEL", "WARNING").upper()
+    log_dir = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "logs"
+    )
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
-    file_handler = RotatingFileHandler(os.path.join(log_dir, 'app.log'), maxBytes=10240, backupCount=5)
-    file_handler.setFormatter(logging.Formatter(
-        '[%(asctime)s] %(levelname)s in %(module)s: %(message)s [%(pathname)s:%(lineno)d]'
-    ))
+    file_handler = RotatingFileHandler(
+        os.path.join(log_dir, "app.log"), maxBytes=10240, backupCount=5
+    )
+    file_handler.setFormatter(
+        logging.Formatter(
+            "[%(asctime)s] %(levelname)s in %(module)s: %(message)s [%(pathname)s:%(lineno)d]"
+        )
+    )
     file_handler.setLevel(log_level)
     console_handler = logging.StreamHandler()
-    console_handler.setFormatter(logging.Formatter(
-        '[%(asctime)s] %(levelname)s in %(module)s: %(message)s'
-    ))
+    console_handler.setFormatter(
+        logging.Formatter("[%(asctime)s] %(levelname)s in %(module)s: %(message)s")
+    )
     console_handler.setLevel(log_level)
     app.logger.setLevel(log_level)
     app.logger.addHandler(file_handler)
@@ -103,7 +115,7 @@ def create_app():
     def add_security_headers(response):
         """Add security headers to all responses."""
         # Content Security Policy
-        response.headers['Content-Security-Policy'] = (
+        response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
             "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
             "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
@@ -114,22 +126,28 @@ def create_app():
         )
 
         # Security headers
-        response.headers['X-Content-Type-Options'] = 'nosniff'
-        response.headers['X-Frame-Options'] = 'DENY'
-        response.headers['X-XSS-Protection'] = '1; mode=block'
-        response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
-        response.headers['Permissions-Policy'] = 'geolocation=(), microphone=(), camera=()'
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"] = (
+            "geolocation=(), microphone=(), camera=()"
+        )
 
         # HTTPS enforcement in production
-        if not request.is_secure and os.environ.get('APP_ENV') == 'production':
-            response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+        if not request.is_secure and os.environ.get("APP_ENV") == "production":
+            response.headers["Strict-Transport-Security"] = (
+                "max-age=31536000; includeSubDomains"
+            )
 
         return response
 
     # Log request info
     @app.before_request
     def log_request_info():
-        app.logger.info(f"Request: {request.method} {request.path} from {request.remote_addr}")
+        app.logger.info(
+            f"Request: {request.method} {request.path} from {request.remote_addr}"
+        )
         # Example custom span for request
         if tracer:
             with tracer.start_as_current_span("log_request_info"):
@@ -137,11 +155,13 @@ def create_app():
 
     # Import and register blueprints
     from web.app.routes.main import main_bp
+
     app.register_blueprint(main_bp)
 
     @login_manager.user_loader
     def load_user(user_id):
         from web.app.models import User
+
         return User.query.get(int(user_id))
 
-    return app 
+    return app

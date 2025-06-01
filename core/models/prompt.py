@@ -1,17 +1,22 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.sql import func
+
 from core.db import Base
 from core.models.appointment import UTCDateTime
+
 
 class Prompt(Base):
     """
     Stores system, user, and action-specific prompts for AI functionality.
     """
-    __tablename__ = 'prompts'
+
+    __tablename__ = "prompts"
     id = Column(Integer, primary_key=True)
     prompt_type = Column(String(32), nullable=False)  # system, user, action-specific
-    user_id = Column(Integer, ForeignKey('users.id'), nullable=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     action_type = Column(String(64), nullable=True)
     content = Column(String, nullable=False)
     created_at = Column(UTCDateTime(), default=func.now(), nullable=False)
-    updated_at = Column(UTCDateTime(), default=func.now(), onupdate=func.now(), nullable=False) 
+    updated_at = Column(
+        UTCDateTime(), default=func.now(), onupdate=func.now(), nullable=False
+    )

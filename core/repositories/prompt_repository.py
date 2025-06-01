@@ -1,11 +1,14 @@
 from typing import List, Optional
-from core.models.prompt import Prompt
+
 from core.db import SessionLocal
+from core.models.prompt import Prompt
+
 
 class PromptRepository:
     """
     Repository for managing Prompt entities.
     """
+
     def __init__(self, session=None):
         self.session = session or SessionLocal()
 
@@ -26,4 +29,4 @@ class PromptRepository:
         prompt = self.get_by_id(prompt_id)
         if prompt:
             self.session.delete(prompt)
-            self.session.commit() 
+            self.session.commit()

@@ -1,6 +1,8 @@
 import os
-import msal
 import stat
+
+import msal
+
 from core.models.user import User
 
 # Secure cache directory with restricted permissions
@@ -8,10 +10,13 @@ CACHE_DIR = os.path.join(os.path.expanduser("~"), ".cache", "admin-assistant")
 CACHE_PATH = os.path.join(CACHE_DIR, "ms_token.json")
 SCOPES = ["https://graph.microsoft.com/.default"]
 
+
 def ensure_secure_cache_dir():
     """Ensure cache directory exists with secure permissions."""
     if not os.path.exists(CACHE_DIR):
-        os.makedirs(CACHE_DIR, mode=0o700, exist_ok=True)  # Owner read/write/execute only
+        os.makedirs(
+            CACHE_DIR, mode=0o700, exist_ok=True
+        )  # Owner read/write/execute only
     else:
         # Ensure existing directory has secure permissions
         os.chmod(CACHE_DIR, 0o700)
@@ -23,7 +28,9 @@ def get_msal_app():
     tenant_id = os.getenv("MS_TENANT_ID")
 
     if not client_id or not tenant_id:
-        raise ValueError("MS_CLIENT_ID and MS_TENANT_ID environment variables are required")
+        raise ValueError(
+            "MS_CLIENT_ID and MS_TENANT_ID environment variables are required"
+        )
 
     authority = f"https://login.microsoftonline.com/{tenant_id}"
 
@@ -42,9 +49,7 @@ def get_msal_app():
             cache.deserialize(f.read())
 
     app = msal.PublicClientApplication(
-        client_id=client_id,
-        authority=authority,
-        token_cache=cache
+        client_id=client_id, authority=authority, token_cache=cache
     )
     return app, cache
 
@@ -69,7 +74,9 @@ def msal_login():
     os.chmod(CACHE_PATH, 0o600)
 
     if "access_token" not in result:
-        raise RuntimeError("Failed to acquire token: %s" % result.get("error_description"))
+        raise RuntimeError(
+            "Failed to acquire token: %s" % result.get("error_description")
+        )
     return result
 
 
@@ -85,4 +92,4 @@ def get_cached_access_token():
         result = app.acquire_token_silent(SCOPES, account=accounts[0])
         if result and "access_token" in result:
             return result["access_token"]
-    return None 
+    return None

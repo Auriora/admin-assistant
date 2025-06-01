@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional
+
 from core.models.appointment import Appointment
+
 
 class BaseAppointmentRepository(ABC):
     @abstractmethod
@@ -27,4 +29,4 @@ class BaseAppointmentRepository(ABC):
 
     @abstractmethod
     def delete(self, appointment_id: int) -> None:
-        pass 
+        pass

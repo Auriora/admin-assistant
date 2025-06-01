@@ -1,13 +1,17 @@
 from typing import List, Optional
-from core.models.calendar import Calendar
+
 from core.db import SessionLocal
-from .calendar_repository_base import BaseCalendarRepository
+from core.models.calendar import Calendar
 from core.models.user import User
+
+from .calendar_repository_base import BaseCalendarRepository
+
 
 class SQLAlchemyCalendarRepository(BaseCalendarRepository):
     """
     Repository for managing Calendar entities using SQLAlchemy.
     """
+
     def __init__(self, user: User, session=None):
         super().__init__(user)
         self.session = session or SessionLocal()
@@ -35,4 +39,4 @@ class SQLAlchemyCalendarRepository(BaseCalendarRepository):
         calendar = self.get_by_id(calendar_id)
         if calendar:
             self.session.delete(calendar)
-            self.session.commit() 
+            self.session.commit()

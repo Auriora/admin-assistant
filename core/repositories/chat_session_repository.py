@@ -1,11 +1,14 @@
 from typing import List, Optional
-from core.models.chat_session import ChatSession
+
 from core.db import SessionLocal
+from core.models.chat_session import ChatSession
+
 
 class ChatSessionRepository:
     """
     Repository for managing ChatSession entities.
     """
+
     def __init__(self, session=None):
         self.session = session or SessionLocal()
 
@@ -23,4 +26,4 @@ class ChatSessionRepository:
         session = self.get_by_id(session_id)
         if session:
             self.session.delete(session)
-            self.session.commit() 
+            self.session.commit()

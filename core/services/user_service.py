@@ -1,11 +1,14 @@
 from typing import List, Optional
+
 from core.models.user import User
 from core.repositories.user_repository import UserRepository
+
 
 class UserService:
     """
     Service for business logic related to User entities.
     """
+
     def __init__(self, repository: Optional[UserRepository] = None):
         self.repository = repository or UserRepository()
 
@@ -39,7 +42,7 @@ class UserService:
         """
         Validate User fields. Raises ValueError if invalid.
         """
-        email = getattr(user, 'email', None)
+        email = getattr(user, "email", None)
         if not email or not str(email).strip():
             raise ValueError("User email is required.")
-        # Add further validation as needed 
+        # Add further validation as needed

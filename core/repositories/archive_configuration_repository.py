@@ -1,11 +1,14 @@
 from typing import List, Optional
-from core.models.archive_configuration import ArchiveConfiguration
+
 from core.db import SessionLocal
+from core.models.archive_configuration import ArchiveConfiguration
+
 
 class ArchiveConfigurationRepository:
     """
     Repository for managing ArchiveConfiguration entities.
     """
+
     def __init__(self, session=None):
         self.session = session or SessionLocal()
 

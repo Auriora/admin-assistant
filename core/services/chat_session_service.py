@@ -1,13 +1,20 @@
 from typing import List, Optional
+
 from core.models.chat_session import ChatSession
 from core.repositories.chat_session_repository import ChatSessionRepository
 from core.services.entity_association_service import EntityAssociationService
+
 
 class ChatSessionService:
     """
     Service for business logic related to ChatSession entities.
     """
-    def __init__(self, repository: Optional[ChatSessionRepository] = None, association_service: Optional[EntityAssociationService] = None):
+
+    def __init__(
+        self,
+        repository: Optional[ChatSessionRepository] = None,
+        association_service: Optional[EntityAssociationService] = None,
+    ):
         self.repository = repository or ChatSessionRepository()
         self.association_service = association_service or EntityAssociationService()
 
@@ -30,9 +37,9 @@ class ChatSessionService:
         session = self.get_by_id(session_id)
         if not session:
             raise ValueError("ChatSession not found")
-        messages = getattr(session, 'messages', None) or []
+        messages = getattr(session, "messages", None) or []
         messages.append(message)
-        setattr(session, 'messages', messages)  # type: ignore
+        setattr(session, "messages", messages)  # type: ignore
         self.repository.add(session)
 
     def get_chat_history(self, session_id: int) -> list:
@@ -42,7 +49,7 @@ class ChatSessionService:
         session = self.get_by_id(session_id)
         if not session:
             raise ValueError("ChatSession not found")
-        return getattr(session, 'messages', []) or []
+        return getattr(session, "messages", []) or []
 
     def close_session(self, session_id: int) -> None:
         """
@@ -51,7 +58,7 @@ class ChatSessionService:
         session = self.get_by_id(session_id)
         if not session:
             raise ValueError("ChatSession not found")
-        setattr(session, 'status', 'closed')  # type: ignore
+        setattr(session, "status", "closed")  # type: ignore
         self.repository.add(session)
 
     def reopen_session(self, session_id: int) -> None:
@@ -61,13 +68,21 @@ class ChatSessionService:
         session = self.get_by_id(session_id)
         if not session:
             raise ValueError("ChatSession not found")
-        setattr(session, 'status', 'open')  # type: ignore
+        setattr(session, "status", "open")  # type: ignore
         self.repository.add(session)
 
     def list_by_action(self, action_id: int) -> list:
         """
         Fetch all chat sessions related to a specific action/task (using EntityAssociation).
         """
-        related = self.association_service.list_by_target('action_log', action_id)
-        chat_session_ids = [getattr(a, 'source_id') for a in related if getattr(a, 'source_type') == 'chat_session']
-        return [self.get_by_id(int(cid)) for cid in chat_session_ids if self.get_by_id(int(cid))] 
+        related = self.association_service.list_by_target("action_log", action_id)
+        chat_session_ids = [
+            getattr(a, "source_id")
+            for a in related
+            if getattr(a, "source_type") == "chat_session"
+        ]
+        return [
+            self.get_by_id(int(cid))
+            for cid in chat_session_ids
+            if self.get_by_id(int(cid))
+        ]

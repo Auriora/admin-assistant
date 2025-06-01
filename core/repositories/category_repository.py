@@ -1,7 +1,9 @@
 from typing import List, Optional
+
+from core.db import SessionLocal
 from core.models.category import Category
 from core.models.user import User
-from core.db import SessionLocal
+
 from .category_repository_base import BaseCategoryRepository
 
 
@@ -9,6 +11,7 @@ class SQLAlchemyCategoryRepository(BaseCategoryRepository):
     """
     Repository for managing Category entities.
     """
+
     def __init__(self, user: User, session=None):
         super().__init__(user)
         self.session = session or SessionLocal()
@@ -45,7 +48,11 @@ class SQLAlchemyCategoryRepository(BaseCategoryRepository):
 
     def get_by_name(self, name: str) -> Optional[Category]:
         """Get a category by name for the repository's user."""
-        return self.session.query(Category).filter_by(name=name, user_id=self.user.id).first()
+        return (
+            self.session.query(Category)
+            .filter_by(name=name, user_id=self.user.id)
+            .first()
+        )
 
     # Legacy method for backward compatibility
     def list_by_user(self, user_id: int) -> List[Category]:
@@ -54,4 +61,6 @@ class SQLAlchemyCategoryRepository(BaseCategoryRepository):
 
     def get_by_name_and_user(self, name: str, user_id: int) -> Optional[Category]:
         """Get a category by name and user ID (legacy method)."""
-        return self.session.query(Category).filter_by(name=name, user_id=user_id).first()
+        return (
+            self.session.query(Category).filter_by(name=name, user_id=user_id).first()
+        )

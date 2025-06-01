@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional
+
 from core.models.calendar import Calendar
 from core.models.user import User
+
 
 class BaseCalendarRepository(ABC):
     def __init__(self, user: User):
@@ -30,4 +32,4 @@ class BaseCalendarRepository(ABC):
     @abstractmethod
     def delete(self, calendar_id: int) -> None:
         """Delete a calendar by its ID."""
-        pass 
+        pass

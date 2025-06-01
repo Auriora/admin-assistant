@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import List, Optional
+
 from core.models.category import Category
 from core.models.user import User
 
