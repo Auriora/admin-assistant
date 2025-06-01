@@ -1,10 +1,11 @@
 [run]
-source = cli,core,web
-omit = 
+source = cli,core
+omit =
     tests/*
     scripts/*
     migrations/*
-    sabdbox/*
+    sandbox/*
+    web/*
     */__pycache__/*
     */.venv/*
 

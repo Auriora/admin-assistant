@@ -1,125 +1,178 @@
-# DEPRECATED: All tests in this file referencing 'archive_appointments' are obsolete.
-# The archiving workflow is now tested via CalendarArchiveOrchestrator in test_calendar_archive_orchestrator.py.
-# These tests are commented out to avoid linter errors and confusion.
-#
-# If you need to test archiving, add new tests to test_calendar_archive_orchestrator.py using the orchestrator and mocks.
+"""
+Tests for CalendarService class.
+"""
 
-import os
-import json
-from datetime import datetime, timedelta, UTC, date
 import pytest
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from core.models.user import User
-from core.models.appointment import Appointment
-from core.db import Base
-from core.utilities.time_utility import to_utc
-from core.exceptions import CalendarServiceException
+from unittest.mock import Mock, MagicMock
 
-TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), '../../data')
+from core.services.calendar_service import CalendarService
+from core.models.calendar import Calendar
+from core.repositories.calendar_repository_base import BaseCalendarRepository
 
-def load_appointments(filename, user_id):
-    path = os.path.abspath(os.path.join(TEST_DATA_DIR, filename))
-    with open(path, 'r') as f:
-        data = json.load(f)
-    appointments = []
-    for appt in data:
-        start = appt['start']
-        end = appt['end']
-        start_dt = datetime.fromisoformat(start['dateTime'].replace('Z', '+00:00'))
-        end_dt = datetime.fromisoformat(end['dateTime'].replace('Z', '+00:00'))
-        start_dt = to_utc(start_dt)
-        end_dt = to_utc(end_dt)
-        appointment = Appointment(
-            user_id=user_id,
-            subject=appt.get('subject', 'Test'),
-            start_time=start_dt,
-            end_time=end_dt,
-            recurrence=appt.get('recurrence'),
-            calendar_id=appt.get('calendar_id', 'test-calendar-id')
+class TestCalendarService:
+    """Test cases for CalendarService class."""
+
+    @pytest.fixture
+    def mock_repository(self):
+        """Create a mock calendar repository."""
+        return Mock(spec=BaseCalendarRepository)
+
+    @pytest.fixture
+    def calendar_service(self, mock_repository):
+        """Create a CalendarService instance with mock repository."""
+        return CalendarService(mock_repository)
+
+    @pytest.fixture
+    def sample_calendar(self):
+        """Create a sample calendar for testing."""
+        return Calendar(
+            id=1,
+            name="Test Calendar",
+            user_id=1,
+            description="A test calendar"
         )
-        appointments.append(appointment)
-    return appointments
 
-@pytest.fixture(scope="function")
-def db_session():
-    engine = create_engine('sqlite:///:memory:')
-    Base.metadata.create_all(engine)
-    Session = sessionmaker(bind=engine)
-    session = Session()
-    yield session
-    session.close()
-    engine.dispose()
+    def test_init_with_repository(self, mock_repository):
+        """Test CalendarService initialization with repository."""
+        service = CalendarService(mock_repository)
+        assert service.repository == mock_repository
 
-@pytest.fixture(scope="function")
-def user(db_session):
-    user = User(email="testuser@example.com", name="Test User")
-    db_session.add(user)
-    db_session.commit()
-    return user
+    def test_get_by_id_success(self, calendar_service, mock_repository, sample_calendar):
+        """Test successful calendar retrieval by ID."""
+        # Arrange
+        mock_repository.get_by_id.return_value = sample_calendar
 
-# pytest.skip("archive_appointments has been removed; tests need migration to new orchestrator workflow", allow_module_level=True)
+        # Act
+        result = calendar_service.get_by_id(1)
 
-# def test_archive_appointments_success(db_session, user):
-#     appts = load_appointments('ms365_calendar_success.json', user.id)
-#     start_date = appts[0].start_time.date()
-#     end_date = appts[0].end_time.date()
-#     result = archive_appointments(user, appts, start_date, end_date, db_session)
-#     assert len(result["appointments"]) == 1
-#     archived = db_session.query(Appointment).filter_by(user_id=user.id).first()
-#     assert archived is not None
-#     assert archived.subject == "Team Sync"
-#     assert archived.is_archived
+        # Assert
+        assert result == sample_calendar
+        mock_repository.get_by_id.assert_called_once_with(1)
 
-# def test_archive_appointments_merges_duplicates(db_session, user):
-#     appts = load_appointments('ms365_calendar_duplicates.json', user.id)
-#     start_date = appts[0].start_time.date()
-#     end_date = appts[0].end_time.date()
-#     result = archive_appointments(user, appts, start_date, end_date, db_session)
-#     assert len(result["appointments"]) == 1
-#     archived = db_session.query(Appointment).filter_by(user_id=user.id).all()
-#     assert len(archived) == 1
+    def test_get_by_id_not_found(self, calendar_service, mock_repository):
+        """Test calendar retrieval when calendar not found."""
+        # Arrange
+        mock_repository.get_by_id.return_value = None
 
-# def test_archive_appointments_detects_overlaps(db_session, user):
-#     appts = load_appointments('ms365_calendar_overlaps.json', user.id)
-#     start_date = appts[0].start_time.date()
-#     end_date = appts[0].end_time.date()
-#     result = archive_appointments(user, appts, start_date, end_date, db_session)
-#     assert result["status"] == "overlap"
-#     assert "conflicts" in result
-#     assert len(result["conflicts"]) == 1
-#     assert len(result["conflicts"][0]) == 2
+        # Act
+        result = calendar_service.get_by_id(999)
 
-# def test_archive_appointments_expands_recurring(db_session, user):
-#     appts = load_appointments('ms365_calendar_recurring.json', user.id)
-#     start_date = appts[0].start_time.date()
-#     end_date = start_date + timedelta(days=2)
-#     result = archive_appointments(user, appts, start_date, end_date, db_session)
-#     assert len(result["appointments"]) == 3
-#     archived = db_session.query(Appointment).filter_by(user_id=user.id).all()
-#     assert len(archived) == 3
-#     for a in archived:
-#         assert a.subject == "Daily Standup"
+        # Assert
+        assert result is None
+        mock_repository.get_by_id.assert_called_once_with(999)
 
-# def test_archive_appointments_handles_partial_failure(db_session, user, monkeypatch):
-#     appts = load_appointments('ms365_calendar_success.json', user.id)
-#     start_date = appts[0].start_time.date()
-#     end_date = appts[0].end_time.date()
-#     def fail_commit():
-#         raise Exception("DB commit failed")
-#     monkeypatch.setattr(db_session, "commit", fail_commit)
-#     with pytest.raises(CalendarServiceException) as exc_info:
-#         archive_appointments(user, appts, start_date, end_date, db_session)
-#     assert "Failed to persist archived appointments" in str(exc_info.value)
+    def test_create_valid_calendar(self, calendar_service, mock_repository, sample_calendar):
+        """Test successful calendar creation."""
+        # Act
+        calendar_service.create(sample_calendar)
 
-# def test_archive_appointments_time_zone_conversion(db_session, user):
-#     appts = load_appointments('ms365_calendar_timezone.json', user.id)
-#     start_date = appts[0].start_time.date()
-#     end_date = appts[0].end_time.date()
-#     result = archive_appointments(user, appts, start_date, end_date, db_session)
-#     archived = db_session.query(Appointment).filter_by(user_id=user.id).first()
-#     assert archived is not None
-#     # Should be stored in UTC
-#     assert archived.start_time.tzinfo is not None
-#     assert archived.start_time.utcoffset() == timedelta(0)
+        # Assert
+        mock_repository.add.assert_called_once_with(sample_calendar)
+
+    def test_create_invalid_calendar_empty_name(self, calendar_service, mock_repository):
+        """Test calendar creation with empty name raises ValueError."""
+        # Arrange
+        invalid_calendar = Calendar(id=1, name="", user_id=1)
+
+        # Act & Assert
+        with pytest.raises(ValueError, match="Calendar name is required"):
+            calendar_service.create(invalid_calendar)
+
+        # Verify repository was not called
+        mock_repository.add.assert_not_called()
+
+    def test_create_invalid_calendar_whitespace_name(self, calendar_service, mock_repository):
+        """Test calendar creation with whitespace-only name raises ValueError."""
+        # Arrange
+        invalid_calendar = Calendar(id=1, name="   ", user_id=1)
+
+        # Act & Assert
+        with pytest.raises(ValueError, match="Calendar name is required"):
+            calendar_service.create(invalid_calendar)
+
+        # Verify repository was not called
+        mock_repository.add.assert_not_called()
+
+    def test_create_invalid_calendar_none_name(self, calendar_service, mock_repository):
+        """Test calendar creation with None name raises ValueError."""
+        # Arrange
+        invalid_calendar = Calendar(id=1, name=None, user_id=1)
+
+        # Act & Assert
+        with pytest.raises(ValueError, match="Calendar name is required"):
+            calendar_service.create(invalid_calendar)
+
+        # Verify repository was not called
+        mock_repository.add.assert_not_called()
+
+    def test_list_calendars(self, calendar_service, mock_repository):
+        """Test listing all calendars."""
+        # Arrange
+        calendars = [
+            Calendar(id=1, name="Calendar 1", user_id=1),
+            Calendar(id=2, name="Calendar 2", user_id=1)
+        ]
+        mock_repository.list.return_value = calendars
+
+        # Act
+        result = calendar_service.list()
+
+        # Assert
+        assert result == calendars
+        mock_repository.list.assert_called_once()
+
+    def test_list_calendars_empty(self, calendar_service, mock_repository):
+        """Test listing calendars when none exist."""
+        # Arrange
+        mock_repository.list.return_value = []
+
+        # Act
+        result = calendar_service.list()
+
+        # Assert
+        assert result == []
+        mock_repository.list.assert_called_once()
+
+    def test_update_valid_calendar(self, calendar_service, mock_repository, sample_calendar):
+        """Test successful calendar update."""
+        # Act
+        calendar_service.update(sample_calendar)
+
+        # Assert
+        mock_repository.update.assert_called_once_with(sample_calendar)
+
+    def test_update_invalid_calendar(self, calendar_service, mock_repository):
+        """Test calendar update with invalid data raises ValueError."""
+        # Arrange
+        invalid_calendar = Calendar(id=1, name="", user_id=1)
+
+        # Act & Assert
+        with pytest.raises(ValueError, match="Calendar name is required"):
+            calendar_service.update(invalid_calendar)
+
+        # Verify repository was not called
+        mock_repository.update.assert_not_called()
+
+    def test_delete_calendar(self, calendar_service, mock_repository):
+        """Test successful calendar deletion."""
+        # Act
+        calendar_service.delete(1)
+
+        # Assert
+        mock_repository.delete.assert_called_once_with(1)
+
+    def test_validate_valid_calendar(self, calendar_service, sample_calendar):
+        """Test validation of valid calendar."""
+        # Act & Assert - should not raise any exception
+        calendar_service.validate(sample_calendar)
+
+    def test_validate_calendar_without_name_attribute(self, calendar_service):
+        """Test validation of calendar without name attribute."""
+        # Arrange
+        calendar_without_name = Mock()
+        del calendar_without_name.name  # Remove name attribute
+
+        # Act & Assert
+        with pytest.raises(ValueError, match="Calendar name is required"):
+            calendar_service.validate(calendar_without_name)
         
