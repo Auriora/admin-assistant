@@ -235,8 +235,27 @@ For implementation tasks, see [AI Implementation Prompts](docs/AIP-001-AI-Implem
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
+## 📚 Documentation
+
+### Quick Start
+- [Getting Started Guide](docs/user-guides/UG-001-Getting-Started.md) - Start here for new users
+- [CLI Reference](docs/user-guides/UG-002-CLI-Reference.md) - Complete command reference
+- [Troubleshooting Guide](docs/user-guides/UG-003-Troubleshooting.md) - Common issues and solutions
+
+### Project Documentation
+- [Current Implementation Status](docs/CIS-001-Current-Implementation-Status.md) - Single source of truth for project status
+- [Consolidated Action Plan](docs/CAP-001-Consolidated-Action-Plan.md) - Development roadmap and priorities
+- [Solo Developer AI Process](docs/Solo-Developer-AI-Process.md) - Development framework
+
+### Technical Documentation
+- [Software Requirements Specification](docs/1-requirements/) - Complete requirements
+- [System Architecture](docs/2-design/ARCH-001-System-Architecture.md) - System design
+- [Database Schema](docs/2-design/DATABASE-SCHEMA-001-Current-Schema.md) - Current database structure
+- [CLI Command Structure](docs/2-design/CLI-001-Command-Structure.md) - Command organization
+- [Test Plan](docs/4-testing/TP-001-Test-Plan.md) - Testing strategy
+- [Requirements Traceability](docs/A-traceability/TM-001-Requirements-Implementation-Matrix.md) - Implementation tracking
+
 ## 🔗 Links
 
-- **Documentation**: [docs/](docs/)
 - **Issues**: [GitHub Issues](https://github.com/bcherrington/admin-assistant/issues)
 - **Project Board**: [GitHub Projects](https://github.com/bcherrington/admin-assistant/projects)
