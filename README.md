@@ -2,7 +2,11 @@
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg?logo=gnu)](https://www.gnu.org/licenses/gpl-3.0)
 [![Python 3.12+](https://img.shields.io/badge/Python-3.12+-blue.svg?logo=python&logoColor=white)](https://www.python.org/downloads/)
-[![Status: Development](https://img.shields.io/badge/Status-Development-orange.svg?logo=git)](https://github.com/Auriora/TimeLocker)
+[![Tests](https://github.com/bcherrington/admin-assistant/workflows/Tests/badge.svg)](https://github.com/bcherrington/admin-assistant/actions/workflows/test.yml)
+[![codecov](https://codecov.io/gh/bcherrington/admin-assistant/branch/main/graph/badge.svg)](https://codecov.io/gh/bcherrington/admin-assistant)
+[![GitHub issues](https://img.shields.io/github/issues/bcherrington/admin-assistant.svg?logo=github)](https://github.com/bcherrington/admin-assistant/issues)
+[![GitHub last commit](https://img.shields.io/github/last-commit/bcherrington/admin-assistant.svg?logo=github)](https://github.com/bcherrington/admin-assistant/commits/main)
+[![Status: Development](https://img.shields.io/badge/Status-Development-orange.svg?logo=git)](https://github.com/bcherrington/admin-assistant)
 
 A comprehensive calendar management and timesheet automation system for Microsoft 365 users. Admin Assistant automates calendar archiving, appointment categorization, overlap resolution, privacy management, and timesheet generation for professional service providers.
 

@@ -1,0 +1,178 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run tests daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    # Allow manual triggering
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.12']
+      fail-fast: false
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-${{ matrix.python-version }}-
+          ${{ runner.os }}-pip-
+
+    - name: Create virtual environment
+      run: |
+        python -m venv .venv
+        echo "VIRTUAL_ENV=$PWD/.venv" >> $GITHUB_ENV
+        echo "$PWD/.venv/bin" >> $GITHUB_PATH
+
+    - name: Upgrade pip
+      run: |
+        source .venv/bin/activate
+        python -m pip install --upgrade pip
+
+    - name: Install dependencies
+      run: |
+        source .venv/bin/activate
+        pip install -r requirements.txt
+
+    - name: Set up test environment
+      run: |
+        echo "APP_ENV=testing" >> $GITHUB_ENV
+        echo "DATABASE_URL=sqlite:///:memory:" >> $GITHUB_ENV
+        echo "LOG_LEVEL=INFO" >> $GITHUB_ENV
+        echo "OTEL_SDK_DISABLED=true" >> $GITHUB_ENV
+
+    - name: Run unit tests
+      run: |
+        source .venv/bin/activate
+        python -m pytest tests/unit/ -v -m unit --cov=core --cov=web --cov-report=xml --cov-report=term-missing
+
+    - name: Run integration tests
+      run: |
+        source .venv/bin/activate
+        python -m pytest tests/integration/ -v -m integration --cov=core --cov=web --cov-append --cov-report=xml --cov-report=term-missing
+
+    - name: Run all tests with coverage
+      run: |
+        source .venv/bin/activate
+        python -m pytest tests/ -v --cov=core --cov=web --cov-report=xml --cov-report=html --cov-report=term-missing --cov-fail-under=80
+
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false
+
+    - name: Upload coverage HTML report
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: coverage-report-${{ matrix.python-version }}
+        path: htmlcov/
+
+    - name: Upload test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: test-results-${{ matrix.python-version }}
+        path: |
+          .coverage
+          coverage.xml
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-lint-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-lint-
+          ${{ runner.os }}-pip-
+
+    - name: Create virtual environment
+      run: |
+        python -m venv .venv
+        echo "VIRTUAL_ENV=$PWD/.venv" >> $GITHUB_ENV
+        echo "$PWD/.venv/bin" >> $GITHUB_PATH
+
+    - name: Install dependencies
+      run: |
+        source .venv/bin/activate
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install flake8 black isort mypy
+
+    - name: Run flake8
+      run: |
+        source .venv/bin/activate
+        flake8 core/ cli/ web/ --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 core/ cli/ web/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+    - name: Check code formatting with black
+      run: |
+        source .venv/bin/activate
+        black --check --diff core/ cli/ web/
+
+    - name: Check import sorting with isort
+      run: |
+        source .venv/bin/activate
+        isort --check-only --diff core/ cli/ web/
+
+    - name: Run type checking with mypy
+      run: |
+        source .venv/bin/activate
+        mypy core/ cli/ web/ --ignore-missing-imports || true
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+
+    - name: Install security tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install safety bandit
+
+    - name: Run safety check
+      run: |
+        safety check --json || true
+
+    - name: Run bandit security check
+      run: |
+        bandit -r core/ cli/ web/ -f json || true
