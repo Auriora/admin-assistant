@@ -6,11 +6,82 @@ build-backend = "setuptools.build_meta"
 name = "admin-assistant"
 version = "0.1.0"
 description = "Admin Assistant CLI and core"
-authors = [{ name = "Your Name", email = "your@email.com" }]
-dependencies = [
-    "typer[all]",
-    # add your other dependencies here
+authors = [{ name = "Bruce Cherrington", email = "aurioraproject@gmail.com" }]
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.12"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3 :: Only",
+    "Environment :: Console",
+    "Environment :: Web Environment",
+    "Natural Language :: English",
 ]
+dependencies = [
+    # Core CLI and UI
+    "typer[all]~=0.16.0",
+    "rich~=14.0.0",
+
+    # Web Framework
+    "Flask~=3.1.1",
+    "Flask-SQLAlchemy~=3.1.1",
+    "Flask-Migrate~=4.0.5",
+    "Flask-Login~=0.6.3",
+    "Flask-APScheduler~=1.13.1",
+
+    # API Integrations
+    "msgraph-sdk~=1.28.0",
+    "xero-python~=8.1.0",
+    "openai~=1.28.0",
+    "googlemaps~=4.10.0",
+
+    # Authentication & Security
+    "msal~=1.28.0",
+    "requests-oauthlib~=2.0.0",
+
+    # Database & Storage
+    "sqlalchemy-utils~=0.41.2",
+
+    # Utilities
+    "python-dotenv~=1.1.0",
+    "pytz~=2024.1",
+    "apprise~=1.7.5",
+    "nest_asyncio~=1.6.0",
+
+    # Observability
+    "opentelemetry-api~=1.33.0",
+    "opentelemetry-sdk~=1.33.0",
+    "opentelemetry-instrumentation-flask~=0.54b0",
+    "opentelemetry-exporter-otlp~=1.33.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    # Testing framework
+    "pytest~=8.3.1",
+    "pytest-cov~=6.1.1",
+    "pytest-mock~=3.12.0",
+    "pytest-asyncio~=0.23.0",
+]
+test = [
+    # Testing framework (alias for dev)
+    "pytest~=8.3.1",
+    "pytest-cov~=6.1.1",
+    "pytest-mock~=3.12.0",
+    "pytest-asyncio~=0.23.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/auriora/admin-assistant"
+"Bug Reports" = "https://github.com/auriora/admin-assistant/issues"
+Source = "https://github.com/auriora/admin-assistant"
+Documentation = "https://github.com/auriora/admin-assistant/tree/main/docs"
 
 [project.scripts]
 admin-assistant = "cli.main:app"
