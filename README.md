@@ -1,20 +1,8 @@
 # Admin Assistant
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Python 3.8+](https://img.shields.io/badge/Python-3.8+-blue.svg?logo=python&logoColor=white)](https://www.python.org/downloads/)
-[![Status: Development](https://img.shields.io/badge/Status-Development-orange.svg)]()
-[![GitHub release](https://img.shields.io/github/v/release/bcherrington/admin-assistant?include_prereleases)](https://github.com/bcherrington/admin-assistant/releases)
-
-[![Flask](https://img.shields.io/badge/Flask-2.3+-green.svg?logo=flask&logoColor=white)](https://flask.palletsprojects.com/)
-[![Microsoft Graph](https://img.shields.io/badge/Microsoft-Graph%20API-blue.svg?logo=microsoft&logoColor=white)](https://docs.microsoft.com/en-us/graph/)
-[![Test Coverage](https://img.shields.io/badge/Coverage-95%25+-brightgreen.svg)]()
-[![Code Style: Black](https://img.shields.io/badge/Code%20Style-Black-black.svg)](https://github.com/psf/black)
-
-[//]: # ([![GitHub stars]&#40;https://img.shields.io/github/stars/bcherrington/admin-assistant?style=social&#41;]&#40;https://github.com/bcherrington/admin-assistant/stargazers&#41;)
-[![GitHub issues](https://img.shields.io/github/issues/bcherrington/admin-assistant)](https://github.com/bcherrington/admin-assistant/issues)
-[![GitHub last commit](https://img.shields.io/github/last-commit/bcherrington/admin-assistant)](https://github.com/bcherrington/admin-assistant/commits/main)
-[![GitHub workflow status](https://img.shields.io/github/actions/workflow/status/bcherrington/admin-assistant/tests.yml?branch=main&label=tests)](https://github.com/bcherrington/admin-assistant/actions)
-[![Platform: Linux](https://img.shields.io/badge/Platform-Linux-blue.svg?logo=linux&logoColor=white)](https://www.linux.org/)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg?logo=gnu)](https://www.gnu.org/licenses/gpl-3.0)
+[![Python 3.12+](https://img.shields.io/badge/Python-3.12+-blue.svg?logo=python&logoColor=white)](https://www.python.org/downloads/)
+[![Status: Development](https://img.shields.io/badge/Status-Development-orange.svg?logo=git)](https://github.com/Auriora/TimeLocker)
 
 A comprehensive calendar management and timesheet automation system for Microsoft 365 users. Admin Assistant automates calendar archiving, appointment categorization, overlap resolution, privacy management, and timesheet generation for professional service providers.
 
