@@ -1,0 +1,14 @@
+[run]
+source = cli,core,web
+omit = 
+    tests/*
+    scripts/*
+    */__pycache__/*
+    */.venv/*
+
+[report]
+show_missing = true
+fail_under = 80
+
+[html]
+directory = htmlcov
