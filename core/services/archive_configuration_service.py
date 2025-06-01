@@ -1,8 +1,9 @@
 from typing import List, Optional
 
 from core.models.archive_configuration import ArchiveConfiguration
-from core.repositories.archive_configuration_repository import \
-    ArchiveConfigurationRepository
+from core.repositories.archive_configuration_repository import (
+    ArchiveConfigurationRepository,
+)
 
 
 class ArchiveConfigurationService:

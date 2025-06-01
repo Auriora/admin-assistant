@@ -3,8 +3,7 @@ from typing import Any, List, Optional
 from sqlalchemy.orm import Session
 
 from core.models.entity_association import EntityAssociation
-from core.repositories.entity_association_repository import \
-    EntityAssociationHelper
+from core.repositories.entity_association_repository import EntityAssociationHelper
 
 
 class EntityAssociationService:

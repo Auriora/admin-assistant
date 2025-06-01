@@ -1,5 +1,4 @@
-from sqlalchemy import (Boolean, Column, Date, DateTime, ForeignKey, Integer,
-                        String)
+from sqlalchemy import Boolean, Column, Date, DateTime, ForeignKey, Integer, String
 
 from core.db import Base
 from core.models.appointment import UTCDateTime

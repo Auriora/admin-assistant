@@ -9,22 +9,20 @@ from core.models.action_log import ActionLog
 from core.models.appointment import Appointment
 from core.models.entity_association import EntityAssociation
 from core.repositories.action_log_repository import ActionLogRepository
-from core.repositories.appointment_repository_msgraph import \
-    MSGraphAppointmentRepository
-from core.repositories.entity_association_repository import \
-    EntityAssociationHelper
+from core.repositories.appointment_repository_msgraph import (
+    MSGraphAppointmentRepository,
+)
+from core.repositories.entity_association_repository import EntityAssociationHelper
 from core.services.audit_log_service import AuditLogService
 from core.services.calendar_archive_service import make_appointments_immutable
 from core.services.category_processing_service import CategoryProcessingService
-from core.services.enhanced_overlap_resolution_service import \
-    EnhancedOverlapResolutionService
-from core.services.meeting_modification_service import \
-    MeetingModificationService
+from core.services.enhanced_overlap_resolution_service import (
+    EnhancedOverlapResolutionService,
+)
+from core.services.meeting_modification_service import MeetingModificationService
 from core.utilities.audit_logging_utility import AuditContext, AuditLogHelper
-from core.utilities.calendar_overlap_utility import (detect_overlaps,
-                                                     merge_duplicates)
-from core.utilities.calendar_recurrence_utility import \
-    expand_recurring_events_range
+from core.utilities.calendar_overlap_utility import detect_overlaps, merge_duplicates
+from core.utilities.calendar_recurrence_utility import expand_recurring_events_range
 
 # OpenTelemetry imports
 try:
@@ -354,8 +352,9 @@ class CalendarArchiveOrchestrator:
                 audit_ctx.add_detail("phase", "archiving")
 
                 if archive_calendar_id.startswith("local://"):
-                    from core.repositories.appointment_repository_sqlalchemy import \
-                        SQLAlchemyAppointmentRepository
+                    from core.repositories.appointment_repository_sqlalchemy import (
+                        SQLAlchemyAppointmentRepository,
+                    )
 
                     # Extract local calendar ID or name from URI
                     local_cal_id = archive_calendar_id[len("local://") :]

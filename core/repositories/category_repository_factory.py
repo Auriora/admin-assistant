@@ -5,8 +5,7 @@ from sqlalchemy.orm import Session
 from core.models.user import User
 from core.repositories.category_repository import SQLAlchemyCategoryRepository
 from core.repositories.category_repository_base import BaseCategoryRepository
-from core.repositories.category_repository_msgraph import \
-    MSGraphCategoryRepository
+from core.repositories.category_repository_msgraph import MSGraphCategoryRepository
 
 
 class CategoryRepositoryFactory:

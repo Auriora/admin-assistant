@@ -8,10 +8,10 @@ from typing import Any, Dict, List, Optional
 from core.models.archive_configuration import ArchiveConfiguration
 from core.models.job_configuration import JobConfiguration
 from core.models.user import User
-from core.repositories.archive_configuration_repository import \
-    ArchiveConfigurationRepository
-from core.repositories.job_configuration_repository import \
-    JobConfigurationRepository
+from core.repositories.archive_configuration_repository import (
+    ArchiveConfigurationRepository,
+)
+from core.repositories.job_configuration_repository import JobConfigurationRepository
 from core.repositories.user_repository import UserRepository
 
 

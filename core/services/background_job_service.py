@@ -22,8 +22,7 @@ from typing import Any, Dict, List, Optional
 
 from flask_apscheduler import APScheduler
 
-from core.services.archive_configuration_service import \
-    ArchiveConfigurationService
+from core.services.archive_configuration_service import ArchiveConfigurationService
 from core.services.job_configuration_service import JobConfigurationService
 from core.services.user_service import UserService
 

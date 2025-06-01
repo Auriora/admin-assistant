@@ -3,12 +3,13 @@ from typing import Any, Optional
 from sqlalchemy.orm import Session
 
 from core.models.user import User
-from core.repositories.appointment_repository_base import \
-    BaseAppointmentRepository
-from core.repositories.appointment_repository_msgraph import \
-    MSGraphAppointmentRepository
-from core.repositories.appointment_repository_sqlalchemy import \
-    SQLAlchemyAppointmentRepository
+from core.repositories.appointment_repository_base import BaseAppointmentRepository
+from core.repositories.appointment_repository_msgraph import (
+    MSGraphAppointmentRepository,
+)
+from core.repositories.appointment_repository_sqlalchemy import (
+    SQLAlchemyAppointmentRepository,
+)
 
 # Import mock client only if needed to avoid test dependency in production
 

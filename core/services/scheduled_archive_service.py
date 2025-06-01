@@ -20,8 +20,7 @@ from datetime import date, datetime, time
 from typing import Any, Dict, List, Optional
 
 from core.models.archive_configuration import ArchiveConfiguration
-from core.services.archive_configuration_service import \
-    ArchiveConfigurationService
+from core.services.archive_configuration_service import ArchiveConfigurationService
 from core.services.background_job_service import BackgroundJobService
 from core.services.job_configuration_service import JobConfigurationService
 from core.services.user_service import UserService

@@ -86,8 +86,9 @@ class OverlapResolutionOrchestrator:
             audit_ctx.add_detail("phase", "fetching_appointments")
             related = self.action_log_service.get_related_entities(action_log_id)
             from core.models.appointment import Appointment
-            from core.repositories.appointment_repository_sqlalchemy import \
-                SQLAlchemyAppointmentRepository
+            from core.repositories.appointment_repository_sqlalchemy import (
+                SQLAlchemyAppointmentRepository,
+            )
 
             appointment_repo = SQLAlchemyAppointmentRepository(
                 user=user, calendar_id=calendar_id

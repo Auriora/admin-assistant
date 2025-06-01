@@ -595,8 +595,7 @@ def validate_category(
     from rich.table import Table
 
     from core.services.calendar_service import CalendarService
-    from core.services.category_processing_service import \
-        CategoryProcessingService
+    from core.services.category_processing_service import CategoryProcessingService
 
     console = Console()
 
@@ -741,11 +740,11 @@ def analyze_overlaps(
 
     from core.models.appointment import Appointment
     from core.services import UserService
-    from core.services.enhanced_overlap_resolution_service import \
-        EnhancedOverlapResolutionService
+    from core.services.enhanced_overlap_resolution_service import (
+        EnhancedOverlapResolutionService,
+    )
     from core.utilities.calendar_overlap_utility import detect_overlaps
-    from core.utilities.calendar_recurrence_utility import \
-        expand_recurring_events_range
+    from core.utilities.calendar_recurrence_utility import expand_recurring_events_range
 
     console = Console()
 
@@ -915,8 +914,7 @@ def analyze_overlaps(
 @archive_archive_config_app.command("list")
 def list_configs(user_id: int = user_id_option):
     """List all archive configurations for a user."""
-    from core.services.archive_configuration_service import \
-        ArchiveConfigurationService
+    from core.services.archive_configuration_service import ArchiveConfigurationService
 
     service = ArchiveConfigurationService()
     configs = service.list_for_user(user_id)
@@ -966,8 +964,7 @@ def create_config(
 ):
     """Create a new archive configuration for a user."""
     from core.models.archive_configuration import ArchiveConfiguration
-    from core.services.archive_configuration_service import \
-        ArchiveConfigurationService
+    from core.services.archive_configuration_service import ArchiveConfigurationService
 
     # Get system timezone
     system_timezone = tzlocal.get_localzone_name()
@@ -1025,8 +1022,7 @@ def activate_config(
     ),
 ):
     """Activate an archive configuration (set is_active=True)."""
-    from core.services.archive_configuration_service import \
-        ArchiveConfigurationService
+    from core.services.archive_configuration_service import ArchiveConfigurationService
 
     service = ArchiveConfigurationService()
     config = service.get_by_id(config_id)
@@ -1046,8 +1042,7 @@ def deactivate_config(
     ),
 ):
     """Deactivate an archive configuration (set is_active=False)."""
-    from core.services.archive_configuration_service import \
-        ArchiveConfigurationService
+    from core.services.archive_configuration_service import ArchiveConfigurationService
 
     service = ArchiveConfigurationService()
     config = service.get_by_id(config_id)
@@ -1067,8 +1062,7 @@ def delete_config(
     ),
 ):
     """Delete an archive configuration by ID."""
-    from core.services.archive_configuration_service import \
-        ArchiveConfigurationService
+    from core.services.archive_configuration_service import ArchiveConfigurationService
 
     service = ArchiveConfigurationService()
     config = service.get_by_id(config_id)
@@ -1483,8 +1477,10 @@ def get_calendars_for_user(
         Exception: If user not found or repository errors occur.
     """
     from core.db import get_session
-    from core.repositories import (MSGraphCalendarRepository,
-                                   SQLAlchemyCalendarRepository)
+    from core.repositories import (
+        MSGraphCalendarRepository,
+        SQLAlchemyCalendarRepository,
+    )
     from core.repositories.user_repository import UserRepository
     from core.utilities import get_graph_client
 
@@ -1693,8 +1689,10 @@ def create_calendar(
 
     from core.db import get_session
     from core.models.calendar import Calendar
-    from core.repositories import (MSGraphCalendarRepository,
-                                   SQLAlchemyCalendarRepository)
+    from core.repositories import (
+        MSGraphCalendarRepository,
+        SQLAlchemyCalendarRepository,
+    )
     from core.utilities import get_graph_client
     from core.utilities.auth_utility import get_cached_access_token
 

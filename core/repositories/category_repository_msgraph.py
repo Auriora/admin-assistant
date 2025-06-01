@@ -47,8 +47,7 @@ class MSGraphCategoryRepository(BaseCategoryRepository):
     async def _add_async(self, category: Category) -> None:
         """Async: Add a new category via MS Graph."""
         try:
-            from msgraph.generated.models.outlook_category import \
-                OutlookCategory
+            from msgraph.generated.models.outlook_category import OutlookCategory
 
             ms_cat = OutlookCategory()
             ms_cat.display_name = (
@@ -107,8 +106,7 @@ class MSGraphCategoryRepository(BaseCategoryRepository):
                     break
 
             if category_id:
-                from msgraph.generated.models.outlook_category import \
-                    OutlookCategory
+                from msgraph.generated.models.outlook_category import OutlookCategory
 
                 ms_cat = OutlookCategory()
                 ms_cat.display_name = (

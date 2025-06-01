@@ -9,8 +9,10 @@ from .calendar_repository_msgraph import MSGraphCalendarRepository
 from .calendar_repository_sqlalchemy import SQLAlchemyCalendarRepository
 from .category_repository import SQLAlchemyCategoryRepository
 from .category_repository_base import BaseCategoryRepository
-from .category_repository_factory import (CategoryRepositoryFactory,
-                                          get_category_repository)
+from .category_repository_factory import (
+    CategoryRepositoryFactory,
+    get_category_repository,
+)
 from .category_repository_msgraph import MSGraphCategoryRepository
 from .chat_session_repository import ChatSessionRepository
 from .job_configuration_repository import JobConfigurationRepository

@@ -8,11 +8,12 @@ import pytz
 from dateutil import parser
 from sqlalchemy.orm.attributes import InstrumentedAttribute
 
-from core.exceptions import (AppointmentRepositoryException,
-                             ImmutableAppointmentException)
+from core.exceptions import (
+    AppointmentRepositoryException,
+    ImmutableAppointmentException,
+)
 from core.models.appointment import Appointment
-from core.repositories.appointment_repository_base import \
-    BaseAppointmentRepository
+from core.repositories.appointment_repository_base import BaseAppointmentRepository
 
 logger = logging.getLogger(__name__)
 if TYPE_CHECKING:

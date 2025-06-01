@@ -2,16 +2,24 @@ from datetime import UTC, date, datetime, timedelta
 from typing import cast
 
 import requests
-from flask import (Blueprint, abort, current_app, flash, jsonify, redirect,
-                   render_template, request, session, url_for)
+from flask import (
+    Blueprint,
+    abort,
+    current_app,
+    flash,
+    jsonify,
+    redirect,
+    render_template,
+    request,
+    session,
+    url_for,
+)
 from flask_login import current_user, login_required, login_user, logout_user
 from sqlalchemy import desc
 from sqlalchemy.orm import Session as SQLAlchemySession
 
-from core.orchestrators.calendar_archive_orchestrator import \
-    CalendarArchiveOrchestrator
-from core.services.archive_configuration_service import \
-    ArchiveConfigurationService
+from core.orchestrators.calendar_archive_orchestrator import CalendarArchiveOrchestrator
+from core.services.archive_configuration_service import ArchiveConfigurationService
 from core.services.calendar_io_service import fetch_appointments
 from web.app.models import User, db
 from web.app.services import msgraph

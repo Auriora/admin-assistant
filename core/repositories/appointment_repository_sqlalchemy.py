@@ -3,11 +3,9 @@ import logging
 from typing import List, Optional
 
 from core.db import SessionLocal
-from core.exceptions import (DuplicateAppointmentException,
-                             ImmutableAppointmentException)
+from core.exceptions import DuplicateAppointmentException, ImmutableAppointmentException
 from core.models.appointment import Appointment
-from core.repositories.appointment_repository_base import \
-    BaseAppointmentRepository
+from core.repositories.appointment_repository_base import BaseAppointmentRepository
 
 
 class SQLAlchemyAppointmentRepository(BaseAppointmentRepository):

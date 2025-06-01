@@ -46,8 +46,7 @@ class MSGraphCalendarRepository(BaseCalendarRepository):
     async def _add_async(self, calendar: Calendar) -> None:
         """Async: Add a new calendar for the current user via MS Graph."""
         try:
-            from msgraph.generated.models.calendar import \
-                Calendar as MsCalendar
+            from msgraph.generated.models.calendar import Calendar as MsCalendar
 
             ms_cal = MsCalendar()
             ms_cal.name = str(calendar.name) if hasattr(calendar, "name") else None
@@ -103,8 +102,7 @@ class MSGraphCalendarRepository(BaseCalendarRepository):
     def update(self, calendar: Calendar) -> None:
         """Update an existing calendar for the current user via MS Graph."""
         try:
-            from msgraph.generated.models.calendar import \
-                Calendar as MsCalendar
+            from msgraph.generated.models.calendar import Calendar as MsCalendar
 
             ms_cal = MsCalendar()
             ms_cal.name = str(calendar.name) if hasattr(calendar, "name") else None

@@ -6,10 +6,8 @@ from sqlalchemy.orm.attributes import InstrumentedAttribute
 
 from core.exceptions import CalendarServiceException
 from core.models.appointment import Appointment
-from core.utilities.calendar_overlap_utility import (detect_overlaps,
-                                                     merge_duplicates)
-from core.utilities.calendar_recurrence_utility import \
-    expand_recurring_events_range
+from core.utilities.calendar_overlap_utility import detect_overlaps, merge_duplicates
+from core.utilities.calendar_recurrence_utility import expand_recurring_events_range
 from core.utilities.time_utility import to_utc
 
 # OpenTelemetry imports

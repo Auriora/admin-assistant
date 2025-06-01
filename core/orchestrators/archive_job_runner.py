@@ -3,11 +3,9 @@ from datetime import date
 from typing import Any, Optional
 
 from core.db import get_session
-from core.orchestrators.calendar_archive_orchestrator import \
-    CalendarArchiveOrchestrator
+from core.orchestrators.calendar_archive_orchestrator import CalendarArchiveOrchestrator
 from core.repositories.factory import get_appointment_repository
-from core.services.archive_configuration_service import \
-    ArchiveConfigurationService
+from core.services.archive_configuration_service import ArchiveConfigurationService
 from core.services.user_service import UserService
 
 logger = logging.getLogger(__name__)
