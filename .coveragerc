@@ -3,6 +3,8 @@ source = cli,core,web
 omit = 
     tests/*
     scripts/*
+    migrations/*
+    sabdbox/*
     */__pycache__/*
     */.venv/*
 
