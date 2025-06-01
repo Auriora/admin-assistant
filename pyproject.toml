@@ -18,3 +18,44 @@ aa = "cli.main:app"
 
 [tool.setuptools.packages.find]
 include = ["cli*", "core*", "web*"]
+
+[tool.pytest.ini_options]
+addopts = "--cov=core --cov=web --cov=cli --cov-report=term-missing --no-cov-on-fail"
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+
+[tool.coverage.run]
+source = [
+    "cli",
+    "core",
+    "web"
+]
+omit = [
+    "*/__pycache__/*",
+    "*/.venv/*",
+    "tests",
+    "tests/*", 
+    "*/tests/*",
+    "*/sandbox/*"
+]
+branch = true
+parallel = false
+relative_files = true
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "pass",
+    "raise ImportError"
+]
+show_missing = true
+ignore_errors = true
+fail_under = 80
+
+[tool.coverage.html]
+directory = "htmlcov"
