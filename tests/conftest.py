@@ -58,8 +58,7 @@ def test_user(db_session):
     """Create a test user."""
     user = User(
         email="test@example.com",
-        name="Test User",
-        ms_user_id="test-ms-user-id"
+        name="Test User"
     )
     db_session.add(user)
     db_session.commit()
@@ -132,8 +131,9 @@ def test_archive_config(db_session, test_user, test_calendar):
         user_id=test_user.id,
         name="Test Archive Config",
         source_calendar_uri=f"msgraph://{test_calendar.ms_calendar_id}",
-        archive_calendar_id="archive-calendar-id",
-        is_active=True
+        destination_calendar_uri="msgraph://archive-calendar-id",
+        is_active=True,
+        timezone="UTC"
     )
     db_session.add(config)
     db_session.commit()

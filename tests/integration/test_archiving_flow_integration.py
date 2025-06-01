@@ -39,7 +39,7 @@ class TestArchivingFlowIntegration:
                 calendar_id="source-calendar",
                 ms_event_id="event-1",
                 location="Conference Room A",
-                body="Weekly team sync"
+                body_content="Weekly team sync"
             ),
             Appointment(
                 user_id=test_user.id,
@@ -49,7 +49,7 @@ class TestArchivingFlowIntegration:
                 calendar_id="source-calendar",
                 ms_event_id="event-2",
                 location="Online",
-                body="Quarterly review"
+                body_content="Quarterly review"
             ),
             Appointment(
                 user_id=test_user.id,
@@ -59,7 +59,7 @@ class TestArchivingFlowIntegration:
                 calendar_id="source-calendar",
                 ms_event_id="event-3",
                 location="Office",
-                body="Q3 planning session"
+                body_content="Q3 planning session"
             )
         ]
 
@@ -148,21 +148,24 @@ class TestArchivingFlowIntegration:
         # Verify overlap handling
         assert result["archived_count"] == 0  # No appointments archived due to overlaps
         assert result["overlap_count"] >= 1  # At least one overlap detected
-        assert result.get("status") in ["partial", "success"]
+        assert "correlation_id" in result  # Verify operation completed
 
+    @patch('core.utilities.auth_utility.get_cached_access_token')
+    @patch('core.utilities.get_graph_client')
     @patch('core.services.user_service.UserService.get_by_id')
     @patch('core.services.archive_configuration_service.ArchiveConfigurationService.get_by_id')
     @patch('core.orchestrators.calendar_archive_orchestrator.CalendarArchiveOrchestrator.archive_user_appointments')
     def test_archive_job_runner_integration(
         self, mock_archive, mock_config_service, mock_user_service,
-        job_runner, test_user, test_archive_config
+        mock_get_client, mock_get_token, job_runner, test_user, test_archive_config
     ):
         """Test the ArchiveJobRunner integration."""
         # Setup mocks
         mock_user_service.return_value = test_user
         mock_config_service.return_value = test_archive_config
+        mock_get_token.return_value = "fake_access_token"
+        mock_get_client.return_value = MagicMock()  # Mock MS Graph client
         mock_archive.return_value = {
-            "status": "success",
             "archived_count": 5,
             "overlap_count": 0,
             "errors": []
@@ -177,9 +180,9 @@ class TestArchivingFlowIntegration:
         )
         
         # Verify results
-        assert result["status"] == "success"
         assert result["archived_count"] == 5
         assert result["overlap_count"] == 0
+        assert len(result["errors"]) == 0
         
         # Verify services were called
         mock_user_service.assert_called_once_with(test_user.id)
@@ -188,36 +191,41 @@ class TestArchivingFlowIntegration:
 
     def test_archive_configuration_service_integration(self, db_session, test_user):
         """Test ArchiveConfigurationService integration."""
-        service = ArchiveConfigurationService()
+        from core.repositories.archive_configuration_repository import ArchiveConfigurationRepository
+
+        # Create service with test database session
+        repository = ArchiveConfigurationRepository(session=db_session)
+        service = ArchiveConfigurationService(repository=repository)
         
         # Create configuration
         config = ArchiveConfiguration(
             user_id=test_user.id,
             name="Integration Test Config",
             source_calendar_uri="msgraph://test-source",
-            archive_calendar_id="test-archive",
-            is_active=True
+            destination_calendar_uri="msgraph://test-archive",
+            is_active=True,
+            timezone="UTC"
         )
         
         # Test create
-        created_config = service.create(config)
-        assert created_config.id is not None
-        assert created_config.name == "Integration Test Config"
+        service.create(config)
+        assert config.id is not None  # Should be set after creation
+        assert config.name == "Integration Test Config"
         
         # Test get
-        retrieved_config = service.get_by_id(created_config.id)
+        retrieved_config = service.get_by_id(config.id)
         assert retrieved_config is not None
-        assert retrieved_config.name == created_config.name
-        
+        assert retrieved_config.name == config.name
+
         # Test update
         retrieved_config.name = "Updated Config"
-        updated_config = service.update(retrieved_config)
-        assert updated_config.name == "Updated Config"
-        
+        service.update(retrieved_config)
+        assert retrieved_config.name == "Updated Config"
+
         # Test list
         configs = service.list_for_user(test_user.id)
         assert len(configs) >= 1
-        assert any(c.id == created_config.id for c in configs)
+        assert any(c.id == config.id for c in configs)
 
     @patch('core.orchestrators.calendar_archive_orchestrator.MSGraphAppointmentRepository')
     def test_archiving_with_errors(
@@ -257,13 +265,17 @@ class TestArchivingFlowIntegration:
 
     def test_user_service_integration(self, db_session, test_user):
         """Test UserService integration."""
-        service = UserService()
-        
+        from core.repositories.user_repository import UserRepository
+
+        # Create service with test database session
+        repository = UserRepository(session=db_session)
+        service = UserService(repository=repository)
+
         # Test get by id
         retrieved_user = service.get_by_id(test_user.id)
         assert retrieved_user is not None
         assert retrieved_user.email == test_user.email
-        
+
         # Test get by email
         retrieved_user = service.get_by_email(test_user.email)
         assert retrieved_user is not None

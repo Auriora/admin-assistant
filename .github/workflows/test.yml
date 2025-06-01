@@ -63,8 +63,7 @@ jobs:
     - name: Run tests with coverage
       run: |
         source .venv/bin/activate
-        # Run tests but allow failures for now while test suite is being fixed
-        python -m pytest tests/ -v --cov=core --cov=web --cov-report=xml --cov-report=html --cov-report=term-missing --tb=short || true
+        python -m pytest tests/ -v --cov=core --cov=web --cov-report=xml --cov-report=html --cov-report=term-missing --tb=short
 
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v4

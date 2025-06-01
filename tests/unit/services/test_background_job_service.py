@@ -97,13 +97,16 @@ class TestBackgroundJobService:
         """Test job scheduling with inactive config."""
         mock_user = Mock()
         mock_user_service.return_value.get_by_id.return_value = mock_user
-        
+
         mock_config = Mock()
         mock_config.is_active = False
         mock_archive_service.return_value.get_by_id.return_value = mock_config
-        
+
+        # Create a new service instance after patches are applied
+        service = BackgroundJobService(self.mock_scheduler)
+
         with pytest.raises(ValueError, match="Archive configuration 1 is not active"):
-            self.service.schedule_daily_archive_job(
+            service.schedule_daily_archive_job(
                 user_id=1,
                 archive_config_id=1
             )

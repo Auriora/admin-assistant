@@ -16,10 +16,12 @@ class ActionLogRepository:
         """Retrieve an ActionLog by its ID."""
         return self.session.get(ActionLog, log_id)
 
-    def add(self, log: ActionLog) -> None:
-        """Add a new ActionLog entry."""
+    def add(self, log: ActionLog) -> ActionLog:
+        """Add a new ActionLog entry and return it with ID populated."""
         self.session.add(log)
         self.session.commit()
+        self.session.refresh(log)
+        return log
 
     def list_for_user(self, user_id: int) -> List[ActionLog]:
         """List all ActionLog entries for a given user."""
@@ -57,3 +59,14 @@ class ActionLogRepository:
             # Ensure recommendations is JSON-serializable
             log.recommendations = recommendations  # type: ignore
             self.session.commit()
+
+    def list_by_event_type(self, event_type: str) -> List[ActionLog]:
+        """List all ActionLog entries by event type."""
+        return self.session.query(ActionLog).filter_by(event_type=event_type).all()
+
+    def list_pending_overlaps(self) -> List[ActionLog]:
+        """List all pending overlap resolution tasks."""
+        return self.session.query(ActionLog).filter_by(
+            event_type="overlap_resolution",
+            state="pending"
+        ).all()

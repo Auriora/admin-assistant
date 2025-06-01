@@ -15,7 +15,7 @@ class TestArchiveConfigurationRepository:
     @pytest.fixture
     def repository(self, db_session, test_user):
         """Create repository instance."""
-        return ArchiveConfigurationRepository(session=db_session, user=test_user)
+        return ArchiveConfigurationRepository(session=db_session)
 
     def test_create_archive_configuration(self, repository, test_user):
         """Test creating a new archive configuration."""
@@ -23,8 +23,9 @@ class TestArchiveConfigurationRepository:
             user_id=test_user.id,
             name="Test Config",
             source_calendar_uri="msgraph://test-calendar",
-            archive_calendar_id="archive-calendar-id",
-            is_active=True
+            destination_calendar_uri="msgraph://archive-calendar-id",
+            is_active=True,
+            timezone="UTC"
         )
         
         result = repository.add(config)
@@ -55,15 +56,17 @@ class TestArchiveConfigurationRepository:
             user_id=test_user.id,
             name="Config 1",
             source_calendar_uri="msgraph://calendar1",
-            archive_calendar_id="archive1",
-            is_active=True
+            destination_calendar_uri="msgraph://archive1",
+            is_active=True,
+            timezone="UTC"
         )
         config2 = ArchiveConfiguration(
             user_id=test_user.id,
             name="Config 2",
             source_calendar_uri="msgraph://calendar2",
-            archive_calendar_id="archive2",
-            is_active=False
+            destination_calendar_uri="msgraph://archive2",
+            is_active=False,
+            timezone="UTC"
         )
         
         db_session.add_all([config1, config2])
@@ -83,15 +86,17 @@ class TestArchiveConfigurationRepository:
             user_id=test_user.id,
             name="Active Config",
             source_calendar_uri="msgraph://calendar1",
-            archive_calendar_id="archive1",
-            is_active=True
+            destination_calendar_uri="msgraph://archive1",
+            is_active=True,
+            timezone="UTC"
         )
         inactive_config = ArchiveConfiguration(
             user_id=test_user.id,
             name="Inactive Config",
             source_calendar_uri="msgraph://calendar2",
-            archive_calendar_id="archive2",
-            is_active=False
+            destination_calendar_uri="msgraph://archive2",
+            is_active=False,
+            timezone="UTC"
         )
         
         db_session.add_all([active_config, inactive_config])
@@ -141,11 +146,12 @@ class TestArchiveConfigurationRepository:
 
     def test_user_isolation(self, db_session, test_user):
         """Test that users can only see their own configurations."""
+        from core.models.user import User
+
         # Create another user
         other_user = User(
             email="other@example.com",
-            name="Other User",
-            ms_user_id="other-ms-user-id"
+            name="Other User"
         )
         db_session.add(other_user)
         db_session.commit()
@@ -155,32 +161,34 @@ class TestArchiveConfigurationRepository:
             user_id=test_user.id,
             name="User 1 Config",
             source_calendar_uri="msgraph://calendar1",
-            archive_calendar_id="archive1",
-            is_active=True
+            destination_calendar_uri="msgraph://archive1",
+            is_active=True,
+            timezone="UTC"
         )
         user2_config = ArchiveConfiguration(
             user_id=other_user.id,
             name="User 2 Config",
             source_calendar_uri="msgraph://calendar2",
-            archive_calendar_id="archive2",
-            is_active=True
+            destination_calendar_uri="msgraph://archive2",
+            is_active=True,
+            timezone="UTC"
         )
         
         db_session.add_all([user1_config, user2_config])
         db_session.commit()
         
         # Test user 1 repository
-        repo1 = ArchiveConfigurationRepository(session=db_session, user=test_user)
-        results1 = repo1.list()
+        repo1 = ArchiveConfigurationRepository(session=db_session)
+        results1 = repo1.list_for_user(test_user.id)
         config_names1 = [c.name for c in results1]
-        
+
         assert "User 1 Config" in config_names1
         assert "User 2 Config" not in config_names1
-        
+
         # Test user 2 repository
-        repo2 = ArchiveConfigurationRepository(session=db_session, user=other_user)
-        results2 = repo2.list()
+        repo2 = ArchiveConfigurationRepository(session=db_session)
+        results2 = repo2.list_for_user(other_user.id)
         config_names2 = [c.name for c in results2]
-        
+
         assert "User 2 Config" in config_names2
         assert "User 1 Config" not in config_names2

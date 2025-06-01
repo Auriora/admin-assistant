@@ -16,10 +16,12 @@ class ArchiveConfigurationRepository:
         """Retrieve an ArchiveConfiguration by its ID."""
         return self.session.get(ArchiveConfiguration, config_id)
 
-    def add(self, config: ArchiveConfiguration) -> None:
-        """Add a new ArchiveConfiguration."""
+    def add(self, config: ArchiveConfiguration) -> ArchiveConfiguration:
+        """Add a new ArchiveConfiguration and return it with ID populated."""
         self.session.add(config)
         self.session.commit()
+        self.session.refresh(config)
+        return config
 
     def list_for_user(self, user_id: int) -> List[ArchiveConfiguration]:
         """List all ArchiveConfigurations for a given user."""
@@ -50,3 +52,10 @@ class ArchiveConfigurationRepository:
         if user_id is not None:
             query = query.filter_by(user_id=user_id)
         return query.all()
+
+    def get_by_name(self, name: str, user_id: Optional[int] = None) -> Optional[ArchiveConfiguration]:
+        """Retrieve an ArchiveConfiguration by its name, optionally filtered by user."""
+        query = self.session.query(ArchiveConfiguration).filter_by(name=name)
+        if user_id is not None:
+            query = query.filter_by(user_id=user_id)
+        return query.first()
