@@ -88,7 +88,7 @@ admin-assistant = "cli.main:app"
 aa = "cli.main:app"
 
 [tool.setuptools.packages.find]
-include = ["cli*", "core*", "web*"]
+where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -4,8 +4,8 @@ This document describes the main entities and relationships for the Admin Assist
 
 ## Database Separation
 
-- **Core Database**: Manages business-critical, backend-agnostic entities. Migrated and versioned via Alembic in `core/migrations`.
-- **Flask (Web) Database**: Manages user-facing, web-specific, and integration-related entities. Migrated via Flask-Migrate/Alembic in `web/migrations`.
+- **Core Database**: Manages business-critical, backend-agnostic entities. Migrated and versioned via Alembic in `src/core/migrations`.
+- **Flask (Web) Database**: Manages user-facing, web-specific, and integration-related entities. Migrated via Flask-Migrate/Alembic in `src/web/migrations`.
 
 ### Entities by Database
 

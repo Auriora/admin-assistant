@@ -233,7 +233,7 @@ CREATE INDEX idx_job_config_user ON job_configurations(user_id);
 ### Current Migration Version
 - **Core Database**: Latest migration applied
 - **Alembic Version**: Current with all models
-- **Migration Path**: `core/migrations/versions/`
+- **Migration Path**: `src/core/migrations/versions/`
 
 ### Migration Commands
 ```bash
