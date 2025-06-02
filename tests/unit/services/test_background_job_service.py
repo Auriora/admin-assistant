@@ -12,6 +12,11 @@ import pytest
 from unittest.mock import Mock, patch, MagicMock
 from datetime import date, datetime, timedelta
 from core.services.background_job_service import BackgroundJobService
+try:
+    from tests.utils.test_helpers import ServiceMockHelper, MockValidator, assert_mock_called_with_subset
+except ImportError:
+    # Fallback for when running tests individually
+    from utils.test_helpers import ServiceMockHelper, MockValidator, assert_mock_called_with_subset
 
 
 class TestBackgroundJobService:
@@ -34,62 +39,64 @@ class TestBackgroundJobService:
         service.set_scheduler(mock_scheduler)
         assert service.scheduler == mock_scheduler
         
-    @patch('core.services.background_job_service.UserService')
-    @patch('core.services.background_job_service.ArchiveConfigurationService')
-    def test_schedule_daily_archive_job_success(self, mock_archive_service, mock_user_service):
+    def test_schedule_daily_archive_job_success(self):
         """Test successful daily job scheduling."""
-        # Setup mocks
-        mock_user = Mock()
-        mock_user.email = "test@example.com"
-        mock_user_service.return_value.get_by_id.return_value = mock_user
-        
-        mock_config = Mock()
-        mock_config.is_active = True
-        mock_archive_service.return_value.get_by_id.return_value = mock_config
-        
-        self.mock_scheduler.get_job.return_value = None  # No existing job
-        
-        # Test
-        job_id = self.service.schedule_daily_archive_job(
-            user_id=1,
-            archive_config_id=1,
-            hour=10,
-            minute=30
-        )
-        
-        # Verify
-        assert job_id == "daily_archive_user_1_config_1"
-        self.mock_scheduler.add_job.assert_called_once()
-        call_args = self.mock_scheduler.add_job.call_args
-        assert call_args[1]['id'] == job_id
-        assert call_args[1]['trigger'] == 'cron'
-        assert call_args[1]['hour'] == 10
-        assert call_args[1]['minute'] == 30
-        
-    @patch('core.services.background_job_service.UserService')
-    def test_schedule_daily_archive_job_user_not_found(self, mock_user_service):
-        """Test job scheduling with non-existent user."""
-        mock_user_service.return_value.get_by_id.return_value = None
-        
-        with pytest.raises(ValueError, match="User with ID 999 not found"):
-            self.service.schedule_daily_archive_job(
-                user_id=999,
-                archive_config_id=1
+        # Setup mocks using helper
+        mock_user_service = ServiceMockHelper.create_user_service_mock([
+            {"id": 1, "email": "test@example.com", "name": "Test User"}
+        ])
+        mock_config_service = ServiceMockHelper.create_archive_config_service_mock([
+            {"id": 1, "is_active": True, "name": "Test Config"}
+        ])
+
+        # Mock the service methods directly
+        with patch.object(self.service.user_service, 'get_by_id', mock_user_service.get_by_id), \
+             patch.object(self.service.archive_config_service, 'get_by_id', mock_config_service.get_by_id):
+
+            self.mock_scheduler.get_job.return_value = None  # No existing job
+
+            # Test
+            job_id = self.service.schedule_daily_archive_job(
+                user_id=1,
+                archive_config_id=1,
+                hour=10,
+                minute=30
             )
+
+            # Verify using improved assertions
+            assert job_id == "daily_archive_user_1_config_1"
+            self.mock_scheduler.add_job.assert_called_once()
+
+            # Use helper to validate specific call arguments
+            assert_mock_called_with_subset(
+                self.mock_scheduler.add_job,
+                id=job_id,
+                trigger='cron',
+                hour=10,
+                minute=30
+            )
+        
+    def test_schedule_daily_archive_job_user_not_found(self):
+        """Test job scheduling with non-existent user."""
+        with patch.object(self.service.user_service, 'get_by_id', return_value=None):
+            with pytest.raises(ValueError, match="User with ID 999 not found"):
+                self.service.schedule_daily_archive_job(
+                    user_id=999,
+                    archive_config_id=1
+                )
             
-    @patch('core.services.background_job_service.UserService')
-    @patch('core.services.background_job_service.ArchiveConfigurationService')
-    def test_schedule_daily_archive_job_config_not_found(self, mock_archive_service, mock_user_service):
+    def test_schedule_daily_archive_job_config_not_found(self):
         """Test job scheduling with non-existent config."""
         mock_user = Mock()
-        mock_user_service.return_value.get_by_id.return_value = mock_user
-        mock_archive_service.return_value.get_by_id.return_value = None
-        
-        with pytest.raises(ValueError, match="Archive configuration with ID 999 not found"):
-            self.service.schedule_daily_archive_job(
-                user_id=1,
-                archive_config_id=999
-            )
+
+        with patch.object(self.service.user_service, 'get_by_id', return_value=mock_user), \
+             patch.object(self.service.archive_config_service, 'get_by_id', return_value=None):
+
+            with pytest.raises(ValueError, match="Archive configuration with ID 999 not found"):
+                self.service.schedule_daily_archive_job(
+                    user_id=1,
+                    archive_config_id=999
+                )
             
     @patch('core.services.background_job_service.UserService')
     @patch('core.services.background_job_service.ArchiveConfigurationService')
@@ -121,39 +128,39 @@ class TestBackgroundJobService:
                 archive_config_id=1
             )
             
-    @patch('core.services.background_job_service.UserService')
-    @patch('core.services.background_job_service.ArchiveConfigurationService')
-    def test_schedule_weekly_archive_job_success(self, mock_archive_service, mock_user_service):
+    def test_schedule_weekly_archive_job_success(self):
         """Test successful weekly job scheduling."""
         # Setup mocks
         mock_user = Mock()
         mock_user.email = "test@example.com"
-        mock_user_service.return_value.get_by_id.return_value = mock_user
-        
+
         mock_config = Mock()
         mock_config.is_active = True
-        mock_archive_service.return_value.get_by_id.return_value = mock_config
+
+        # Mock the service methods directly
+        with patch.object(self.service.user_service, 'get_by_id', return_value=mock_user), \
+             patch.object(self.service.archive_config_service, 'get_by_id', return_value=mock_config):
+
+            self.mock_scheduler.get_job.return_value = None  # No existing job
+
+            # Test
+            job_id = self.service.schedule_weekly_archive_job(
+                user_id=1,
+                archive_config_id=1,
+                day_of_week=5,  # Friday
+                hour=14,
+                minute=0
+            )
         
-        self.mock_scheduler.get_job.return_value = None  # No existing job
-        
-        # Test
-        job_id = self.service.schedule_weekly_archive_job(
-            user_id=1,
-            archive_config_id=1,
-            day_of_week=5,  # Friday
-            hour=14,
-            minute=0
-        )
-        
-        # Verify
-        assert job_id == "weekly_archive_user_1_config_1"
-        self.mock_scheduler.add_job.assert_called_once()
-        call_args = self.mock_scheduler.add_job.call_args
-        assert call_args[1]['id'] == job_id
-        assert call_args[1]['trigger'] == 'cron'
-        assert call_args[1]['day_of_week'] == 5
-        assert call_args[1]['hour'] == 14
-        assert call_args[1]['minute'] == 0
+            # Verify
+            assert job_id == "weekly_archive_user_1_config_1"
+            self.mock_scheduler.add_job.assert_called_once()
+            call_args = self.mock_scheduler.add_job.call_args
+            assert call_args[1]['id'] == job_id
+            assert call_args[1]['trigger'] == 'cron'
+            assert call_args[1]['day_of_week'] == 5
+            assert call_args[1]['hour'] == 14
+            assert call_args[1]['minute'] == 0
         
     def test_trigger_manual_archive_success(self):
         """Test successful manual archive triggering."""
@@ -272,32 +279,40 @@ class TestBackgroundJobService:
     @patch('core.services.background_job_service.logger')
     def test_run_scheduled_archive_success(self, mock_logger):
         """Test successful scheduled archive execution."""
-        with patch.object(self.service.archive_runner, 'run_archive_job') as mock_run:
-            mock_run.return_value = {'status': 'success', 'archived_count': 5}
-            
-            # Call the internal method directly
-            self.service._run_scheduled_archive(1, 1)
-            
-            # Verify archive runner was called with yesterday's date
-            yesterday = date.today() - timedelta(days=1)
-            mock_run.assert_called_once_with(
-                user_id=1,
-                archive_config_id=1,
-                start_date=yesterday,
-                end_date=yesterday
-            )
+        # Mock the job config service to return no job configs (uses default 1 day window)
+        with patch.object(self.service.job_config_service, 'get_by_archive_config_id') as mock_get_configs:
+            mock_get_configs.return_value = []
+
+            with patch.object(self.service.archive_runner, 'run_archive_job') as mock_run:
+                mock_run.return_value = {'status': 'success', 'archived_count': 5}
+
+                # Call the internal method directly
+                self.service._run_scheduled_archive(1, 1)
+
+                # Verify archive runner was called with yesterday's date
+                yesterday = date.today() - timedelta(days=1)
+                mock_run.assert_called_once_with(
+                    user_id=1,
+                    archive_config_id=1,
+                    start_date=yesterday,
+                    end_date=yesterday
+                )
             
     @patch('core.services.background_job_service.logger')
     def test_run_scheduled_archive_error(self, mock_logger):
         """Test scheduled archive execution with error."""
-        with patch.object(self.service.archive_runner, 'run_archive_job') as mock_run:
-            mock_run.return_value = {'status': 'error', 'error': 'Test error'}
-            
-            # Call the internal method directly
-            self.service._run_scheduled_archive(1, 1)
-            
-            # Verify error was logged
-            mock_logger.error.assert_called_once()
+        # Mock the job config service to return no job configs (uses default 1 day window)
+        with patch.object(self.service.job_config_service, 'get_by_archive_config_id') as mock_get_configs:
+            mock_get_configs.return_value = []
+
+            with patch.object(self.service.archive_runner, 'run_archive_job') as mock_run:
+                mock_run.return_value = {'status': 'error', 'error': 'Test error'}
+
+                # Call the internal method directly
+                self.service._run_scheduled_archive(1, 1)
+
+                # Verify error was logged
+                mock_logger.error.assert_called_once()
             
     @patch('core.services.background_job_service.logger')
     def test_run_manual_archive_success(self, mock_logger):

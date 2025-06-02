@@ -5,6 +5,7 @@ from sqlalchemy.orm import sessionmaker
 from core.models.appointment import Appointment, Base as AppointmentBase
 from core.models.action_log import ActionLog, Base as ActionLogBase
 from core.models.entity_association import EntityAssociation, Base as AssocBase
+from core.models.audit_log import AuditLog
 from core.orchestrators.calendar_archive_orchestrator import CalendarArchiveOrchestrator
 
 # --- Mock MS Graph Repository ---
@@ -27,11 +28,27 @@ def db_session():
     AppointmentBase.metadata.create_all(engine)
     ActionLogBase.metadata.create_all(engine)
     AssocBase.metadata.create_all(engine)
+    # AuditLog uses the same Base as other models, so we need to ensure it's created
+    from core.db import Base
+    Base.metadata.create_all(engine)
+
+    # Create session with proper transaction handling
     Session = sessionmaker(bind=engine)
-    sess = Session()
-    yield sess
-    sess.close()
-    engine.dispose()
+    session = Session()
+
+    # Start a transaction for test isolation
+    connection = engine.connect()
+    transaction = connection.begin()
+    session.bind = connection
+
+    try:
+        yield session
+    finally:
+        # Ensure proper cleanup regardless of test outcome
+        session.close()
+        transaction.rollback()
+        connection.close()
+        engine.dispose()
 
 @pytest.fixture
 def user():
@@ -261,21 +278,33 @@ def test_archive_appointments_handles_partial_failure(user, msgraph_client, db_s
             archive_repo_instance['repo'] = repo
             return repo
     monkeypatch.setattr("core.orchestrators.calendar_archive_orchestrator.MSGraphAppointmentRepository", repo_factory)
+
+    # Mock the AuditContext to avoid database operations
+    from unittest.mock import Mock, patch
+    mock_audit_context = Mock()
+    mock_audit_context.__enter__ = Mock(return_value=mock_audit_context)
+    mock_audit_context.__exit__ = Mock(return_value=None)
+    mock_audit_context.set_request_data = Mock()
+    mock_audit_context.add_detail = Mock()
+    mock_audit_context.set_response_data = Mock()
+
     # Simulate DB commit failure
     def fail_commit():
         raise Exception("DB commit failed")
     db_session.commit = fail_commit
-    orchestrator = CalendarArchiveOrchestrator()
-    result = orchestrator.archive_user_appointments(
-        user=user,
-        msgraph_client=msgraph_client,
-        source_calendar_uri="source",
-        archive_calendar_id="archive",
-        start_date=date.today(),
-        end_date=date.today() + timedelta(days=1),
-        db_session=db_session,
-        logger=None
-    )
+
+    with patch("core.orchestrators.calendar_archive_orchestrator.AuditContext", return_value=mock_audit_context):
+        orchestrator = CalendarArchiveOrchestrator()
+        result = orchestrator.archive_user_appointments(
+            user=user,
+            msgraph_client=msgraph_client,
+            source_calendar_uri="source",
+            archive_calendar_id="archive",
+            start_date=date.today(),
+            end_date=date.today() + timedelta(days=1),
+            db_session=db_session,
+            logger=None
+        )
     assert result["archived_count"] == 0
     assert result["overlap_count"] == 0
     assert result["errors"]

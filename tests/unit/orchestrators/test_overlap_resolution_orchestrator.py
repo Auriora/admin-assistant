@@ -324,8 +324,8 @@ class TestOverlapResolutionOrchestrator:
 
     @patch('core.utilities.audit_logging_utility.AuditContext')
     @patch('core.repositories.appointment_repository_sqlalchemy.SQLAlchemyAppointmentRepository')
-    @patch('core.utilities.audit_logging_utility.AuditLogHelper')
-    def test_resolve_overlap_edit_appointments(self, mock_audit_helper, mock_repo_class, mock_audit_context):
+    @patch('core.utilities.audit_logging_utility.AuditLogHelper.log_data_modification')
+    def test_resolve_overlap_edit_appointments(self, mock_log_data_modification, mock_repo_class, mock_audit_context):
         """Test resolving overlap with edit actions"""
         # Arrange
         action_log_id = 123

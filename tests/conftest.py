@@ -23,6 +23,11 @@ from core.models.calendar import Calendar
 from core.models.archive_configuration import ArchiveConfiguration
 from core.models.action_log import ActionLog
 from core.models.audit_log import AuditLog
+from core.models.chat_session import ChatSession
+from core.models.entity_association import EntityAssociation
+from core.models.job_configuration import JobConfiguration
+from core.models.prompt import Prompt
+from core.models.timesheet import Timesheet
 
 
 @pytest.fixture(scope="session")
