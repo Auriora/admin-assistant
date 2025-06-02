@@ -11,6 +11,8 @@ from unittest.mock import MagicMock, AsyncMock
 
 # Set test environment
 os.environ['APP_ENV'] = 'testing'
+os.environ['DATABASE_URL'] = 'sqlite:///:memory:'
+os.environ['CORE_DATABASE_URL'] = 'sqlite:///:memory:'
 
 from core.db import Base
 from core.models.user import User

@@ -94,20 +94,25 @@ class TestAuthUtility:
         mock_cache = MagicMock()
         mock_msal.return_value = mock_app
         mock_cache_class.return_value = mock_cache
-        
+
+        # Mock file stat to simulate secure permissions
+        mock_stat = MagicMock()
+        mock_stat.st_mode = 0o600  # Secure permissions
+
         with patch.dict(os.environ, {
             'MS_CLIENT_ID': 'test_client_id',
             'MS_TENANT_ID': 'test_tenant_id'
         }):
             with patch('core.utilities.auth_utility.os.path.exists', return_value=True):
-                with patch('builtins.open', mock_open(read_data='cached_data')):
-                    # Act
-                    app, cache = get_msal_app()
-                    
-                    # Assert
-                    assert app == mock_app
-                    assert cache == mock_cache
-                    mock_cache.deserialize.assert_called_once_with('cached_data')
+                with patch('core.utilities.auth_utility.os.stat', return_value=mock_stat):
+                    with patch('builtins.open', mock_open(read_data='cached_data')):
+                        # Act
+                        app, cache = get_msal_app()
+
+                        # Assert
+                        assert app == mock_app
+                        assert cache == mock_cache
+                        mock_cache.deserialize.assert_called_once_with('cached_data')
     
     def test_get_msal_app_missing_environment_variables(self):
         """Test MSAL app creation fails with missing environment variables"""

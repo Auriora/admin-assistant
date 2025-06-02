@@ -80,6 +80,12 @@ class TestArchivingFlowIntegration:
         # Mock archive repository
         mock_archive_repo.add = MagicMock()
         
+        # Create audit service with test session
+        from core.repositories.audit_log_repository import AuditLogRepository
+        from core.services.audit_log_service import AuditLogService
+        audit_repo = AuditLogRepository(session=db_session)
+        audit_service = AuditLogService(repository=audit_repo)
+
         # Execute archiving
         result = orchestrator.archive_user_appointments(
             user=test_user,
@@ -88,7 +94,8 @@ class TestArchivingFlowIntegration:
             archive_calendar_id="archive-calendar",
             start_date=date(2025, 6, 1),
             end_date=date(2025, 6, 2),
-            db_session=db_session
+            db_session=db_session,
+            audit_service=audit_service
         )
         
         # Verify results
@@ -133,7 +140,13 @@ class TestArchivingFlowIntegration:
         mock_repo_class.side_effect = [mock_source_repo, mock_archive_repo]
         
         mock_source_repo.list_for_user.return_value = overlapping_appointments
-        
+
+        # Create audit service with test session
+        from core.repositories.audit_log_repository import AuditLogRepository
+        from core.services.audit_log_service import AuditLogService
+        audit_repo = AuditLogRepository(session=db_session)
+        audit_service = AuditLogService(repository=audit_repo)
+
         # Execute archiving
         result = orchestrator.archive_user_appointments(
             user=test_user,
@@ -142,7 +155,8 @@ class TestArchivingFlowIntegration:
             archive_calendar_id="archive-calendar",
             start_date=date(2025, 6, 1),
             end_date=date(2025, 6, 1),
-            db_session=db_session
+            db_session=db_session,
+            audit_service=audit_service
         )
         
         # Verify overlap handling
@@ -246,7 +260,13 @@ class TestArchivingFlowIntegration:
                 raise Exception("Archive failed")
         
         mock_archive_repo.add.side_effect = mock_add
-        
+
+        # Create audit service with test session
+        from core.repositories.audit_log_repository import AuditLogRepository
+        from core.services.audit_log_service import AuditLogService
+        audit_repo = AuditLogRepository(session=db_session)
+        audit_service = AuditLogService(repository=audit_repo)
+
         # Execute archiving
         result = orchestrator.archive_user_appointments(
             user=test_user,
@@ -255,7 +275,8 @@ class TestArchivingFlowIntegration:
             archive_calendar_id="archive-calendar",
             start_date=date(2025, 6, 1),
             end_date=date(2025, 6, 2),
-            db_session=db_session
+            db_session=db_session,
+            audit_service=audit_service
         )
         
         # Verify error handling

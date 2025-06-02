@@ -93,6 +93,7 @@ class CalendarArchiveOrchestrator:
         end_date: date,
         db_session: Session,
         logger: Optional[Any] = None,
+        audit_service: Optional[Any] = None,
     ) -> Dict[str, Any]:
         """
         Archive appointments from a user's MS Graph calendar to an archive calendar, logging overlaps locally.
@@ -111,7 +112,10 @@ class CalendarArchiveOrchestrator:
         operation_start_time = time.time()
 
         # Initialize audit logging
-        audit_service = AuditLogService()
+        if audit_service is None:
+            from core.repositories.audit_log_repository import AuditLogRepository
+            audit_repo = AuditLogRepository(session=db_session)
+            audit_service = AuditLogService(repository=audit_repo)
         correlation_id = audit_service.generate_correlation_id()
 
         # Start OpenTelemetry span

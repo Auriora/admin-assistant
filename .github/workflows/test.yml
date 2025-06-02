@@ -57,8 +57,11 @@ jobs:
       run: |
         echo "APP_ENV=testing" >> $GITHUB_ENV
         echo "DATABASE_URL=sqlite:///:memory:" >> $GITHUB_ENV
+        echo "CORE_DATABASE_URL=sqlite:///:memory:" >> $GITHUB_ENV
         echo "LOG_LEVEL=INFO" >> $GITHUB_ENV
         echo "OTEL_SDK_DISABLED=true" >> $GITHUB_ENV
+        # Create instance directory for any file-based operations
+        mkdir -p instance
 
     - name: Run tests with coverage
       run: |

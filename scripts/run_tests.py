@@ -17,11 +17,16 @@ def setup_test_environment():
     """Setup test environment variables."""
     os.environ['APP_ENV'] = 'testing'
     os.environ['DATABASE_URL'] = 'sqlite:///:memory:'
+    os.environ['CORE_DATABASE_URL'] = 'sqlite:///:memory:'
     os.environ['LOG_LEVEL'] = 'INFO'
 
     # Disable OpenTelemetry for tests unless explicitly enabled
     if 'ENABLE_OTEL_IN_TESTS' not in os.environ:
         os.environ['OTEL_SDK_DISABLED'] = 'true'
+
+    # Create instance directory for any file-based operations
+    instance_dir = project_root / 'instance'
+    instance_dir.mkdir(exist_ok=True)
 
 def run_unit_tests(verbose=False, coverage=False):
     """Run unit tests."""
