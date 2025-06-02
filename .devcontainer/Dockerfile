@@ -20,13 +20,8 @@ USER devuser
 # Set working directory
 WORKDIR /workspace
 
-# Copy pyproject.toml and install Python dependencies
-COPY --chown=devuser:devuser pyproject.toml ./
-RUN pip install --upgrade pip \
-    && pip install -e .[dev]
-
-# Copy the rest of the codebase
-COPY --chown=devuser:devuser . .
+# Install common Python development tools
+RUN pip install --upgrade pip setuptools wheel
 
 # Default command (can be overridden by devcontainer.json)
 CMD ["sleep", "infinity"] 
