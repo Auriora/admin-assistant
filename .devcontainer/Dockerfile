@@ -20,10 +20,10 @@ USER devuser
 # Set working directory
 WORKDIR /workspace
 
-# Copy requirements and install Python dependencies
-COPY --chown=devuser:devuser requirements.txt ./
+# Copy pyproject.toml and install Python dependencies
+COPY --chown=devuser:devuser pyproject.toml ./
 RUN pip install --upgrade pip \
-    && pip install -r requirements.txt
+    && pip install -e .[dev]
 
 # Copy the rest of the codebase
 COPY --chown=devuser:devuser . .

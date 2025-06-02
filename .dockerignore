@@ -61,5 +61,5 @@ docs/
 logs/
 instance/
 
-# Do NOT ignore requirements.txt!
-!requirements.txt 
+# Do NOT ignore pyproject.toml!
+!pyproject.toml
