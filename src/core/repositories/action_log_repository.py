@@ -66,7 +66,8 @@ class ActionLogRepository:
 
     def list_pending_overlaps(self) -> List[ActionLog]:
         """List all pending overlap resolution tasks."""
-        return self.session.query(ActionLog).filter_by(
-            event_type="overlap_resolution",
-            state="pending"
-        ).all()
+        return (
+            self.session.query(ActionLog)
+            .filter_by(event_type="overlap_resolution", state="pending")
+            .all()
+        )

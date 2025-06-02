@@ -53,7 +53,9 @@ class ArchiveConfigurationRepository:
             query = query.filter_by(user_id=user_id)
         return query.all()
 
-    def get_by_name(self, name: str, user_id: Optional[int] = None) -> Optional[ArchiveConfiguration]:
+    def get_by_name(
+        self, name: str, user_id: Optional[int] = None
+    ) -> Optional[ArchiveConfiguration]:
         """Retrieve an ArchiveConfiguration by its name, optionally filtered by user."""
         query = self.session.query(ArchiveConfiguration).filter_by(name=name)
         if user_id is not None:

@@ -103,7 +103,9 @@ def resolve_cli_user(cli_user_input: Optional[str] = None) -> User:
         if not user:
             source = get_user_identifier_source(cli_user_input)
             typer.echo(f"No user identifier found from {source}.")
-            typer.echo("Please specify --user <username_or_id> or set ADMIN_ASSISTANT_USER environment variable.")
+            typer.echo(
+                "Please specify --user <username_or_id> or set ADMIN_ASSISTANT_USER environment variable."
+            )
             raise typer.Exit(code=1)
         return user
     except ValueError as e:
@@ -335,7 +337,9 @@ def list_category(
             )
             return
 
-        table = Table(title=f"Categories for user {user.id} ({user.username or user.email}) (store: {store})")
+        table = Table(
+            title=f"Categories for user {user.id} ({user.username or user.email}) (store: {store})"
+        )
         table.add_column("ID", style="cyan", no_wrap=True)
         table.add_column("Name", style="green")
         table.add_column("Description", style="white")
@@ -941,7 +945,9 @@ def list_configs(user_input: Optional[str] = user_option):
                 f"[yellow]No archive configurations found for user {user.id} ({user.username or user.email}).[/yellow]"
             )
             return
-        table = Table(title=f"Archive Configurations for user {user.id} ({user.username or user.email})")
+        table = Table(
+            title=f"Archive Configurations for user {user.id} ({user.username or user.email})"
+        )
         table.add_column("ID", style="cyan", no_wrap=True)
         table.add_column("Name", style="green")
         table.add_column("Source", style="magenta")
@@ -997,7 +1003,9 @@ def create_config(
         if not name:
             name = typer.prompt("Name for the archive configuration")
         if not source_calendar_uri:
-            source_calendar_uri = typer.prompt("Source calendar URI (e.g., msgraph://id)")
+            source_calendar_uri = typer.prompt(
+                "Source calendar URI (e.g., msgraph://id)"
+            )
         if not destination_calendar_uri:
             destination_calendar_uri = typer.prompt(
                 "Destination (archive) calendar URI (e.g., msgraph://id)"
@@ -1055,7 +1063,9 @@ def activate_config(
         service = ArchiveConfigurationService()
         config = service.get_by_id(config_id)
         if not config or getattr(config, "user_id", None) != user.id:
-            typer.echo(f"Config {config_id} not found for user {user.id} ({user.username or user.email}).")
+            typer.echo(
+                f"Config {config_id} not found for user {user.id} ({user.username or user.email})."
+            )
             raise typer.Exit(code=1)
         setattr(config, "is_active", True)
         service.update(config)
@@ -1082,7 +1092,9 @@ def deactivate_config(
         service = ArchiveConfigurationService()
         config = service.get_by_id(config_id)
         if not config or getattr(config, "user_id", None) != user.id:
-            typer.echo(f"Config {config_id} not found for user {user.id} ({user.username or user.email}).")
+            typer.echo(
+                f"Config {config_id} not found for user {user.id} ({user.username or user.email})."
+            )
             raise typer.Exit(code=1)
         setattr(config, "is_active", False)
         service.update(config)
@@ -1109,7 +1121,9 @@ def delete_config(
         service = ArchiveConfigurationService()
         config = service.get_by_id(config_id)
         if not config or getattr(config, "user_id", None) != user.id:
-            typer.echo(f"Config {config_id} not found for user {user.id} ({user.username or user.email}).")
+            typer.echo(
+                f"Config {config_id} not found for user {user.id} ({user.username or user.email})."
+            )
             raise typer.Exit(code=1)
         service.delete(config_id)
         typer.echo(f"Config {config_id} deleted.")
@@ -1137,7 +1151,9 @@ def export(
     try:
         # Get user
         user = resolve_cli_user(user_input)
-        typer.echo(f"Exporting timesheet as {output} for user {user.id} ({user.username or user.email})")
+        typer.echo(
+            f"Exporting timesheet as {output} for user {user.id} ({user.username or user.email})"
+        )
     except Exception as e:
         typer.echo(f"Failed to export timesheet: {e}")
         raise typer.Exit(code=1)
@@ -1152,7 +1168,9 @@ def upload(
     try:
         # Get user
         user = resolve_cli_user(user_input)
-        typer.echo(f"Uploading timesheet to {destination} for user {user.id} ({user.username or user.email})")
+        typer.echo(
+            f"Uploading timesheet to {destination} for user {user.id} ({user.username or user.email})"
+        )
     except Exception as e:
         typer.echo(f"Failed to upload timesheet: {e}")
         raise typer.Exit(code=1)
@@ -1557,7 +1575,9 @@ def get_calendars_for_user(
     user_repo = UserRepository(session)
     user = user_repo.get_by_id(user_id)
     if not user:
-        raise ValueError(f"No user found for user {user.id} ({user.username or user.email}).")
+        raise ValueError(
+            f"No user found for user {user.id} ({user.username or user.email})."
+        )
 
     calendars = []
     if datastore in ("local", "all"):
@@ -1685,7 +1705,9 @@ def list_calendars(
                 f"[yellow]No calendars found for user {user.id} ({user.username or user.email}) in datastore '{datastore}'.[/yellow]"
             )
             raise typer.Exit(code=0)
-        table = Table(title=f"Calendars for user {user.id} ({user.username or user.email}) (datastore: {datastore})")
+        table = Table(
+            title=f"Calendars for user {user.id} ({user.username or user.email}) (datastore: {datastore})"
+        )
         table.add_column("Source", style="cyan", no_wrap=True)
         table.add_column("Name", style="green")
         table.add_column("Description", style="white")
