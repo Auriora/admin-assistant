@@ -63,7 +63,7 @@ from core.services import UserService
 from core.services.calendar_service import CalendarService
 from core.utilities import get_graph_client
 from core.utilities.auth_utility import get_cached_access_token
-from core.utilities.user_resolution import resolve_user, get_user_identifier_source
+from core.utilities.user_resolution import get_user_identifier_source, resolve_user
 
 app = typer.Typer(
     help="Admin Assistant CLI for running calendar and timesheet operations."
