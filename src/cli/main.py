@@ -44,6 +44,18 @@ from rich.console import Console
 from rich.table import Table
 from sqlalchemy.orm.attributes import InstrumentedAttribute
 
+# Load environment variables from .env file in current working directory
+try:
+    from dotenv import load_dotenv
+
+    # Load environment variables from .env file in current working directory
+    if os.path.exists(".env"):
+        load_dotenv(".env")
+
+except ImportError:
+    # python-dotenv not available, continue without loading .env files
+    pass
+
 from core.db import get_session
 from core.models.user import User
 from core.orchestrators.archive_job_runner import ArchiveJobRunner
@@ -608,6 +620,9 @@ def validate_category(
     console = Console()
 
     try:
+        # Get user first
+        user = resolve_cli_user(user_input)
+
         # Parse date range
         if start_date or end_date:
             if start_date and end_date:
@@ -627,15 +642,8 @@ def validate_category(
 
         # Get appointments directly from database for all calendars
         from core.models.appointment import Appointment
-        from core.services import UserService
 
         session = get_session()
-        user_service = UserService()
-        user = user_service.get_by_id(user_id)
-
-        if not user:
-            console.print(f"[red]No user found for user {user.id} ({user.username or user.email}).[/red]")
-            raise typer.Exit(code=1)
 
         # Query appointments for the user within the date range
         from datetime import datetime, timezone
@@ -757,6 +765,9 @@ def analyze_overlaps(
     console = Console()
 
     try:
+        # Get user first
+        user = resolve_cli_user(user_input)
+
         # Parse date range
         if start_date or end_date:
             if start_date and end_date:
@@ -776,12 +787,6 @@ def analyze_overlaps(
 
         # Get appointments directly from database for all calendars
         session = get_session()
-        user_service = UserService()
-        user = user_service.get_by_id(user_id)
-
-        if not user:
-            console.print(f"[red]No user found for user {user.id} ({user.username or user.email}).[/red]")
-            raise typer.Exit(code=1)
 
         # Query appointments for the user within the date range
         from datetime import datetime, timezone
@@ -924,31 +929,39 @@ def list_configs(user_input: Optional[str] = user_option):
     """List all archive configurations for a user."""
     from core.services.archive_configuration_service import ArchiveConfigurationService
 
-    service = ArchiveConfigurationService()
-    configs = service.list_for_user(user_id)
-    console = Console()
-    if not configs:
-        console.print(
-            f"[yellow]No archive configurations found for user {user.id} ({user.username or user.email}).[/yellow]"
-        )
-        raise typer.Exit(code=0)
-    table = Table(title=f"Archive Configurations for user {user.id} ({user.username or user.email})")
-    table.add_column("ID", style="cyan", no_wrap=True)
-    table.add_column("Name", style="green")
-    table.add_column("Source", style="magenta")
-    table.add_column("Dest", style="magenta")
-    table.add_column("Active", style="yellow")
-    table.add_column("TZ", style="blue")
-    for c in configs:
-        table.add_row(
-            str(getattr(c, "id", "")),
-            str(getattr(c, "name", "")),
-            str(getattr(c, "source_calendar_uri", "")),
-            str(getattr(c, "destination_calendar_uri", "")),
-            "✔" if getattr(c, "is_active", False) else "✗",
-            str(getattr(c, "timezone", "")),
-        )
-    console.print(table)
+    try:
+        # Get user
+        user = resolve_cli_user(user_input)
+
+        service = ArchiveConfigurationService()
+        configs = service.list_for_user(user.id)
+        console = Console()
+        if not configs:
+            console.print(
+                f"[yellow]No archive configurations found for user {user.id} ({user.username or user.email}).[/yellow]"
+            )
+            raise typer.Exit(code=0)
+        table = Table(title=f"Archive Configurations for user {user.id} ({user.username or user.email})")
+        table.add_column("ID", style="cyan", no_wrap=True)
+        table.add_column("Name", style="green")
+        table.add_column("Source", style="magenta")
+        table.add_column("Dest", style="magenta")
+        table.add_column("Active", style="yellow")
+        table.add_column("TZ", style="blue")
+        for c in configs:
+            table.add_row(
+                str(getattr(c, "id", "")),
+                str(getattr(c, "name", "")),
+                str(getattr(c, "source_calendar_uri", "")),
+                str(getattr(c, "destination_calendar_uri", "")),
+                "✔" if getattr(c, "is_active", False) else "✗",
+                str(getattr(c, "timezone", "")),
+            )
+        console.print(table)
+    except Exception as e:
+        console = Console()
+        console.print(f"[red]Error listing archive configurations: {e}[/red]")
+        raise typer.Exit(code=1)
 
 
 @archive_archive_config_app.command("create")
@@ -974,31 +987,34 @@ def create_config(
     from core.models.archive_configuration import ArchiveConfiguration
     from core.services.archive_configuration_service import ArchiveConfigurationService
 
-    # Get system timezone
-    system_timezone = tzlocal.get_localzone_name()
-    # Prompt for missing fields
-    if not name:
-        name = typer.prompt("Name for the archive configuration")
-    if not source_calendar_uri:
-        source_calendar_uri = typer.prompt("Source calendar URI (e.g., msgraph://id)")
-    if not destination_calendar_uri:
-        destination_calendar_uri = typer.prompt(
-            "Destination (archive) calendar URI (e.g., msgraph://id)"
-        )
-    if not timezone:
-        timezone = typer.prompt(
-            "Timezone (IANA format, e.g., Europe/London)", default=system_timezone
-        )
-    config = ArchiveConfiguration(
-        user_id=user.id,
-        name=name,
-        source_calendar_uri=source_calendar_uri,
-        destination_calendar_uri=destination_calendar_uri,
-        is_active=is_active,
-        timezone=timezone,
-    )
-    service = ArchiveConfigurationService()
     try:
+        # Get user
+        user = resolve_cli_user(user_input)
+
+        # Get system timezone
+        system_timezone = tzlocal.get_localzone_name()
+        # Prompt for missing fields
+        if not name:
+            name = typer.prompt("Name for the archive configuration")
+        if not source_calendar_uri:
+            source_calendar_uri = typer.prompt("Source calendar URI (e.g., msgraph://id)")
+        if not destination_calendar_uri:
+            destination_calendar_uri = typer.prompt(
+                "Destination (archive) calendar URI (e.g., msgraph://id)"
+            )
+        if not timezone:
+            timezone = typer.prompt(
+                "Timezone (IANA format, e.g., Europe/London)", default=system_timezone
+            )
+        config = ArchiveConfiguration(
+            user_id=user.id,
+            name=name,
+            source_calendar_uri=source_calendar_uri,
+            destination_calendar_uri=destination_calendar_uri,
+            is_active=is_active,
+            timezone=timezone,
+        )
+        service = ArchiveConfigurationService()
         service.create(config)
         typer.echo(f"Created archive configuration: {config}")
     except Exception as e:
@@ -1032,14 +1048,21 @@ def activate_config(
     """Activate an archive configuration (set is_active=True)."""
     from core.services.archive_configuration_service import ArchiveConfigurationService
 
-    service = ArchiveConfigurationService()
-    config = service.get_by_id(config_id)
-    if not config or getattr(config, "user_id", None) != user_id:
-        typer.echo(f"Config {config_id} not found for user {user.id} ({user.username or user.email}).")
+    try:
+        # Get user
+        user = resolve_cli_user(user_input)
+
+        service = ArchiveConfigurationService()
+        config = service.get_by_id(config_id)
+        if not config or getattr(config, "user_id", None) != user.id:
+            typer.echo(f"Config {config_id} not found for user {user.id} ({user.username or user.email}).")
+            raise typer.Exit(code=1)
+        setattr(config, "is_active", True)
+        service.update(config)
+        typer.echo(f"Config {config_id} activated.")
+    except Exception as e:
+        typer.echo(f"Failed to activate config: {e}")
         raise typer.Exit(code=1)
-    setattr(config, "is_active", True)
-    service.update(config)
-    typer.echo(f"Config {config_id} activated.")
 
 
 @archive_archive_config_app.command("deactivate")
@@ -1052,14 +1075,21 @@ def deactivate_config(
     """Deactivate an archive configuration (set is_active=False)."""
     from core.services.archive_configuration_service import ArchiveConfigurationService
 
-    service = ArchiveConfigurationService()
-    config = service.get_by_id(config_id)
-    if not config or getattr(config, "user_id", None) != user_id:
-        typer.echo(f"Config {config_id} not found for user {user.id} ({user.username or user.email}).")
+    try:
+        # Get user
+        user = resolve_cli_user(user_input)
+
+        service = ArchiveConfigurationService()
+        config = service.get_by_id(config_id)
+        if not config or getattr(config, "user_id", None) != user.id:
+            typer.echo(f"Config {config_id} not found for user {user.id} ({user.username or user.email}).")
+            raise typer.Exit(code=1)
+        setattr(config, "is_active", False)
+        service.update(config)
+        typer.echo(f"Config {config_id} deactivated.")
+    except Exception as e:
+        typer.echo(f"Failed to deactivate config: {e}")
         raise typer.Exit(code=1)
-    setattr(config, "is_active", False)
-    service.update(config)
-    typer.echo(f"Config {config_id} deactivated.")
 
 
 @archive_archive_config_app.command("delete")
@@ -1072,13 +1102,20 @@ def delete_config(
     """Delete an archive configuration by ID."""
     from core.services.archive_configuration_service import ArchiveConfigurationService
 
-    service = ArchiveConfigurationService()
-    config = service.get_by_id(config_id)
-    if not config or getattr(config, "user_id", None) != user_id:
-        typer.echo(f"Config {config_id} not found for user {user.id} ({user.username or user.email}).")
+    try:
+        # Get user
+        user = resolve_cli_user(user_input)
+
+        service = ArchiveConfigurationService()
+        config = service.get_by_id(config_id)
+        if not config or getattr(config, "user_id", None) != user.id:
+            typer.echo(f"Config {config_id} not found for user {user.id} ({user.username or user.email}).")
+            raise typer.Exit(code=1)
+        service.delete(config_id)
+        typer.echo(f"Config {config_id} deleted.")
+    except Exception as e:
+        typer.echo(f"Failed to delete config: {e}")
         raise typer.Exit(code=1)
-    service.delete(config_id)
-    typer.echo(f"Config {config_id} deleted.")
 
 
 # Add archive config commands to archive_config_app as "archive" subcommand
@@ -1097,7 +1134,13 @@ def export(
     user_input: Optional[str] = user_option,
 ):
     """Export timesheet data."""
-    typer.echo(f"Exporting timesheet as {output} for user {user.id} ({user.username or user.email})")
+    try:
+        # Get user
+        user = resolve_cli_user(user_input)
+        typer.echo(f"Exporting timesheet as {output} for user {user.id} ({user.username or user.email})")
+    except Exception as e:
+        typer.echo(f"Failed to export timesheet: {e}")
+        raise typer.Exit(code=1)
 
 
 @timesheet_app.command("upload")
@@ -1106,7 +1149,13 @@ def upload(
     user_input: Optional[str] = user_option,
 ):
     """Upload timesheet."""
-    typer.echo(f"Uploading timesheet to {destination} for user {user.id} ({user.username or user.email})")
+    try:
+        # Get user
+        user = resolve_cli_user(user_input)
+        typer.echo(f"Uploading timesheet to {destination} for user {user.id} ({user.username or user.email})")
+    except Exception as e:
+        typer.echo(f"Failed to upload timesheet: {e}")
+        raise typer.Exit(code=1)
 
 
 app.add_typer(category_app, name="category")
@@ -1143,6 +1192,9 @@ def schedule_archive_job(
     console = Console()
 
     try:
+        # Get user
+        user = resolve_cli_user(user_input)
+
         # Initialize services (without Flask app context)
         scheduler = APScheduler()
         background_job_service = BackgroundJobService(scheduler)
@@ -1228,6 +1280,9 @@ def trigger_manual_archive(
     console = Console()
 
     try:
+        # Get user
+        user = resolve_cli_user(user_input)
+
         # Parse dates
         start_dt = None
         end_dt = None
@@ -1274,15 +1329,18 @@ def get_job_status(user_input: Optional[str] = user_option):
     console = Console()
 
     try:
+        # Get user
+        user = resolve_cli_user(user_input)
+
         # Initialize services (without Flask app context)
         scheduler = APScheduler()
         background_job_service = BackgroundJobService(scheduler)
         scheduled_archive_service = ScheduledArchiveService(background_job_service)
 
         # Get status
-        status = scheduled_archive_service.get_user_schedule_status(user_id)
+        status = scheduled_archive_service.get_user_schedule_status(user.id)
 
-        console.print(f"[bold]Job Status for User {user_id}[/bold]")
+        console.print(f"[bold]Job Status for User {user.id}[/bold]")
         console.print(f"Has Schedule: {'✓' if status['has_schedule'] else '✗'}")
 
         # Show active configurations
@@ -1344,22 +1402,25 @@ def remove_scheduled_jobs(
 
     console = Console()
 
-    if not confirm:
-        confirm = typer.confirm(
-            f"Are you sure you want to remove all scheduled jobs for user {user.id} ({user.username or user.email})?"
-        )
-        if not confirm:
-            console.print("[yellow]Operation cancelled.[/yellow]")
-            raise typer.Exit(code=0)
-
     try:
+        # Get user
+        user = resolve_cli_user(user_input)
+
+        if not confirm:
+            confirm = typer.confirm(
+                f"Are you sure you want to remove all scheduled jobs for user {user.id} ({user.username or user.email})?"
+            )
+            if not confirm:
+                console.print("[yellow]Operation cancelled.[/yellow]")
+                raise typer.Exit(code=0)
+
         # Initialize services (without Flask app context)
         scheduler = APScheduler()
         background_job_service = BackgroundJobService(scheduler)
         scheduled_archive_service = ScheduledArchiveService(background_job_service)
 
         # Remove jobs
-        result = scheduled_archive_service.remove_user_schedule(user_id)
+        result = scheduled_archive_service.remove_user_schedule(user.id)
 
         if result["removed_jobs"]:
             console.print("[green]Successfully removed jobs:[/green]")
@@ -1716,23 +1777,21 @@ def create_calendar(
     if not name:
         name = typer.prompt("Name for the calendar")
 
-    session = get_session() if store == "local" else None
-    user_service = UserService()
-    user = user_service.get_by_id(user_id)
-    if not user:
-        console.print(f"[red]No user found for user {user.id} ({user.username or user.email}).[/red]")
-        raise typer.Exit(code=1)
-
-    calendar = Calendar(
-        user_id=user.id,
-        name=name,
-        description=description,
-        calendar_type="real",  # default
-        is_primary=False,  # default
-        is_active=True,  # default
-    )
-
     try:
+        # Get user
+        user = resolve_cli_user(user_input)
+
+        session = get_session() if store == "local" else None
+
+        calendar = Calendar(
+            user_id=user.id,
+            name=name,
+            description=description,
+            calendar_type="real",  # default
+            is_primary=False,  # default
+            is_active=True,  # default
+        )
+
         if store == "local":
             repo = SQLAlchemyCalendarRepository(user, session=session)
         else:
