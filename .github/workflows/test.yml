@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.11', '3.12']
+        python-version: ['3.12', '3.13']
       fail-fast: false
 
     steps:
@@ -32,7 +32,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('**/requirements.txt') }}
+        key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('**/pyproject.toml') }}
         restore-keys: |
           ${{ runner.os }}-pip-${{ matrix.python-version }}-
           ${{ runner.os }}-pip-
@@ -51,7 +51,7 @@ jobs:
     - name: Install dependencies
       run: |
         source .venv/bin/activate
-        pip install -r requirements.txt
+        pip install -e .[dev]
 
     - name: Set up test environment
       run: |
@@ -63,7 +63,7 @@ jobs:
     - name: Run tests with coverage
       run: |
         source .venv/bin/activate
-        python -m pytest tests/ -v --cov=core --cov=web --cov=cli --cov-report=xml --cov-report=html --cov-report=term-missing --tb=short
+        python -m pytest tests/ -v --cov=src/core --cov=src/web --cov=src/cli --cov-report=xml --cov-report=html --cov-report=term-missing --tb=short
 
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v4
@@ -105,7 +105,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-lint-${{ hashFiles('**/requirements.txt') }}
+        key: ${{ runner.os }}-pip-lint-${{ hashFiles('**/pyproject.toml') }}
         restore-keys: |
           ${{ runner.os }}-pip-lint-
           ${{ runner.os }}-pip-
@@ -120,29 +120,29 @@ jobs:
       run: |
         source .venv/bin/activate
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
+        pip install -e .[dev]
         pip install flake8 black isort mypy
 
     - name: Run flake8
       run: |
         source .venv/bin/activate
-        flake8 core/ cli/ web/ --count --select=E9,F63,F7,F82 --show-source --statistics
-        flake8 core/ cli/ web/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        flake8 src/core/ src/cli/ src/web/ --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 src/core/ src/cli/ src/web/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
     - name: Check code formatting with black
       run: |
         source .venv/bin/activate
-        black --check --diff core/ cli/ web/
+        black --check --diff src/core/ src/cli/ src/web/
 
     - name: Check import sorting with isort
       run: |
         source .venv/bin/activate
-        isort --check-only --diff core/ cli/ web/
+        isort --check-only --diff src/core/ src/cli/ src/web/
 
     - name: Run type checking with mypy
       run: |
         source .venv/bin/activate
-        mypy core/ cli/ web/ --ignore-missing-imports || true
+        mypy src/core/ src/cli/ src/web/ --ignore-missing-imports || true
 
   security:
     runs-on: ubuntu-latest
@@ -166,4 +166,4 @@ jobs:
 
     - name: Run bandit security check
       run: |
-        bandit -r core/ cli/ web/ -f json || true
+        bandit -r src/core/ src/cli/ src/web/ -f json || true
