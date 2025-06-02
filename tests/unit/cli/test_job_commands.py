@@ -68,11 +68,15 @@ class TestJobCLICommands:
     
     def test_schedule_archive_job_weekly_success(self):
         """Test successful weekly archive job scheduling"""
-        with patch('flask_apscheduler.APScheduler') as mock_scheduler_class, \
+        with patch('cli.main.resolve_cli_user') as mock_resolve_user, \
+             patch('flask_apscheduler.APScheduler') as mock_scheduler_class, \
              patch('core.services.background_job_service.BackgroundJobService') as mock_bg_job_service_class, \
              patch('core.services.scheduled_archive_service.ScheduledArchiveService') as mock_scheduled_service_class:
 
             # Arrange
+            mock_user = Mock(id=1, email='test@example.com')
+            mock_resolve_user.return_value = mock_user
+
             mock_scheduler = Mock()
             mock_scheduler_class.return_value = mock_scheduler
 
@@ -147,61 +151,70 @@ class TestJobCLICommands:
             assert result.exit_code == 0
             assert 'No active archive configurations found' in result.output
     
-    @patch('core.services.user_service.UserService')
-    @patch('core.services.archive_configuration_service.ArchiveConfigurationService')
-    def test_schedule_archive_job_no_active_config(self, mock_archive_service_class,
-                                                  mock_user_service_class):
+    @patch('cli.main.resolve_cli_user')
+    @patch('flask_apscheduler.APScheduler')
+    @patch('core.services.background_job_service.BackgroundJobService')
+    @patch('core.services.scheduled_archive_service.ScheduledArchiveService')
+    def test_schedule_archive_job_no_active_config(self, mock_scheduled_service_class,
+                                                  mock_bg_job_service_class, mock_scheduler_class,
+                                                  mock_resolve_user):
         """Test job scheduling when no active archive config found"""
         # Arrange
         mock_user = Mock(id=1, email='test@example.com')
-        mock_user_service = Mock()
-        mock_user_service.get_by_id.return_value = mock_user
-        mock_user_service_class.return_value = mock_user_service
-        
-        mock_archive_service = Mock()
-        mock_archive_service.get_active_config_for_user.return_value = None
-        mock_archive_service_class.return_value = mock_archive_service
+        mock_resolve_user.return_value = mock_user
+
+        mock_scheduler = Mock()
+        mock_scheduler_class.return_value = mock_scheduler
+
+        mock_bg_service = Mock()
+        mock_bg_job_service_class.return_value = mock_bg_service
+
+        # Empty result when no active configs found
+        mock_result = {'updated_jobs': [], 'failed_jobs': []}
+        mock_scheduled_service = Mock()
+        mock_scheduled_service.update_user_schedule.return_value = mock_result
+        mock_scheduled_service_class.return_value = mock_scheduled_service
         
         # Act
         result = self.runner.invoke(jobs_app, [
             'schedule', '--user', '1',
             '--type', 'daily'
         ])
-        
+
         # Assert
-        # The test is actually succeeding (exit code 0) because the mocking is working
-        # Let's check for the actual behavior
         assert result.exit_code == 0
-        assert 'Successfully scheduled jobs' in result.output
-        assert 'daily_archive_user_1_config_1' in result.output
+        assert 'No active archive configurations found' in result.output
     
-    def test_schedule_archive_job_invalid_schedule_type(self):
+    @patch('cli.main.resolve_cli_user')
+    def test_schedule_archive_job_invalid_schedule_type(self, mock_resolve_user):
         """Test job scheduling with invalid schedule type"""
+        # Arrange
+        mock_user = Mock(id=1, email='test@example.com')
+        mock_resolve_user.return_value = mock_user
+
         # Act
         result = self.runner.invoke(jobs_app, [
             'schedule', '--user', '1',
             '--type', 'invalid'
         ])
-        
+
         # Assert
         assert result.exit_code == 1
         assert 'Invalid schedule type' in result.output
     
-    @patch('core.services.user_service.UserService')
+    @patch('cli.main.resolve_cli_user')
     @patch('core.services.archive_configuration_service.ArchiveConfigurationService')
     @patch('flask_apscheduler.APScheduler')
     @patch('core.services.background_job_service.BackgroundJobService')
     @patch('cli.main.parse_date_range')
     def test_trigger_manual_archive_success(self, mock_parse_date_range,
                                            mock_bg_job_service_class, mock_scheduler_class,
-                                           mock_archive_service_class, mock_user_service_class):
+                                           mock_archive_service_class, mock_resolve_user):
         """Test successful manual archive job trigger"""
         # Arrange
         mock_user = Mock(id=1, email='test@example.com')
-        mock_user_service = Mock()
-        mock_user_service.get_by_id.return_value = mock_user
-        mock_user_service_class.return_value = mock_user_service
-        
+        mock_resolve_user.return_value = mock_user
+
         mock_config = Mock(id=1, name='Default Archive', is_active=True)
         mock_archive_service = Mock()
         mock_archive_service.get_active_config_for_user.return_value = mock_config
@@ -294,18 +307,16 @@ class TestJobCLICommands:
         # Check for error message instead
         assert 'status' in result.output.lower() or result.exception is not None
     
-    @patch('core.services.user_service.UserService')
+    @patch('cli.main.resolve_cli_user')
     @patch('core.services.scheduled_archive_service.ScheduledArchiveService')
     @patch('flask_apscheduler.APScheduler')
     @patch('core.services.background_job_service.BackgroundJobService')
     def test_remove_scheduled_jobs_success(self, mock_bg_job_service_class, mock_scheduler_class,
-                                          mock_scheduled_service_class, mock_user_service_class):
+                                          mock_scheduled_service_class, mock_resolve_user):
         """Test successful job removal with confirmation"""
         # Arrange
         mock_user = Mock(id=1, email='test@example.com')
-        mock_user_service = Mock()
-        mock_user_service.get_by_id.return_value = mock_user
-        mock_user_service_class.return_value = mock_user_service
+        mock_resolve_user.return_value = mock_user
         
         mock_result = {
             'removed_jobs': ['job_123', 'job_456'],

@@ -31,19 +31,22 @@ class TestOverlapAnalysisCLI:
         appointment.ms_event_id = f"test-{subject.replace(' ', '-').lower()}"
         return appointment
     
-    @patch('core.db.get_session')
-    @patch('core.db.SessionLocal')
-    @patch('cli.main.UserService')
-    def test_analyze_overlaps_no_appointments(self, mock_user_service, mock_session_local, mock_get_session):
+    @patch('cli.main.resolve_cli_user')
+    @patch('cli.main.get_session')
+    @patch('cli.main.parse_flexible_date')
+    def test_analyze_overlaps_no_appointments(self, mock_parse_flexible_date, mock_get_session, mock_resolve_user):
         """Test analyze-overlaps command when no appointments are found"""
-        # Mock database session and user service
+        # Mock user resolution
+        mock_user = Mock(id=1, email='test@example.com')
+        mock_resolve_user.return_value = mock_user
+
+        # Mock date parsing
+        from datetime import date
+        mock_parse_flexible_date.side_effect = [date(2024, 1, 1), date(2024, 1, 2)]
+
+        # Mock database session
         mock_session = Mock()
         mock_get_session.return_value = mock_session
-        mock_session_local.return_value = mock_session
-
-        mock_user = Mock()
-        mock_user.id = 1
-        mock_user_service.return_value.get_by_id.return_value = mock_user
 
         # Mock the entire query chain to return empty results
         # We need to mock the session.query().filter().all() chain
@@ -62,28 +65,28 @@ class TestOverlapAnalysisCLI:
         ])
 
         # Verify the command executed successfully
-        print(f"Exit code: {result.exit_code}")
-        print(f"Stdout: {result.stdout}")
-        print(f"Exception: {result.exception}")
         assert result.exit_code == 0
-        assert "No appointments found" in result.stdout
+        assert "No appointments found" in result.output
     
-    @patch('core.db.get_session')
-    @patch('core.db.SessionLocal')
-    @patch('cli.main.UserService')
+    @patch('cli.main.resolve_cli_user')
+    @patch('cli.main.get_session')
+    @patch('cli.main.parse_flexible_date')
     @patch('core.utilities.calendar_recurrence_utility.expand_recurring_events_range')
     @patch('core.utilities.calendar_overlap_utility.detect_overlaps')
     def test_analyze_overlaps_no_overlaps_found(self, mock_detect_overlaps, mock_expand_recurring,
-                                               mock_user_service, mock_session_local, mock_get_session):
+                                               mock_parse_flexible_date, mock_get_session, mock_resolve_user):
         """Test analyze-overlaps command when no overlaps are found"""
-        # Mock database session and user service
+        # Mock user resolution
+        mock_user = Mock(id=1, email='test@example.com')
+        mock_resolve_user.return_value = mock_user
+
+        # Mock date parsing
+        from datetime import date
+        mock_parse_flexible_date.side_effect = [date(2024, 1, 1), date(2024, 1, 2)]
+
+        # Mock database session
         mock_session = Mock()
         mock_get_session.return_value = mock_session
-        mock_session_local.return_value = mock_session
-
-        mock_user = Mock()
-        mock_user.id = 1
-        mock_user_service.return_value.get_by_id.return_value = mock_user
 
         # Create mock appointments
         now = datetime.now(timezone.utc)
@@ -113,25 +116,28 @@ class TestOverlapAnalysisCLI:
         
         # Verify the command executed successfully
         assert result.exit_code == 0
-        assert "No overlapping appointments found" in result.stdout
-        assert "✓" in result.stdout
+        assert "No overlapping appointments found" in result.output
+        assert "✓" in result.output
     
-    @patch('core.db.get_session')
-    @patch('core.db.SessionLocal')
-    @patch('cli.main.UserService')
+    @patch('cli.main.resolve_cli_user')
+    @patch('cli.main.get_session')
+    @patch('cli.main.parse_flexible_date')
     @patch('core.utilities.calendar_recurrence_utility.expand_recurring_events_range')
     @patch('core.utilities.calendar_overlap_utility.detect_overlaps')
     def test_analyze_overlaps_with_overlaps_no_auto_resolve(self, mock_detect_overlaps, mock_expand_recurring,
-                                                           mock_user_service, mock_session_local, mock_get_session):
+                                                           mock_parse_flexible_date, mock_get_session, mock_resolve_user):
         """Test analyze-overlaps command when overlaps are found but auto-resolve is not enabled"""
-        # Mock database session and user service
+        # Mock user resolution
+        mock_user = Mock(id=1, email='test@example.com')
+        mock_resolve_user.return_value = mock_user
+
+        # Mock date parsing
+        from datetime import date
+        mock_parse_flexible_date.side_effect = [date(2024, 1, 1), date(2024, 1, 2)]
+
+        # Mock database session
         mock_session = Mock()
         mock_get_session.return_value = mock_session
-        mock_session_local.return_value = mock_session
-
-        mock_user = Mock()
-        mock_user.id = 1
-        mock_user_service.return_value.get_by_id.return_value = mock_user
 
         # Create overlapping mock appointments
         now = datetime.now(timezone.utc)
@@ -161,28 +167,31 @@ class TestOverlapAnalysisCLI:
         
         # Verify the command executed successfully
         assert result.exit_code == 0
-        assert "Found 1 overlap groups" in result.stdout
-        assert "Use --auto-resolve to apply automatic resolution rules" in result.stdout
-        assert "Meeting 1" in result.stdout
-        assert "Meeting 2" in result.stdout
+        assert "Found 1 overlap groups" in result.output
+        assert "Use --auto-resolve to apply automatic resolution rules" in result.output
+        assert "Meeting 1" in result.output
+        assert "Meeting 2" in result.output
     
-    @patch('core.db.get_session')
-    @patch('core.db.SessionLocal')
-    @patch('cli.main.UserService')
+    @patch('cli.main.resolve_cli_user')
+    @patch('cli.main.get_session')
+    @patch('cli.main.parse_flexible_date')
     @patch('core.utilities.calendar_recurrence_utility.expand_recurring_events_range')
     @patch('core.utilities.calendar_overlap_utility.detect_overlaps')
     @patch('core.services.enhanced_overlap_resolution_service.EnhancedOverlapResolutionService')
     def test_analyze_overlaps_with_auto_resolve(self, mock_overlap_service_class, mock_detect_overlaps,
-                                               mock_expand_recurring, mock_user_service, mock_session_local, mock_get_session):
+                                               mock_expand_recurring, mock_parse_flexible_date, mock_get_session, mock_resolve_user):
         """Test analyze-overlaps command with auto-resolve enabled"""
-        # Mock database session and user service
+        # Mock user resolution
+        mock_user = Mock(id=1, email='test@example.com')
+        mock_resolve_user.return_value = mock_user
+
+        # Mock date parsing
+        from datetime import date
+        mock_parse_flexible_date.side_effect = [date(2024, 1, 1), date(2024, 1, 2)]
+
+        # Mock database session
         mock_session = Mock()
         mock_get_session.return_value = mock_session
-        mock_session_local.return_value = mock_session
-
-        mock_user = Mock()
-        mock_user.id = 1
-        mock_user_service.return_value.get_by_id.return_value = mock_user
 
         # Create overlapping mock appointments
         now = datetime.now(timezone.utc)
@@ -223,18 +232,35 @@ class TestOverlapAnalysisCLI:
         
         # Verify the command executed successfully
         assert result.exit_code == 0
-        assert "Found 1 overlap groups" in result.stdout
-        assert "All overlaps resolved automatically" in result.stdout
-        assert "✓" in result.stdout
-        assert "Auto-Resolved" in result.stdout
-        assert "Remaining Conflicts" in result.stdout
+        assert "Found 1 overlap groups" in result.output
+        assert "All overlaps resolved automatically" in result.output
+        assert "✓" in result.output
+        assert "Auto-Resolved" in result.output
+        assert "Remaining Conflicts" in result.output
     
     @patch('cli.main.resolve_cli_user')
-    def test_analyze_overlaps_missing_user(self, mock_resolve_user):
+    @patch('cli.main.get_session')
+    @patch('cli.main.parse_flexible_date')
+    def test_analyze_overlaps_missing_user(self, mock_parse_flexible_date, mock_get_session, mock_resolve_user):
         """Test analyze-overlaps command with missing user parameter"""
         # Mock user resolution to succeed with default user
         mock_user = Mock(id=1, email='test@example.com')
         mock_resolve_user.return_value = mock_user
+
+        # Mock date parsing
+        from datetime import date
+        mock_parse_flexible_date.side_effect = [date(2024, 1, 1), date(2024, 1, 2)]
+
+        # Mock database session
+        mock_session = Mock()
+        mock_get_session.return_value = mock_session
+
+        # Mock the query chain to return empty results
+        mock_query = Mock()
+        mock_filter = Mock()
+        mock_filter.all.return_value = []
+        mock_query.filter.return_value = mock_filter
+        mock_session.query.return_value = mock_query
 
         result = self.runner.invoke(app, [
             'calendar', 'analyze-overlaps',
@@ -244,7 +270,7 @@ class TestOverlapAnalysisCLI:
 
         # Should succeed since user resolution falls back to defaults
         assert result.exit_code == 0
-        assert "No appointments found" in result.stdout
+        assert "No appointments found" in result.output
     
     @patch('cli.main.resolve_cli_user')
     def test_analyze_overlaps_user_not_found(self, mock_resolve_user):
@@ -262,4 +288,4 @@ class TestOverlapAnalysisCLI:
 
         # Should fail due to user not found
         assert result.exit_code == 1
-        assert "No user found for identifier: 999" in result.stdout
+        assert "No user found for identifier: 999" in result.output
