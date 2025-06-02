@@ -76,23 +76,51 @@ class TestUserService:
         # Arrange
         email = "nonexistent@example.com"
         self.mock_repository.get_by_email.return_value = None
-        
+
         # Act
         result = self.service.get_by_email(email)
-        
+
         # Assert
         assert result is None
         self.mock_repository.get_by_email.assert_called_once_with(email)
+
+    def test_get_by_username(self):
+        """Test getting user by username"""
+        # Arrange
+        username = "testuser"
+        expected_user = Mock(spec=User)
+        self.mock_repository.get_by_username.return_value = expected_user
+
+        # Act
+        result = self.service.get_by_username(username)
+
+        # Assert
+        assert result == expected_user
+        self.mock_repository.get_by_username.assert_called_once_with(username)
+
+    def test_get_by_username_not_found(self):
+        """Test getting user by username when not found"""
+        # Arrange
+        username = "notfound"
+        self.mock_repository.get_by_username.return_value = None
+
+        # Act
+        result = self.service.get_by_username(username)
+
+        # Assert
+        assert result is None
+        self.mock_repository.get_by_username.assert_called_once_with(username)
     
     def test_create_valid_user(self):
         """Test creating a valid user"""
         # Arrange
         user = Mock(spec=User)
         user.email = "test@example.com"
-        
+        user.username = None  # No username
+
         # Act
         self.service.create(user)
-        
+
         # Assert
         self.mock_repository.add.assert_called_once_with(user)
     
@@ -152,10 +180,11 @@ class TestUserService:
         # Arrange
         user = Mock(spec=User)
         user.email = "updated@example.com"
-        
+        user.username = None  # No username
+
         # Act
         self.service.update(user)
-        
+
         # Assert
         self.mock_repository.update.assert_called_once_with(user)
     
@@ -187,7 +216,64 @@ class TestUserService:
         # Arrange
         user = Mock(spec=User)
         user.email = "valid@example.com"
-        
+        user.username = None
+
+        # Act & Assert - should not raise exception
+        self.service.validate(user)
+
+    def test_validate_valid_username(self):
+        """Test validation with valid username"""
+        # Arrange
+        user = Mock(spec=User)
+        user.email = "valid@example.com"
+        user.username = "validuser"
+        user.id = 123
+
+        self.mock_repository.get_by_username.return_value = None
+
+        # Act & Assert - should not raise exception
+        self.service.validate(user)
+        self.mock_repository.get_by_username.assert_called_once_with("validuser")
+
+    def test_validate_empty_username(self):
+        """Test validation with empty username"""
+        # Arrange
+        user = Mock(spec=User)
+        user.email = "valid@example.com"
+        user.username = "   "  # Whitespace only
+
+        # Act & Assert
+        with pytest.raises(ValueError, match="Username cannot be empty or whitespace"):
+            self.service.validate(user)
+
+    def test_validate_duplicate_username(self):
+        """Test validation with duplicate username"""
+        # Arrange
+        user = Mock(spec=User)
+        user.email = "valid@example.com"
+        user.username = "existinguser"
+        user.id = 123
+
+        existing_user = Mock(spec=User)
+        existing_user.id = 456  # Different ID
+        self.mock_repository.get_by_username.return_value = existing_user
+
+        # Act & Assert
+        with pytest.raises(ValueError, match="Username 'existinguser' is already taken"):
+            self.service.validate(user)
+
+    def test_validate_same_user_username(self):
+        """Test validation allows same username for same user (update scenario)"""
+        # Arrange
+        user = Mock(spec=User)
+        user.email = "valid@example.com"
+        user.username = "sameuser"
+        user.id = 123
+
+        existing_user = Mock(spec=User)
+        existing_user.id = 123  # Same ID
+        self.mock_repository.get_by_username.return_value = existing_user
+
         # Act & Assert - should not raise exception
         self.service.validate(user)
     
@@ -238,7 +324,8 @@ class TestUserService:
         # Arrange
         user = Mock(spec=User)
         user.email = 123  # Non-string value
-        
+        user.username = None  # No username
+
         # Act & Assert - should not raise exception since str(123).strip() is "123"
         self.service.validate(user)
     

@@ -45,11 +45,13 @@ from rich.table import Table
 from sqlalchemy.orm.attributes import InstrumentedAttribute
 
 from core.db import get_session
+from core.models.user import User
 from core.orchestrators.archive_job_runner import ArchiveJobRunner
 from core.services import UserService
 from core.services.calendar_service import CalendarService
 from core.utilities import get_graph_client
 from core.utilities.auth_utility import get_cached_access_token
+from core.utilities.user_resolution import resolve_user, get_user_identifier_source
 
 app = typer.Typer(
     help="Admin Assistant CLI for running calendar and timesheet operations."
@@ -63,13 +65,39 @@ archive_archive_config_app = typer.Typer(help="Archive configuration management"
 login_app = typer.Typer(help="Authentication commands")
 jobs_app = typer.Typer(help="Background job management")
 
-user_id_option = typer.Option(
-    ...,
+user_option = typer.Option(
+    None,
     "--user",
-    help="User to operate on.",
-    envvar="ADMIN_ASSISTANT_USER",
+    help="User to operate on (username or user ID). Falls back to ADMIN_ASSISTANT_USER env var, then OS username.",
     show_default=False,
 )
+
+
+def resolve_cli_user(cli_user_input: Optional[str] = None) -> User:
+    """
+    Resolve user from CLI input with proper error handling.
+
+    Args:
+        cli_user_input: User identifier from CLI (username or user ID)
+
+    Returns:
+        User object
+
+    Raises:
+        typer.Exit: If user cannot be resolved
+    """
+    try:
+        user = resolve_user(cli_user_input)
+        if not user:
+            source = get_user_identifier_source(cli_user_input)
+            typer.echo(f"No user identifier found from {source}.")
+            typer.echo("Please specify --user <username_or_id> or set ADMIN_ASSISTANT_USER environment variable.")
+            raise typer.Exit(code=1)
+        return user
+    except ValueError as e:
+        source = get_user_identifier_source(cli_user_input)
+        typer.echo(f"Error resolving user from {source}: {e}")
+        raise typer.Exit(code=1)
 
 
 def parse_flexible_date(date_str: str) -> date:
@@ -184,7 +212,7 @@ def archive(
         "--date",
         help="Date or date range. Accepts: 'today', 'yesterday', 'last 7 days', 'last week', 'last 30 days', 'last month', a single date (e.g. 31-12-2024, 31-Dec, 31-12), or a range (e.g. 1-6 to 7-6, 1-6-2024 - 7-6-2024)",
     ),
-    user_id: int = user_id_option,
+    user_input: Optional[str] = user_option,
     archive_config_id: int = typer.Option(
         ...,
         "--archive-config",
@@ -201,11 +229,7 @@ def archive(
         typer.echo(f"Error parsing date: {e}")
         raise typer.Exit(code=1)
     try:
-        user_service = UserService()
-        user = user_service.get_by_id(user_id)
-        if not user:
-            typer.echo(f"No user found in user DB for user_id={user_id}.")
-            raise typer.Exit(code=1)
+        user = resolve_cli_user(user_input)
         access_token = get_cached_access_token()
         if not access_token:
             typer.echo(
@@ -219,7 +243,7 @@ def archive(
         if end_dt and not start_dt:
             start_dt = end_dt
         result = runner.run_archive_job(
-            user_id=user_id,
+            user_id=user.id,
             archive_config_id=archive_config_id,
             start_date=start_dt,
             end_date=end_dt,
@@ -240,7 +264,7 @@ def travel_auto_plan():
 # Category commands
 @category_app.command("list")
 def list_category(
-    user_id: int = user_id_option,
+    user_input: Optional[str] = user_option,
     store: str = typer.Option(
         "local",
         "--store",
@@ -267,11 +291,7 @@ def list_category(
 
     try:
         # Get user
-        user_service = UserService()
-        user = user_service.get_by_id(user_id)
-        if not user:
-            console.print(f"[red]No user found for user_id={user_id}.[/red]")
-            raise typer.Exit(code=1)
+        user = resolve_cli_user(user_input)
 
         # Get repository based on store
         if store == "local":
@@ -299,11 +319,11 @@ def list_category(
 
         if not categories:
             console.print(
-                f"[yellow]No categories found for user_id={user_id} in {store} store.[/yellow]"
+                f"[yellow]No categories found for user {user.id} ({user.username or user.email}) in {store} store.[/yellow]"
             )
             return
 
-        table = Table(title=f"Categories for user_id={user_id} (store: {store})")
+        table = Table(title=f"Categories for user {user.id} ({user.username or user.email}) (store: {store})")
         table.add_column("ID", style="cyan", no_wrap=True)
         table.add_column("Name", style="green")
         table.add_column("Description", style="white")
@@ -325,7 +345,7 @@ def list_category(
 
 @category_app.command("add")
 def add_category(
-    user_id: int = user_id_option,
+    user_input: Optional[str] = user_option,
     store: str = typer.Option(
         "local",
         "--store",
@@ -361,11 +381,7 @@ def add_category(
 
     try:
         # Get user
-        user_service = UserService()
-        user = user_service.get_by_id(user_id)
-        if not user:
-            console.print(f"[red]No user found for user_id={user_id}.[/red]")
-            raise typer.Exit(code=1)
+        user = resolve_cli_user(user_input)
 
         # Get repository based on store
         if store == "local":
@@ -391,7 +407,7 @@ def add_category(
         service = CategoryService(repository)
 
         category = Category(
-            user_id=user_id,
+            user_id=user.id,
             name=name.strip(),
             description=description.strip() if description else None,
         )
@@ -408,7 +424,7 @@ def add_category(
 
 @category_app.command("edit")
 def edit_category(
-    user_id: int = user_id_option,
+    user_input: Optional[str] = user_option,
     store: str = typer.Option(
         "local",
         "--store",
@@ -439,11 +455,7 @@ def edit_category(
 
     try:
         # Get user
-        user_service = UserService()
-        user = user_service.get_by_id(user_id)
-        if not user:
-            console.print(f"[red]No user found for user_id={user_id}.[/red]")
-            raise typer.Exit(code=1)
+        user = resolve_cli_user(user_input)
 
         # Get repository based on store
         if store == "local":
@@ -471,7 +483,7 @@ def edit_category(
 
         if not category:
             console.print(
-                f"[red]Category {category_id} not found for user {user_id} in {store} store.[/red]"
+                f"[red]Category {category_id} not found for user {user.id} ({user.username or user.email}) in {store} store.[/red]"
             )
             raise typer.Exit(code=1)
 
@@ -494,7 +506,7 @@ def edit_category(
 
 @category_app.command("delete")
 def delete_category(
-    user_id: int = user_id_option,
+    user_input: Optional[str] = user_option,
     store: str = typer.Option(
         "local",
         "--store",
@@ -522,11 +534,7 @@ def delete_category(
 
     try:
         # Get user
-        user_service = UserService()
-        user = user_service.get_by_id(user_id)
-        if not user:
-            console.print(f"[red]No user found for user_id={user_id}.[/red]")
-            raise typer.Exit(code=1)
+        user = resolve_cli_user(user_input)
 
         # Get repository based on store
         if store == "local":
@@ -554,7 +562,7 @@ def delete_category(
 
         if not category:
             console.print(
-                f"[red]Category {category_id} not found for user {user_id} in {store} store.[/red]"
+                f"[red]Category {category_id} not found for user {user.id} ({user.username or user.email}) in {store} store.[/red]"
             )
             raise typer.Exit(code=1)
 
@@ -578,7 +586,7 @@ def delete_category(
 
 @category_app.command("validate")
 def validate_category(
-    user_id: int = user_id_option,
+    user_input: Optional[str] = user_option,
     start_date: str = typer.Option(
         None, help="Start date (YYYY-MM-DD or flexible format)"
     ),
@@ -614,7 +622,7 @@ def validate_category(
             start_dt, end_dt = parse_date_range("last 7 days")
 
         console.print(
-            f"[blue]Validating categories for user {user_id} from {start_dt} to {end_dt}[/blue]"
+            f"[blue]Validating categories for user {user.id} ({user.username or user.email}) from {start_dt} to {end_dt}[/blue]"
         )
 
         # Get appointments directly from database for all calendars
@@ -626,7 +634,7 @@ def validate_category(
         user = user_service.get_by_id(user_id)
 
         if not user:
-            console.print(f"[red]No user found for user_id={user_id}.[/red]")
+            console.print(f"[red]No user found for user {user.id} ({user.username or user.email}).[/red]")
             raise typer.Exit(code=1)
 
         # Query appointments for the user within the date range
@@ -642,7 +650,7 @@ def validate_category(
         appointments = (
             session.query(Appointment)
             .filter(
-                Appointment.user_id == user_id,
+                Appointment.user_id == user.id,
                 Appointment.start_time >= start_datetime,
                 Appointment.end_time <= end_datetime,
             )
@@ -722,7 +730,7 @@ def validate_category(
 
 @calendar_app.command("analyze-overlaps")
 def analyze_overlaps(
-    user_id: int = user_id_option,
+    user_input: Optional[str] = user_option,
     start_date: str = typer.Option(
         None, help="Start date (YYYY-MM-DD or flexible format)"
     ),
@@ -763,7 +771,7 @@ def analyze_overlaps(
             start_dt, end_dt = parse_date_range("last 7 days")
 
         console.print(
-            f"[blue]Analyzing overlaps for user {user_id} from {start_dt} to {end_dt}[/blue]"
+            f"[blue]Analyzing overlaps for user {user.id} ({user.username or user.email}) from {start_dt} to {end_dt}[/blue]"
         )
 
         # Get appointments directly from database for all calendars
@@ -772,7 +780,7 @@ def analyze_overlaps(
         user = user_service.get_by_id(user_id)
 
         if not user:
-            console.print(f"[red]No user found for user_id={user_id}.[/red]")
+            console.print(f"[red]No user found for user {user.id} ({user.username or user.email}).[/red]")
             raise typer.Exit(code=1)
 
         # Query appointments for the user within the date range
@@ -788,7 +796,7 @@ def analyze_overlaps(
         appointments = (
             session.query(Appointment)
             .filter(
-                Appointment.user_id == user_id,
+                Appointment.user_id == user.id,
                 Appointment.start_time >= start_datetime,
                 Appointment.end_time <= end_datetime,
             )
@@ -912,7 +920,7 @@ def analyze_overlaps(
 
 
 @archive_archive_config_app.command("list")
-def list_configs(user_id: int = user_id_option):
+def list_configs(user_input: Optional[str] = user_option):
     """List all archive configurations for a user."""
     from core.services.archive_configuration_service import ArchiveConfigurationService
 
@@ -921,10 +929,10 @@ def list_configs(user_id: int = user_id_option):
     console = Console()
     if not configs:
         console.print(
-            f"[yellow]No archive configurations found for user_id={user_id}.[/yellow]"
+            f"[yellow]No archive configurations found for user {user.id} ({user.username or user.email}).[/yellow]"
         )
         raise typer.Exit(code=0)
-    table = Table(title=f"Archive Configurations for user_id={user_id}")
+    table = Table(title=f"Archive Configurations for user {user.id} ({user.username or user.email})")
     table.add_column("ID", style="cyan", no_wrap=True)
     table.add_column("Name", style="green")
     table.add_column("Source", style="magenta")
@@ -945,7 +953,7 @@ def list_configs(user_id: int = user_id_option):
 
 @archive_archive_config_app.command("create")
 def create_config(
-    user_id: int = user_id_option,
+    user_input: Optional[str] = user_option,
     name: str = typer.Option(None, "--name", help="Name for the archive configuration"),
     source_calendar_uri: str = typer.Option(
         None, "--source-uri", help="Source calendar URI (e.g., msgraph://id)"
@@ -982,7 +990,7 @@ def create_config(
             "Timezone (IANA format, e.g., Europe/London)", default=system_timezone
         )
     config = ArchiveConfiguration(
-        user_id=user_id,
+        user_id=user.id,
         name=name,
         source_calendar_uri=source_calendar_uri,
         destination_calendar_uri=destination_calendar_uri,
@@ -1000,7 +1008,7 @@ def create_config(
 
 @archive_archive_config_app.command("set-default")
 def set_default_config(
-    user_id: int = user_id_option,
+    user_input: Optional[str] = user_option,
     config_id: int = typer.Option(
         ..., "--config-id", help="ID of the config to set as default"
     ),
@@ -1016,7 +1024,7 @@ def set_default_config(
 
 @archive_archive_config_app.command("activate")
 def activate_config(
-    user_id: int = user_id_option,
+    user_input: Optional[str] = user_option,
     config_id: int = typer.Option(
         ..., "--config-id", help="ID of the config to activate"
     ),
@@ -1027,7 +1035,7 @@ def activate_config(
     service = ArchiveConfigurationService()
     config = service.get_by_id(config_id)
     if not config or getattr(config, "user_id", None) != user_id:
-        typer.echo(f"Config {config_id} not found for user {user_id}.")
+        typer.echo(f"Config {config_id} not found for user {user.id} ({user.username or user.email}).")
         raise typer.Exit(code=1)
     setattr(config, "is_active", True)
     service.update(config)
@@ -1036,7 +1044,7 @@ def activate_config(
 
 @archive_archive_config_app.command("deactivate")
 def deactivate_config(
-    user_id: int = user_id_option,
+    user_input: Optional[str] = user_option,
     config_id: int = typer.Option(
         ..., "--config-id", help="ID of the config to deactivate"
     ),
@@ -1047,7 +1055,7 @@ def deactivate_config(
     service = ArchiveConfigurationService()
     config = service.get_by_id(config_id)
     if not config or getattr(config, "user_id", None) != user_id:
-        typer.echo(f"Config {config_id} not found for user {user_id}.")
+        typer.echo(f"Config {config_id} not found for user {user.id} ({user.username or user.email}).")
         raise typer.Exit(code=1)
     setattr(config, "is_active", False)
     service.update(config)
@@ -1056,7 +1064,7 @@ def deactivate_config(
 
 @archive_archive_config_app.command("delete")
 def delete_config(
-    user_id: int = user_id_option,
+    user_input: Optional[str] = user_option,
     config_id: int = typer.Option(
         ..., "--config-id", help="ID of the config to delete"
     ),
@@ -1067,7 +1075,7 @@ def delete_config(
     service = ArchiveConfigurationService()
     config = service.get_by_id(config_id)
     if not config or getattr(config, "user_id", None) != user_id:
-        typer.echo(f"Config {config_id} not found for user {user_id}.")
+        typer.echo(f"Config {config_id} not found for user {user.id} ({user.username or user.email}).")
         raise typer.Exit(code=1)
     service.delete(config_id)
     typer.echo(f"Config {config_id} deleted.")
@@ -1086,19 +1094,19 @@ def export(
     output: str = typer.Option(
         "PDF", "--output", "-o", help="Output format: PDF or CSV"
     ),
-    user_id: int = user_id_option,
+    user_input: Optional[str] = user_option,
 ):
     """Export timesheet data."""
-    typer.echo(f"Exporting timesheet as {output} for user {user_id}")
+    typer.echo(f"Exporting timesheet as {output} for user {user.id} ({user.username or user.email})")
 
 
 @timesheet_app.command("upload")
 def upload(
     destination: str = typer.Option(..., help="Upload destination (e.g., Xero)"),
-    user_id: int = user_id_option,
+    user_input: Optional[str] = user_option,
 ):
     """Upload timesheet."""
-    typer.echo(f"Uploading timesheet to {destination} for user {user_id}")
+    typer.echo(f"Uploading timesheet to {destination} for user {user.id} ({user.username or user.email})")
 
 
 app.add_typer(category_app, name="category")
@@ -1112,7 +1120,7 @@ app.add_typer(jobs_app, name="jobs")
 
 @jobs_app.command("schedule")
 def schedule_archive_job(
-    user_id: int = user_id_option,
+    user_input: Optional[str] = user_option,
     schedule_type: str = typer.Option(
         "daily", "--type", help="Schedule type: daily or weekly"
     ),
@@ -1167,7 +1175,7 @@ def schedule_archive_job(
 
         # Schedule the job
         result = scheduled_archive_service.update_user_schedule(
-            user_id=user_id,
+            user_id=user.id,
             schedule_type=schedule_type,
             hour=hour,
             minute=minute,
@@ -1200,7 +1208,7 @@ def schedule_archive_job(
 
 @jobs_app.command("trigger")
 def trigger_manual_archive(
-    user_id: int = user_id_option,
+    user_input: Optional[str] = user_option,
     start_date: Optional[str] = typer.Option(
         None, "--start", help="Start date (YYYY-MM-DD)"
     ),
@@ -1234,7 +1242,7 @@ def trigger_manual_archive(
 
         # Trigger the job
         job_id = background_job_service.trigger_manual_archive(
-            user_id=user_id,
+            user_id=user.id,
             archive_config_id=archive_config_id or 0,  # Will use active config if 0
             start_date=start_dt,
             end_date=end_dt,
@@ -1254,7 +1262,7 @@ def trigger_manual_archive(
 
 
 @jobs_app.command("status")
-def get_job_status(user_id: int = user_id_option):
+def get_job_status(user_input: Optional[str] = user_option):
     """Get job status for a user."""
     from flask_apscheduler import APScheduler
     from rich.console import Console
@@ -1324,7 +1332,7 @@ def get_job_status(user_id: int = user_id_option):
 
 @jobs_app.command("remove")
 def remove_scheduled_jobs(
-    user_id: int = user_id_option,
+    user_input: Optional[str] = user_option,
     confirm: bool = typer.Option(False, "--confirm", help="Skip confirmation prompt"),
 ):
     """Remove all scheduled jobs for a user."""
@@ -1338,7 +1346,7 @@ def remove_scheduled_jobs(
 
     if not confirm:
         confirm = typer.confirm(
-            f"Are you sure you want to remove all scheduled jobs for user {user_id}?"
+            f"Are you sure you want to remove all scheduled jobs for user {user.id} ({user.username or user.email})?"
         )
         if not confirm:
             console.print("[yellow]Operation cancelled.[/yellow]")
@@ -1488,7 +1496,7 @@ def get_calendars_for_user(
     user_repo = UserRepository(session)
     user = user_repo.get_by_id(user_id)
     if not user:
-        raise ValueError(f"No user found for user_id={user_id}.")
+        raise ValueError(f"No user found for user {user.id} ({user.username or user.email}).")
 
     calendars = []
     if datastore in ("local", "all"):
@@ -1592,7 +1600,7 @@ def calendar_name_id_autocomplete(
 
 @calendar_app.command("list")
 def list_calendars(
-    user_id: int = user_id_option,
+    user_input: Optional[str] = user_option,
     datastore: str = typer.Option(
         "all",
         "--datastore",
@@ -1609,13 +1617,14 @@ def list_calendars(
     """
     console = Console()
     try:
-        calendars = get_calendars_for_user(user_id, datastore, console=console)
+        user = resolve_cli_user(user_input)
+        calendars = get_calendars_for_user(user.id, datastore, console=console)
         if not calendars:
             console.print(
-                f"[yellow]No calendars found for user_id={user_id} in datastore '{datastore}'.[/yellow]"
+                f"[yellow]No calendars found for user {user.id} ({user.username or user.email}) in datastore '{datastore}'.[/yellow]"
             )
             raise typer.Exit(code=0)
-        table = Table(title=f"Calendars for user_id={user_id} (datastore: {datastore})")
+        table = Table(title=f"Calendars for user {user.id} ({user.username or user.email}) (datastore: {datastore})")
         table.add_column("Source", style="cyan", no_wrap=True)
         table.add_column("Name", style="green")
         table.add_column("Description", style="white")
@@ -1643,7 +1652,7 @@ def list_calendars(
 
 
 @login_app.command("msgraph")
-def login_msgraph(user_id: int = user_id_option):
+def login_msgraph(user_input: Optional[str] = user_option):
     """
     Log in to Microsoft 365 (MS Graph) for the given user. Uses MSAL device code flow and caches token in ~/.cache/admin-assistant/ms_token.json.
     """
@@ -1658,7 +1667,7 @@ def login_msgraph(user_id: int = user_id_option):
 
 
 @login_app.command("logout")
-def logout_msgraph(user_id: int = user_id_option):
+def logout_msgraph(user_input: Optional[str] = user_option):
     """
     Log out from Microsoft 365 (MS Graph) for the given user. Removes the token cache file.
     """
@@ -1673,7 +1682,7 @@ app.add_typer(login_app, name="login")
 
 @calendar_app.command("create")
 def create_calendar(
-    user_id: int = user_id_option,
+    user_input: Optional[str] = user_option,
     store: str = typer.Option(
         ..., "--store", help="Calendar store: local or msgraph", case_sensitive=False
     ),
@@ -1711,11 +1720,11 @@ def create_calendar(
     user_service = UserService()
     user = user_service.get_by_id(user_id)
     if not user:
-        console.print(f"[red]No user found for user_id={user_id}.[/red]")
+        console.print(f"[red]No user found for user {user.id} ({user.username or user.email}).[/red]")
         raise typer.Exit(code=1)
 
     calendar = Calendar(
-        user_id=user_id,
+        user_id=user.id,
         name=name,
         description=description,
         calendar_type="real",  # default

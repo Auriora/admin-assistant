@@ -18,8 +18,34 @@ All commands support these global options:
 
 | Option | Description | Environment Variable |
 |--------|-------------|---------------------|
-| `--user <USER_ID>` | User ID to operate on | `ADMIN_ASSISTANT_USER` |
+| `--user <USER_ID_OR_USERNAME>` | User ID or username to operate on | `ADMIN_ASSISTANT_USER` |
 | `--help` | Show command help | - |
+
+## User Identification
+
+The CLI supports multiple ways to identify users with the following precedence (highest to lowest):
+
+1. **Command-line argument**: `--user <username_or_id>`
+2. **ADMIN_ASSISTANT_USER environment variable**: `export ADMIN_ASSISTANT_USER=username`
+3. **OS environment variables**: `USER`, `USERNAME`, or `LOGNAME`
+
+### Examples
+
+```bash
+# Using explicit user ID (traditional)
+admin-assistant calendar archive --user 123
+
+# Using username (new)
+admin-assistant calendar archive --user john.doe
+
+# Using environment variable
+export ADMIN_ASSISTANT_USER=john.doe
+admin-assistant calendar archive
+
+# Using OS username (automatic fallback)
+# If your OS username matches a user in the system
+admin-assistant calendar archive
+```
 
 ## Command Categories
 

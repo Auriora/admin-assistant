@@ -25,6 +25,7 @@ The Admin Assistant system uses two separate databases to support modularity, se
 |--------|------|-------------|-------------|
 | id | Integer | Primary Key | Unique user identifier |
 | email | String | Unique, Not Null | User email address |
+| username | String | Unique, Nullable | Username for CLI/OS mapping |
 | name | String | Nullable | User display name |
 | role | String | Nullable | User role/permissions |
 | is_active | Boolean | Default: True | Account status |

@@ -20,6 +20,10 @@ class UserService:
         """Retrieve a User by email address."""
         return self.repository.get_by_email(email)
 
+    def get_by_username(self, username: str) -> Optional[User]:
+        """Retrieve a User by username."""
+        return self.repository.get_by_username(username)
+
     def create(self, user: User) -> None:
         """Create a new User after validation."""
         self.validate(user)
@@ -45,4 +49,17 @@ class UserService:
         email = getattr(user, "email", None)
         if not email or not str(email).strip():
             raise ValueError("User email is required.")
+
+        # Validate username uniqueness if provided
+        username = getattr(user, "username", None)
+        if username:
+            username = str(username).strip()
+            if not username:
+                raise ValueError("Username cannot be empty or whitespace.")
+
+            # Check for existing user with same username (excluding current user)
+            existing_user = self.repository.get_by_username(username)
+            if existing_user and existing_user.id != getattr(user, "id", None):
+                raise ValueError(f"Username '{username}' is already taken.")
+
         # Add further validation as needed

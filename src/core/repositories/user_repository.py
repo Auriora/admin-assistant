@@ -20,6 +20,10 @@ class UserRepository:
         """Retrieve a User by email address."""
         return self.session.query(User).filter_by(email=email).first()
 
+    def get_by_username(self, username: str) -> Optional[User]:
+        """Retrieve a User by username."""
+        return self.session.query(User).filter_by(username=username).first()
+
     def add(self, user: User) -> None:
         """Add a new User."""
         self.session.add(user)

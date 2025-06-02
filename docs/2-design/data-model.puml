@@ -5,6 +5,7 @@
 entity User <<core,web>> #B3E6FF {
     * id : integer <<PK>>
     * email : string <<U, unique>>
+    * username : string <<U, unique, nullable>>
     * name : string
     * role : string
     * is_active : boolean

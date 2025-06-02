@@ -48,6 +48,7 @@ class User(UserMixin, db.Model):
     __tablename__ = "users"
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String, unique=True, nullable=False)
+    username = db.Column(db.String, unique=True, nullable=True)
     name = db.Column(db.String)
     role = db.Column(db.String)
     is_active = db.Column(db.Boolean, default=True)
