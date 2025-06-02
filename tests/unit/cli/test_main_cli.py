@@ -189,29 +189,27 @@ class TestCLICommands:
     
     @patch('cli.main.ArchiveJobRunner')
     @patch('cli.main.get_session')
-    @patch('cli.main.UserService')
+    @patch('cli.main.resolve_cli_user')
     @patch('cli.main.get_cached_access_token')
     @patch('cli.main.get_graph_client')
     @patch('cli.main.typer.echo')
-    def test_archive_command_success(self, mock_echo, mock_graph_client, mock_token, 
-                                   mock_user_service, mock_session, mock_runner_class):
+    def test_archive_command_success(self, mock_echo, mock_graph_client, mock_token,
+                                   mock_resolve_user, mock_session, mock_runner_class):
         """Test successful archive command execution"""
         # Arrange
         mock_runner = Mock()
         mock_runner_class.return_value = mock_runner
         mock_runner.run_archive_job.return_value = "Archive completed successfully"
-        
-        mock_user = Mock()
-        mock_user_service_instance = Mock()
-        mock_user_service.return_value = mock_user_service_instance
-        mock_user_service_instance.get_by_id.return_value = mock_user
-        
+
+        mock_user = Mock(id=123)
+        mock_resolve_user.return_value = mock_user
+
         mock_token.return_value = "valid_token"
         
         # Act
         archive(
             date_option="yesterday",
-            user_id=123,
+            user_input="123",
             archive_config_id=456
         )
         

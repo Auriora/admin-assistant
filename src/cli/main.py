@@ -940,7 +940,7 @@ def list_configs(user_input: Optional[str] = user_option):
             console.print(
                 f"[yellow]No archive configurations found for user {user.id} ({user.username or user.email}).[/yellow]"
             )
-            raise typer.Exit(code=0)
+            return
         table = Table(title=f"Archive Configurations for user {user.id} ({user.username or user.email})")
         table.add_column("ID", style="cyan", no_wrap=True)
         table.add_column("Name", style="green")
@@ -1412,7 +1412,7 @@ def remove_scheduled_jobs(
             )
             if not confirm:
                 console.print("[yellow]Operation cancelled.[/yellow]")
-                raise typer.Exit(code=0)
+                return
 
         # Initialize services (without Flask app context)
         scheduler = APScheduler()

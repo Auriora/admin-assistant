@@ -229,39 +229,37 @@ class TestOverlapAnalysisCLI:
         assert "Auto-Resolved" in result.stdout
         assert "Remaining Conflicts" in result.stdout
     
-    def test_analyze_overlaps_missing_user(self):
+    @patch('cli.main.resolve_cli_user')
+    def test_analyze_overlaps_missing_user(self, mock_resolve_user):
         """Test analyze-overlaps command with missing user parameter"""
+        # Mock user resolution to succeed with default user
+        mock_user = Mock(id=1, email='test@example.com')
+        mock_resolve_user.return_value = mock_user
+
         result = self.runner.invoke(app, [
             'calendar', 'analyze-overlaps',
             '--start-date', '2024-01-01',
             '--end-date', '2024-01-02'
         ])
-        
-        # Should fail due to missing required user parameter
-        assert result.exit_code != 0
-        assert "Missing option" in result.stdout or "required" in result.stdout.lower()
-    
-    @patch('core.db.get_session')
-    @patch('core.db.SessionLocal')
-    @patch('cli.main.UserService')
-    def test_analyze_overlaps_user_not_found(self, mock_user_service, mock_session_local, mock_get_session):
-        """Test analyze-overlaps command when user is not found"""
-        # Mock database session and user service
-        mock_session = Mock()
-        mock_get_session.return_value = mock_session
-        mock_session_local.return_value = mock_session
 
-        # Mock user not found
-        mock_user_service.return_value.get_by_id.return_value = None
-        
+        # Should succeed since user resolution falls back to defaults
+        assert result.exit_code == 0
+        assert "No appointments found" in result.stdout
+    
+    @patch('cli.main.resolve_cli_user')
+    def test_analyze_overlaps_user_not_found(self, mock_resolve_user):
+        """Test analyze-overlaps command when user is not found"""
+        # Mock user resolution to fail
+        mock_resolve_user.side_effect = ValueError("No user found for identifier: 999")
+
         # Run the command
         result = self.runner.invoke(app, [
-            'calendar', 'analyze-overlaps', 
+            'calendar', 'analyze-overlaps',
             '--user', '999',  # Non-existent user
             '--start-date', '2024-01-01',
             '--end-date', '2024-01-02'
         ])
-        
+
         # Should fail due to user not found
         assert result.exit_code == 1
-        assert "No user found for user_id=999" in result.stdout
+        assert "No user found for identifier: 999" in result.stdout

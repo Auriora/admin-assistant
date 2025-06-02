@@ -112,11 +112,15 @@ class TestJobCLICommands:
         """Test job scheduling when user not found"""
         # The job commands don't actually check for user existence - they delegate to services
         # Let's test the actual behavior - empty result when no active configs
-        with patch('flask_apscheduler.APScheduler') as mock_scheduler_class, \
+        with patch('cli.main.resolve_cli_user') as mock_resolve_user, \
+             patch('flask_apscheduler.APScheduler') as mock_scheduler_class, \
              patch('core.services.background_job_service.BackgroundJobService') as mock_bg_job_service_class, \
              patch('core.services.scheduled_archive_service.ScheduledArchiveService') as mock_scheduled_service_class:
 
             # Arrange
+            mock_user = Mock(id=999, email='test@example.com')
+            mock_resolve_user.return_value = mock_user
+
             mock_scheduler = Mock()
             mock_scheduler_class.return_value = mock_scheduler
 
@@ -320,24 +324,22 @@ class TestJobCLICommands:
         assert 'job_456' in result.output
         mock_scheduled_service.remove_user_schedule.assert_called_once_with(1)
     
-    @patch('core.services.user_service.UserService')
+    @patch('cli.main.resolve_cli_user')
     @patch('core.services.scheduled_archive_service.ScheduledArchiveService')
     @patch('flask_apscheduler.APScheduler')
     @patch('core.services.background_job_service.BackgroundJobService')
     def test_remove_scheduled_jobs_cancelled(self, mock_bg_job_service_class, mock_scheduler_class,
-                                            mock_scheduled_service_class, mock_user_service_class):
+                                            mock_scheduled_service_class, mock_resolve_user):
         """Test job removal cancelled by user"""
         # Arrange
         mock_user = Mock(id=1, email='test@example.com')
-        mock_user_service = Mock()
-        mock_user_service.get_by_id.return_value = mock_user
-        mock_user_service_class.return_value = mock_user_service
-        
+        mock_resolve_user.return_value = mock_user
+
         # Act - simulate user cancelling removal
         result = self.runner.invoke(jobs_app, [
             'remove', '--user', '1'
         ], input='n\n')
-        
+
         # Assert
         assert result.exit_code == 0
         assert 'Operation cancelled' in result.output

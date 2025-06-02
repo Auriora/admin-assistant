@@ -19,8 +19,12 @@ class TestConfigCLICommands:
     
     def test_list_archive_configs_success(self):
         """Test successful archive configuration listing"""
-        with patch('core.services.archive_configuration_service.ArchiveConfigurationService') as mock_archive_service_class:
+        with patch('cli.main.resolve_cli_user') as mock_resolve_user, \
+             patch('core.services.archive_configuration_service.ArchiveConfigurationService') as mock_archive_service_class:
             # Arrange
+            mock_user = Mock(id=1, email='test@example.com')
+            mock_resolve_user.return_value = mock_user
+
             # Create simple config objects that work with Rich rendering
             class MockConfig:
                 def __init__(self, id, name, is_active, source_uri, dest_uri, timezone):
@@ -44,7 +48,7 @@ class TestConfigCLICommands:
 
             # Assert
             assert result.exit_code == 0
-            assert 'Archive Configurations for user_id=1' in result.output
+            assert 'Archive Configurations for user 1' in result.output
             assert 'Work Archive' in result.output
             assert 'Personal' in result.output  # Rich table splits long names
             assert 'Archive' in result.output
@@ -52,8 +56,12 @@ class TestConfigCLICommands:
     
     def test_list_archive_configs_no_configs(self):
         """Test archive configuration listing when no configs found"""
-        with patch('core.services.archive_configuration_service.ArchiveConfigurationService') as mock_archive_service_class:
+        with patch('cli.main.resolve_cli_user') as mock_resolve_user, \
+             patch('core.services.archive_configuration_service.ArchiveConfigurationService') as mock_archive_service_class:
             # Arrange
+            mock_user = Mock(id=1, email='test@example.com')
+            mock_resolve_user.return_value = mock_user
+
             mock_archive_service = Mock()
             mock_archive_service.list_for_user.return_value = []
             mock_archive_service_class.return_value = mock_archive_service
@@ -67,28 +75,27 @@ class TestConfigCLICommands:
     
     def test_list_archive_configs_user_not_found(self):
         """Test archive configuration listing when user not found"""
-        # This test is not applicable since the config commands don't check for user existence
-        # The archive config service directly queries by user_id
-        # Let's test the actual behavior - empty list when user has no configs
-        with patch('core.services.archive_configuration_service.ArchiveConfigurationService') as mock_archive_service_class:
+        with patch('cli.main.resolve_cli_user') as mock_resolve_user:
             # Arrange
-            mock_archive_service = Mock()
-            mock_archive_service.list_for_user.return_value = []
-            mock_archive_service_class.return_value = mock_archive_service
+            mock_resolve_user.side_effect = ValueError("No user found for identifier: 999")
 
             # Act
             result = self.runner.invoke(archive_archive_config_app, ['list', '--user', '999'])
 
             # Assert
-            assert result.exit_code == 0
-            assert 'No archive configurations found' in result.output
+            assert result.exit_code == 1
+            assert 'No user found for identifier: 999' in result.output
     
     def test_create_archive_config_interactive_success(self):
         """Test successful archive configuration creation with interactive prompts"""
-        with patch('core.services.archive_configuration_service.ArchiveConfigurationService') as mock_archive_service_class, \
+        with patch('cli.main.resolve_cli_user') as mock_resolve_user, \
+             patch('core.services.archive_configuration_service.ArchiveConfigurationService') as mock_archive_service_class, \
              patch('typer.prompt') as mock_prompt:
 
             # Arrange
+            mock_user = Mock(id=1, email='test@example.com')
+            mock_resolve_user.return_value = mock_user
+
             mock_prompt.side_effect = [
                 'New Archive Config',  # name
                 'msgraph://source',    # source_uri
@@ -121,8 +128,12 @@ class TestConfigCLICommands:
     
     def test_create_archive_config_with_options(self):
         """Test archive configuration creation with command line options"""
-        with patch('core.services.archive_configuration_service.ArchiveConfigurationService') as mock_archive_service_class:
+        with patch('cli.main.resolve_cli_user') as mock_resolve_user, \
+             patch('core.services.archive_configuration_service.ArchiveConfigurationService') as mock_archive_service_class:
             # Arrange
+            mock_user = Mock(id=1, email='test@example.com')
+            mock_resolve_user.return_value = mock_user
+
             # Create a simple config object for the response
             class MockConfig:
                 def __init__(self, id, name, is_active):
@@ -154,8 +165,12 @@ class TestConfigCLICommands:
     
     def test_activate_config_success(self):
         """Test successful archive configuration activation"""
-        with patch('core.services.archive_configuration_service.ArchiveConfigurationService') as mock_archive_service_class:
+        with patch('cli.main.resolve_cli_user') as mock_resolve_user, \
+             patch('core.services.archive_configuration_service.ArchiveConfigurationService') as mock_archive_service_class:
             # Arrange
+            mock_user = Mock(id=1, email='test@example.com')
+            mock_resolve_user.return_value = mock_user
+
             class MockConfig:
                 def __init__(self, id, name, user_id, is_active):
                     self.id = id
@@ -298,24 +313,22 @@ class TestConfigCLICommands:
         assert 'To use this config as default' in result.output
         assert 'archive-config 1' in result.output
     
-    @patch('core.services.user_service.UserService')
+    @patch('cli.main.resolve_cli_user')
     @patch('core.services.archive_configuration_service.ArchiveConfigurationService')
-    def test_config_commands_error_handling(self, mock_archive_service_class, mock_user_service_class):
+    def test_config_commands_error_handling(self, mock_archive_service_class, mock_resolve_user):
         """Test error handling in configuration commands"""
         # Arrange
         mock_user = Mock(id=1, email='test@example.com')
-        mock_user_service = Mock()
-        mock_user_service.get_by_id.return_value = mock_user
-        mock_user_service_class.return_value = mock_user_service
-        
+        mock_resolve_user.return_value = mock_user
+
         mock_archive_service = Mock()
         mock_archive_service.list_for_user.side_effect = Exception('Database connection failed')
         mock_archive_service_class.return_value = mock_archive_service
-        
+
         # Act
         result = self.runner.invoke(archive_archive_config_app, ['list', '--user', '1'])
-        
+
         # Assert
-        # The exception is being raised but not caught, so we expect an exception result
-        assert result.exception is not None
-        assert 'Database connection failed' in str(result.exception)
+        # The exception is now caught and handled, so we expect exit code 1
+        assert result.exit_code == 1
+        assert 'Error listing archive configurations: Database connection failed' in result.output

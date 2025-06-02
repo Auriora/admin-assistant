@@ -17,19 +17,17 @@ class TestCategoryCLICommands:
         """Set up test fixtures"""
         self.runner = CliRunner()
     
-    @patch('core.services.UserService')
+    @patch('cli.main.resolve_cli_user')
     @patch('core.db.get_session')
     @patch('core.repositories.get_category_repository')
     @patch('core.services.category_service.CategoryService')
     def test_category_list_command_success_local(self, mock_category_service_class,
                                                 mock_get_repo, mock_get_session,
-                                                mock_user_service_class):
+                                                mock_resolve_user):
         """Test successful category listing with local store"""
         # Arrange
         mock_user = Mock(id=1, email='test@example.com')
-        mock_user_service = Mock()
-        mock_user_service.get_by_id.return_value = mock_user
-        mock_user_service_class.return_value = mock_user_service
+        mock_resolve_user.return_value = mock_user
         
         # Create simple category objects that work with Rich rendering
         class MockCategory:
@@ -57,12 +55,12 @@ class TestCategoryCLICommands:
         assert result.exit_code == 0
         assert 'Client A - Hourly' in result.output
         assert 'Client B - Fixed' in result.output
-        mock_user_service.get_by_id.assert_called_once_with(1)
+        mock_resolve_user.assert_called_once_with('1')
         mock_category_service.list.assert_called_once()
     
     def test_category_list_command_success_msgraph(self):
         """Test successful category listing with msgraph store"""
-        with patch('core.services.UserService') as mock_user_service_class, \
+        with patch('cli.main.resolve_cli_user') as mock_resolve_user, \
              patch('core.utilities.auth_utility.get_cached_access_token') as mock_get_token, \
              patch('core.utilities.get_graph_client') as mock_get_graph_client, \
              patch('core.repositories.get_category_repository') as mock_get_repo, \
@@ -70,9 +68,7 @@ class TestCategoryCLICommands:
 
             # Arrange
             mock_user = Mock(id=1, email='test@example.com')
-            mock_user_service = Mock()
-            mock_user_service.get_by_id.return_value = mock_user
-            mock_user_service_class.return_value = mock_user_service
+            mock_resolve_user.return_value = mock_user
 
             mock_get_token.return_value = 'valid_token'
             mock_graph_client = Mock()
@@ -119,20 +115,18 @@ class TestCategoryCLICommands:
         assert result.exit_code == 1
         assert 'No valid MS Graph token found' in result.output
 
-    @patch('core.services.user_service.UserService')
-    def test_category_list_command_user_not_found(self, mock_user_service_class):
+    @patch('cli.main.resolve_cli_user')
+    def test_category_list_command_user_not_found(self, mock_resolve_user):
         """Test category listing when user not found"""
         # Arrange
-        mock_user_service = Mock()
-        mock_user_service.get_by_id.return_value = None
-        mock_user_service_class.return_value = mock_user_service
+        mock_resolve_user.side_effect = ValueError("No user found for identifier: 999")
 
         # Act
         result = self.runner.invoke(category_app, ['list', '--user', '999'])
 
         # Assert
         assert result.exit_code == 1
-        assert 'No user found for user_id=999' in result.output
+        assert 'No user found for identifier: 999' in result.output
     
     @patch('core.services.user_service.UserService')
     @patch('core.db.get_session')
@@ -322,66 +316,30 @@ class TestCategoryCLICommands:
 
         # Assert
         assert result.exit_code == 1
-        assert 'Category 999 not found for user 1 in local store' in result.output
+        assert 'Category 999 not found for user 1' in result.output
 
-    @patch('core.services.user_service.UserService')
-    @patch('core.services.calendar_service.CalendarService')
+    @patch('cli.main.resolve_cli_user')
+    @patch('core.db.get_session')
     @patch('core.services.category_processing_service.CategoryProcessingService')
     def test_category_validate_command_success(self, mock_category_processing_class,
-                                              mock_calendar_service_class,
-                                              mock_user_service_class):
+                                              mock_get_session,
+                                              mock_resolve_user):
         """Test successful category validation"""
         # Arrange
         mock_user = Mock(id=1, email='test@example.com')
-        mock_user_service = Mock()
-        mock_user_service.get_by_id.return_value = mock_user
-        mock_user_service_class.return_value = mock_user_service
+        mock_resolve_user.return_value = mock_user
 
-        mock_calendar_service = Mock()
-        mock_calendar_service_class.return_value = mock_calendar_service
-
-        mock_stats = {
-            'total_appointments': 100,
-            'valid_categories': 85,
-            'invalid_categories': 15,
-            'validation_issues': [
-                {'appointment_id': '123', 'issue': 'Invalid format'},
-                {'appointment_id': '456', 'issue': 'Missing billing type'}
-            ]
-        }
-        mock_category_processing = Mock()
-        mock_category_processing.get_category_statistics.return_value = mock_stats
-        mock_category_processing_class.return_value = mock_category_processing
-
-        # Act
-        result = self.runner.invoke(category_app, [
-            'validate', '--user', '1',
-            '--start-date', '2024-01-01',
-            '--end-date', '2024-01-31'
-        ])
-
-        # Assert
-        assert result.exit_code == 0
-        # The actual output shows "No appointments found" when no appointments are returned
-        # Let's check for the actual output pattern
-        assert 'Validating categories for user 1' in result.output
-
-    @patch('core.services.user_service.UserService')
-    @patch('core.services.calendar_service.CalendarService')
-    @patch('core.services.category_processing_service.CategoryProcessingService')
-    def test_category_validate_command_no_issues(self, mock_category_processing_class,
-                                                 mock_calendar_service_class,
-                                                 mock_user_service_class):
-        """Test category validation with no issues found"""
-        # Arrange
-        mock_user = Mock(id=1, email='test@example.com')
-        mock_user_service = Mock()
-        mock_user_service.get_by_id.return_value = mock_user
-        mock_user_service_class.return_value = mock_user_service
+        # Mock session and query
+        mock_session = Mock()
+        mock_get_session.return_value = mock_session
+        mock_query = Mock()
+        mock_session.query.return_value = mock_query
+        mock_query.filter.return_value = mock_query
+        mock_query.all.return_value = []  # No appointments found
 
         mock_stats = {
-            'total_appointments': 50,
-            'valid_categories': 50,
+            'total_appointments': 0,
+            'valid_categories': 0,
             'invalid_categories': 0,
             'validation_issues': []
         }
@@ -400,13 +358,51 @@ class TestCategoryCLICommands:
         assert result.exit_code == 0
         assert 'No appointments found for the specified date range' in result.output
 
-    @patch('core.services.user_service.UserService')
-    def test_category_validate_command_user_not_found(self, mock_user_service_class):
+    @patch('cli.main.resolve_cli_user')
+    @patch('core.db.get_session')
+    @patch('core.services.category_processing_service.CategoryProcessingService')
+    def test_category_validate_command_no_issues(self, mock_category_processing_class,
+                                                 mock_get_session,
+                                                 mock_resolve_user):
+        """Test category validation with no issues found"""
+        # Arrange
+        mock_user = Mock(id=1, email='test@example.com')
+        mock_resolve_user.return_value = mock_user
+
+        # Mock session and query
+        mock_session = Mock()
+        mock_get_session.return_value = mock_session
+        mock_query = Mock()
+        mock_session.query.return_value = mock_query
+        mock_query.filter.return_value = mock_query
+        mock_query.all.return_value = []  # No appointments found
+
+        mock_stats = {
+            'total_appointments': 0,
+            'valid_categories': 0,
+            'invalid_categories': 0,
+            'validation_issues': []
+        }
+        mock_category_processing = Mock()
+        mock_category_processing.get_category_statistics.return_value = mock_stats
+        mock_category_processing_class.return_value = mock_category_processing
+
+        # Act
+        result = self.runner.invoke(category_app, [
+            'validate', '--user', '1',
+            '--start-date', '2024-01-01',
+            '--end-date', '2024-01-31'
+        ])
+
+        # Assert
+        assert result.exit_code == 0
+        assert 'No appointments found for the specified date range' in result.output
+
+    @patch('cli.main.resolve_cli_user')
+    def test_category_validate_command_user_not_found(self, mock_resolve_user):
         """Test category validation when user not found"""
         # Arrange
-        mock_user_service = Mock()
-        mock_user_service.get_by_id.return_value = None
-        mock_user_service_class.return_value = mock_user_service
+        mock_resolve_user.side_effect = ValueError("No user found for identifier: 999")
 
         # Act
         result = self.runner.invoke(category_app, [
@@ -415,7 +411,7 @@ class TestCategoryCLICommands:
 
         # Assert
         assert result.exit_code == 1
-        assert 'No user found for user_id=999' in result.output
+        assert 'No user found for identifier: 999' in result.output
 
     @patch('core.services.user_service.UserService')
     @patch('core.db.get_session')
