@@ -114,6 +114,7 @@ class CalendarArchiveOrchestrator:
         # Initialize audit logging
         if audit_service is None:
             from core.repositories.audit_log_repository import AuditLogRepository
+
             audit_repo = AuditLogRepository(session=db_session)
             audit_service = AuditLogService(repository=audit_repo)
         correlation_id = audit_service.generate_correlation_id()

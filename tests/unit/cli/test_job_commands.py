@@ -19,11 +19,15 @@ class TestJobCLICommands:
     
     def test_schedule_archive_job_daily_success(self):
         """Test successful daily archive job scheduling"""
-        with patch('flask_apscheduler.APScheduler') as mock_scheduler_class, \
+        with patch('cli.main.resolve_cli_user') as mock_resolve_user, \
+             patch('flask_apscheduler.APScheduler') as mock_scheduler_class, \
              patch('core.services.background_job_service.BackgroundJobService') as mock_bg_job_service_class, \
              patch('core.services.scheduled_archive_service.ScheduledArchiveService') as mock_scheduled_service_class:
 
             # Arrange
+            mock_user = Mock(id=1, email='test@example.com')
+            mock_resolve_user.return_value = mock_user
+
             mock_scheduler = Mock()
             mock_scheduler_class.return_value = mock_scheduler
 

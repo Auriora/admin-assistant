@@ -196,8 +196,12 @@ class TestConfigCLICommands:
     
     def test_activate_config_not_found(self):
         """Test archive configuration activation when config not found"""
-        with patch('core.services.archive_configuration_service.ArchiveConfigurationService') as mock_archive_service_class:
+        with patch('cli.main.resolve_cli_user') as mock_resolve_user, \
+             patch('core.services.archive_configuration_service.ArchiveConfigurationService') as mock_archive_service_class:
             # Arrange
+            mock_user = Mock(id=1, email='test@example.com')
+            mock_resolve_user.return_value = mock_user
+
             mock_archive_service = Mock()
             mock_archive_service.get_by_id.return_value = None
             mock_archive_service_class.return_value = mock_archive_service
@@ -213,8 +217,12 @@ class TestConfigCLICommands:
     
     def test_activate_config_wrong_user(self):
         """Test archive configuration activation for wrong user"""
-        with patch('core.services.archive_configuration_service.ArchiveConfigurationService') as mock_archive_service_class:
+        with patch('cli.main.resolve_cli_user') as mock_resolve_user, \
+             patch('core.services.archive_configuration_service.ArchiveConfigurationService') as mock_archive_service_class:
             # Arrange
+            mock_user = Mock(id=1, email='test@example.com')
+            mock_resolve_user.return_value = mock_user
+
             class MockConfig:
                 def __init__(self, id, name, user_id):
                     self.id = id
@@ -235,79 +243,95 @@ class TestConfigCLICommands:
             assert result.exit_code == 1
             assert 'Config 1 not found for user 1' in result.output
     
+    @patch('cli.main.resolve_cli_user')
     @patch('core.services.archive_configuration_service.ArchiveConfigurationService')
-    def test_deactivate_config_success(self, mock_archive_service_class):
+    def test_deactivate_config_success(self, mock_archive_service_class, mock_resolve_user):
         """Test successful archive configuration deactivation"""
         # Arrange
+        mock_user = Mock(id=1, email='test@example.com')
+        mock_resolve_user.return_value = mock_user
+
         mock_config = Mock(id=1, name='Test Config', user_id=1, is_active=True)
         mock_archive_service = Mock()
         mock_archive_service.get_by_id.return_value = mock_config
         mock_archive_service_class.return_value = mock_archive_service
-        
+
         # Act
         result = self.runner.invoke(archive_archive_config_app, [
             'deactivate', '--user', '1', '--config-id', '1'
         ])
-        
+
         # Assert
         assert result.exit_code == 0
         assert 'Config 1 deactivated' in result.output
         mock_archive_service.update.assert_called_once()
         assert mock_config.is_active is False
     
+    @patch('cli.main.resolve_cli_user')
     @patch('core.services.archive_configuration_service.ArchiveConfigurationService')
-    def test_delete_config_success(self, mock_archive_service_class):
+    def test_delete_config_success(self, mock_archive_service_class, mock_resolve_user):
         """Test successful archive configuration deletion with confirmation"""
         # Arrange
+        mock_user = Mock(id=1, email='test@example.com')
+        mock_resolve_user.return_value = mock_user
+
         mock_config = Mock(id=1, name='Test Config', user_id=1)
         mock_archive_service = Mock()
         mock_archive_service.get_by_id.return_value = mock_config
         mock_archive_service_class.return_value = mock_archive_service
-        
+
         # Act - simulate user confirming deletion
         result = self.runner.invoke(archive_archive_config_app, [
             'delete', '--user', '1', '--config-id', '1'
         ], input='y\n')
-        
+
         # Assert
         assert result.exit_code == 0
         assert 'Config 1 deleted' in result.output
         mock_archive_service.delete.assert_called_once_with(1)
     
+    @patch('cli.main.resolve_cli_user')
     @patch('core.services.archive_configuration_service.ArchiveConfigurationService')
-    def test_delete_config_cancelled(self, mock_archive_service_class):
+    def test_delete_config_cancelled(self, mock_archive_service_class, mock_resolve_user):
         """Test archive configuration deletion cancelled by user"""
         # Arrange
+        mock_user = Mock(id=1, email='test@example.com')
+        mock_resolve_user.return_value = mock_user
+
         mock_config = Mock(id=1, name='Test Config', user_id=1)
         mock_archive_service = Mock()
         mock_archive_service.get_by_id.return_value = mock_config
         mock_archive_service_class.return_value = mock_archive_service
-        
+
         # Act - simulate user cancelling deletion
         result = self.runner.invoke(archive_archive_config_app, [
             'delete', '--user', '1', '--config-id', '1'
         ], input='n\n')
-        
+
         # Assert
         assert result.exit_code == 0
         # The test is actually deleting instead of cancelling - this suggests the input simulation isn't working
         # Let's check for the actual output
         assert 'Config 1 deleted' in result.output
     
+    @patch('cli.main.resolve_cli_user')
     @patch('core.services.archive_configuration_service.ArchiveConfigurationService')
-    def test_set_default_config_success(self, mock_archive_service_class):
+    def test_set_default_config_success(self, mock_archive_service_class, mock_resolve_user):
         """Test successful default configuration setting"""
         # Arrange
+        mock_user = Mock(id=1, email='test@example.com')
+        mock_resolve_user.return_value = mock_user
+
         mock_config = Mock(id=1, name='Test Config', user_id=1)
         mock_archive_service = Mock()
         mock_archive_service.get_by_id.return_value = mock_config
         mock_archive_service_class.return_value = mock_archive_service
-        
+
         # Act
         result = self.runner.invoke(archive_archive_config_app, [
             'set-default', '--user', '1', '--config-id', '1'
         ])
-        
+
         # Assert
         assert result.exit_code == 0
         assert 'To use this config as default' in result.output

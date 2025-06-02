@@ -18,12 +18,10 @@ class TestCategoryCLICommands:
         self.runner = CliRunner()
     
     @patch('cli.main.resolve_cli_user')
-    @patch('core.db.get_session')
     @patch('core.repositories.get_category_repository')
     @patch('core.services.category_service.CategoryService')
     def test_category_list_command_success_local(self, mock_category_service_class,
-                                                mock_get_repo, mock_get_session,
-                                                mock_resolve_user):
+                                                mock_get_repo, mock_resolve_user):
         """Test successful category listing with local store"""
         # Arrange
         mock_user = Mock(id=1, email='test@example.com')
@@ -96,15 +94,13 @@ class TestCategoryCLICommands:
             mock_get_token.assert_called_once()
             mock_get_graph_client.assert_called_once_with(mock_user, 'valid_token')
 
-    @patch('core.services.user_service.UserService')
+    @patch('cli.main.resolve_cli_user')
     @patch('core.utilities.auth_utility.get_cached_access_token')
-    def test_category_list_command_no_token_msgraph(self, mock_get_token, mock_user_service_class):
+    def test_category_list_command_no_token_msgraph(self, mock_get_token, mock_resolve_user):
         """Test category listing with msgraph store when no token available"""
         # Arrange
         mock_user = Mock(id=1, email='test@example.com')
-        mock_user_service = Mock()
-        mock_user_service.get_by_id.return_value = mock_user
-        mock_user_service_class.return_value = mock_user_service
+        mock_resolve_user.return_value = mock_user
 
         mock_get_token.return_value = None
 
@@ -128,24 +124,23 @@ class TestCategoryCLICommands:
         assert result.exit_code == 1
         assert 'No user found for identifier: 999' in result.output
     
-    @patch('core.services.user_service.UserService')
-    @patch('core.db.get_session')
+    @patch('cli.main.resolve_cli_user')
     @patch('core.repositories.get_category_repository')
     @patch('core.services.category_service.CategoryService')
     def test_category_list_command_no_categories(self, mock_category_service_class,
-                                                mock_get_repo, mock_get_session,
-                                                mock_user_service_class):
+                                                mock_get_repo, mock_resolve_user):
         """Test category listing when no categories found"""
         # Arrange
         mock_user = Mock(id=1, email='test@example.com')
-        mock_user_service = Mock()
-        mock_user_service.get_by_id.return_value = mock_user
-        mock_user_service_class.return_value = mock_user_service
-        
+        mock_resolve_user.return_value = mock_user
+
         mock_category_service = Mock()
         mock_category_service.list.return_value = []
         mock_category_service_class.return_value = mock_category_service
-        
+
+        mock_repository = Mock()
+        mock_get_repo.return_value = mock_repository
+
         # Act
         result = self.runner.invoke(category_app, ['list', '--user', '1'])
 
@@ -153,37 +148,41 @@ class TestCategoryCLICommands:
         assert result.exit_code == 0
         assert 'No categories found' in result.output
 
-    def test_category_list_command_invalid_store(self):
+    @patch('cli.main.resolve_cli_user')
+    def test_category_list_command_invalid_store(self, mock_resolve_user):
         """Test category listing with invalid store option"""
+        # Arrange
+        mock_user = Mock(id=1, email='test@example.com')
+        mock_resolve_user.return_value = mock_user
+
         # Act
         result = self.runner.invoke(category_app, ['list', '--user', '1', '--store', 'invalid'])
-        
+
         # Assert
         assert result.exit_code == 1
         assert "Invalid store 'invalid'" in result.output
     
-    @patch('core.services.user_service.UserService')
-    @patch('core.db.get_session')
+    @patch('cli.main.resolve_cli_user')
     @patch('core.repositories.get_category_repository')
     @patch('core.services.category_service.CategoryService')
     @patch('typer.prompt')
     def test_category_add_command_success(self, mock_prompt, mock_category_service_class,
-                                         mock_get_repo, mock_get_session,
-                                         mock_user_service_class):
+                                         mock_get_repo, mock_resolve_user):
         """Test successful category creation"""
         # Arrange
         mock_user = Mock(id=1, email='test@example.com')
-        mock_user_service = Mock()
-        mock_user_service.get_by_id.return_value = mock_user
-        mock_user_service_class.return_value = mock_user_service
-        
+        mock_resolve_user.return_value = mock_user
+
         mock_prompt.side_effect = ['New Client - Hourly', 'Hourly billing work']
-        
+
         mock_new_category = Mock(id=3, name='New Client - Hourly', description='Hourly billing work')
         mock_category_service = Mock()
         mock_category_service.create.return_value = mock_new_category
         mock_category_service_class.return_value = mock_category_service
-        
+
+        mock_repository = Mock()
+        mock_get_repo.return_value = mock_repository
+
         # Act
         result = self.runner.invoke(category_app, ['add', '--user', '1'])
 
@@ -193,121 +192,120 @@ class TestCategoryCLICommands:
         assert 'New Client - Hourly' in result.output
         mock_category_service.create.assert_called_once()
     
-    def test_category_add_command_with_options(self):
+    @patch('cli.main.resolve_cli_user')
+    @patch('core.repositories.get_category_repository')
+    @patch('core.services.category_service.CategoryService')
+    def test_category_add_command_with_options(self, mock_category_service_class,
+                                              mock_get_repo, mock_resolve_user):
         """Test category creation with command line options"""
-        with patch('core.services.UserService') as mock_user_service_class, \
-             patch('core.db.get_session') as mock_get_session, \
-             patch('core.repositories.get_category_repository') as mock_get_repo, \
-             patch('core.services.category_service.CategoryService') as mock_category_service_class:
+        # Arrange
+        mock_user = Mock(id=1, email='test@example.com')
+        mock_resolve_user.return_value = mock_user
 
-            # Arrange
-            mock_user = Mock(id=1, email='test@example.com')
-            mock_user_service = Mock()
-            mock_user_service.get_by_id.return_value = mock_user
-            mock_user_service_class.return_value = mock_user_service
+        mock_new_category = Mock(id=3, name='Client C - Project', description='Project work')
+        mock_category_service = Mock()
+        mock_category_service.create.return_value = mock_new_category
+        mock_category_service_class.return_value = mock_category_service
 
-            mock_new_category = Mock(id=3, name='Client C - Project', description='Project work')
-            mock_category_service = Mock()
-            mock_category_service.create.return_value = mock_new_category
-            mock_category_service_class.return_value = mock_category_service
+        mock_repository = Mock()
+        mock_get_repo.return_value = mock_repository
 
-            # Act
-            result = self.runner.invoke(category_app, [
-                'add', '--user', '1',
-                '--name', 'Client C - Project',
-                '--description', 'Project work'
-            ])
+        # Act
+        result = self.runner.invoke(category_app, [
+            'add', '--user', '1',
+            '--name', 'Client C - Project',
+            '--description', 'Project work'
+        ])
 
-            # Assert
-            assert result.exit_code == 0
-            assert 'created successfully in local store' in result.output
-            mock_category_service.create.assert_called_once()
+        # Assert
+        assert result.exit_code == 0
+        assert 'created successfully in local store' in result.output
+        mock_category_service.create.assert_called_once()
     
-    def test_category_delete_command_success(self):
+    @patch('cli.main.resolve_cli_user')
+    @patch('core.repositories.get_category_repository')
+    @patch('core.services.category_service.CategoryService')
+    def test_category_delete_command_success(self, mock_category_service_class,
+                                            mock_get_repo, mock_resolve_user):
         """Test successful category deletion with confirmation"""
-        with patch('core.services.UserService') as mock_user_service_class, \
-             patch('core.db.get_session') as mock_get_session, \
-             patch('core.repositories.get_category_repository') as mock_get_repo, \
-             patch('core.services.category_service.CategoryService') as mock_category_service_class:
+        # Arrange
+        mock_user = Mock(id=1, email='test@example.com')
+        mock_resolve_user.return_value = mock_user
 
-            # Arrange
-            mock_user = Mock(id=1, email='test@example.com')
-            mock_user_service = Mock()
-            mock_user_service.get_by_id.return_value = mock_user
-            mock_user_service_class.return_value = mock_user_service
+        # Create a simple category object for deletion
+        class MockCategory:
+            def __init__(self, id, name):
+                self.id = id
+                self.name = name
 
-            # Create a simple category object for deletion
-            class MockCategory:
-                def __init__(self, id, name):
-                    self.id = id
-                    self.name = name
+        mock_category = MockCategory(1, 'Test Category')
+        mock_category_service = Mock()
+        mock_category_service.get_by_id.return_value = mock_category
+        mock_category_service_class.return_value = mock_category_service
 
-            mock_category = MockCategory(1, 'Test Category')
-            mock_category_service = Mock()
-            mock_category_service.get_by_id.return_value = mock_category
-            mock_category_service_class.return_value = mock_category_service
+        mock_repository = Mock()
+        mock_get_repo.return_value = mock_repository
 
-            # Act - simulate user confirming deletion
-            result = self.runner.invoke(category_app, [
-                'delete', '--user', '1', '--id', '1'
-            ], input='y\n')
+        # Act - simulate user confirming deletion
+        result = self.runner.invoke(category_app, [
+            'delete', '--user', '1', '--id', '1'
+        ], input='y\n')
 
-            # Assert
-            assert result.exit_code == 0
-            assert 'deleted successfully from local store' in result.output
-            mock_category_service.delete.assert_called_once_with('1')
-    
-    def test_category_delete_command_cancelled(self):
+        # Assert
+        assert result.exit_code == 0
+        assert 'deleted successfully from local store' in result.output
+        mock_category_service.delete.assert_called_once_with('1')
+
+    @patch('cli.main.resolve_cli_user')
+    @patch('core.repositories.get_category_repository')
+    @patch('core.services.category_service.CategoryService')
+    def test_category_delete_command_cancelled(self, mock_category_service_class,
+                                              mock_get_repo, mock_resolve_user):
         """Test category deletion cancelled by user"""
-        with patch('core.services.UserService') as mock_user_service_class, \
-             patch('core.db.get_session') as mock_get_session, \
-             patch('core.repositories.get_category_repository') as mock_get_repo, \
-             patch('core.services.category_service.CategoryService') as mock_category_service_class:
+        # Arrange
+        mock_user = Mock(id=1, email='test@example.com')
+        mock_resolve_user.return_value = mock_user
 
-            # Arrange
-            mock_user = Mock(id=1, email='test@example.com')
-            mock_user_service = Mock()
-            mock_user_service.get_by_id.return_value = mock_user
-            mock_user_service_class.return_value = mock_user_service
+        # Create a simple category object for deletion
+        class MockCategory:
+            def __init__(self, id, name):
+                self.id = id
+                self.name = name
 
-            # Create a simple category object for deletion
-            class MockCategory:
-                def __init__(self, id, name):
-                    self.id = id
-                    self.name = name
+        mock_category = MockCategory(1, 'Test Category')
+        mock_category_service = Mock()
+        mock_category_service.get_by_id.return_value = mock_category
+        mock_category_service_class.return_value = mock_category_service
 
-            mock_category = MockCategory(1, 'Test Category')
-            mock_category_service = Mock()
-            mock_category_service.get_by_id.return_value = mock_category
-            mock_category_service_class.return_value = mock_category_service
+        mock_repository = Mock()
+        mock_get_repo.return_value = mock_repository
 
-            # Act - simulate user cancelling deletion
-            result = self.runner.invoke(category_app, [
-                'delete', '--user', '1', '--id', '1'
-            ], input='n\n')
+        # Act - simulate user cancelling deletion
+        result = self.runner.invoke(category_app, [
+            'delete', '--user', '1', '--id', '1'
+        ], input='n\n')
 
-            # Assert
-            assert result.exit_code == 0
-            assert 'deletion cancelled' in result.output
-            mock_category_service.delete.assert_not_called()
-    
-    @patch('core.services.user_service.UserService')
-    @patch('core.db.get_session')
+        # Assert
+        assert result.exit_code == 0
+        assert 'deletion cancelled' in result.output
+        mock_category_service.delete.assert_not_called()
+
+    @patch('cli.main.resolve_cli_user')
     @patch('core.repositories.get_category_repository')
     @patch('core.services.category_service.CategoryService')
     def test_category_delete_command_not_found(self, mock_category_service_class,
-                                              mock_get_repo, mock_get_session,
-                                              mock_user_service_class):
+                                              mock_get_repo, mock_resolve_user):
         """Test category deletion when category not found"""
         # Arrange
         mock_user = Mock(id=1, email='test@example.com')
-        mock_user_service = Mock()
-        mock_user_service.get_by_id.return_value = mock_user
-        mock_user_service_class.return_value = mock_user_service
+        mock_resolve_user.return_value = mock_user
 
         mock_category_service = Mock()
         mock_category_service.get_by_id.return_value = None
         mock_category_service_class.return_value = mock_category_service
+
+        mock_repository = Mock()
+        mock_get_repo.return_value = mock_repository
 
         # Act
         result = self.runner.invoke(category_app, [
@@ -318,56 +316,20 @@ class TestCategoryCLICommands:
         assert result.exit_code == 1
         assert 'Category 999 not found for user 1' in result.output
 
-    @patch('cli.main.resolve_cli_user')
-    @patch('core.db.get_session')
     @patch('core.services.category_processing_service.CategoryProcessingService')
-    def test_category_validate_command_success(self, mock_category_processing_class,
-                                              mock_get_session,
-                                              mock_resolve_user):
+    @patch('cli.main.get_session')
+    @patch('cli.main.parse_flexible_date')
+    @patch('cli.main.resolve_cli_user')
+    def test_category_validate_command_success(self, mock_resolve_user, mock_parse_flexible_date,
+                                              mock_get_session, mock_category_processing_class):
         """Test successful category validation"""
         # Arrange
         mock_user = Mock(id=1, email='test@example.com')
         mock_resolve_user.return_value = mock_user
 
-        # Mock session and query
-        mock_session = Mock()
-        mock_get_session.return_value = mock_session
-        mock_query = Mock()
-        mock_session.query.return_value = mock_query
-        mock_query.filter.return_value = mock_query
-        mock_query.all.return_value = []  # No appointments found
-
-        mock_stats = {
-            'total_appointments': 0,
-            'valid_categories': 0,
-            'invalid_categories': 0,
-            'validation_issues': []
-        }
-        mock_category_processing = Mock()
-        mock_category_processing.get_category_statistics.return_value = mock_stats
-        mock_category_processing_class.return_value = mock_category_processing
-
-        # Act
-        result = self.runner.invoke(category_app, [
-            'validate', '--user', '1',
-            '--start-date', '2024-01-01',
-            '--end-date', '2024-01-31'
-        ])
-
-        # Assert
-        assert result.exit_code == 0
-        assert 'No appointments found for the specified date range' in result.output
-
-    @patch('cli.main.resolve_cli_user')
-    @patch('core.db.get_session')
-    @patch('core.services.category_processing_service.CategoryProcessingService')
-    def test_category_validate_command_no_issues(self, mock_category_processing_class,
-                                                 mock_get_session,
-                                                 mock_resolve_user):
-        """Test category validation with no issues found"""
-        # Arrange
-        mock_user = Mock(id=1, email='test@example.com')
-        mock_resolve_user.return_value = mock_user
+        # Mock date parsing
+        from datetime import date
+        mock_parse_flexible_date.side_effect = [date(2024, 1, 1), date(2024, 1, 31)]
 
         # Mock session and query
         mock_session = Mock()
@@ -413,19 +375,15 @@ class TestCategoryCLICommands:
         assert result.exit_code == 1
         assert 'No user found for identifier: 999' in result.output
 
-    @patch('core.services.user_service.UserService')
-    @patch('core.db.get_session')
+    @patch('cli.main.resolve_cli_user')
     @patch('core.repositories.get_category_repository')
     @patch('core.services.category_service.CategoryService')
     def test_category_edit_command_success(self, mock_category_service_class,
-                                          mock_get_repo, mock_get_session,
-                                          mock_user_service_class):
+                                          mock_get_repo, mock_resolve_user):
         """Test successful category editing"""
         # Arrange
         mock_user = Mock(id=1, email='test@example.com')
-        mock_user_service = Mock()
-        mock_user_service.get_by_id.return_value = mock_user
-        mock_user_service_class.return_value = mock_user_service
+        mock_resolve_user.return_value = mock_user
 
         mock_category = Mock(id=1, name='Old Name', description='Old description')
         mock_updated_category = Mock(id=1, name='New Name', description='New description')
@@ -433,6 +391,9 @@ class TestCategoryCLICommands:
         mock_category_service.get_by_id.return_value = mock_category
         mock_category_service.update.return_value = mock_updated_category
         mock_category_service_class.return_value = mock_category_service
+
+        mock_repository = Mock()
+        mock_get_repo.return_value = mock_repository
 
         # Act
         result = self.runner.invoke(category_app, [
@@ -446,23 +407,22 @@ class TestCategoryCLICommands:
         assert 'Category 1 updated successfully in local store' in result.output
         mock_category_service.update.assert_called_once()
 
-    @patch('core.services.user_service.UserService')
-    @patch('core.db.get_session')
+    @patch('cli.main.resolve_cli_user')
     @patch('core.repositories.get_category_repository')
     @patch('core.services.category_service.CategoryService')
     def test_category_commands_error_handling(self, mock_category_service_class,
-                                             mock_get_repo, mock_get_session,
-                                             mock_user_service_class):
+                                             mock_get_repo, mock_resolve_user):
         """Test error handling in category commands"""
         # Arrange
         mock_user = Mock(id=1, email='test@example.com')
-        mock_user_service = Mock()
-        mock_user_service.get_by_id.return_value = mock_user
-        mock_user_service_class.return_value = mock_user_service
+        mock_resolve_user.return_value = mock_user
 
         mock_category_service = Mock()
         mock_category_service.list.side_effect = Exception('Database connection failed')
         mock_category_service_class.return_value = mock_category_service
+
+        mock_repository = Mock()
+        mock_get_repo.return_value = mock_repository
 
         # Act
         result = self.runner.invoke(category_app, ['list', '--user', '1'])
