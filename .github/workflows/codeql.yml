@@ -12,6 +12,7 @@ jobs:
   analyze:
     name: Analyze
     runs-on: ubuntu-latest
+    environment: Testing
     timeout-minutes: 360
     permissions:
       actions: read

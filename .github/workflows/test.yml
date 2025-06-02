@@ -14,6 +14,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    environment: Testing
     strategy:
       matrix:
         python-version: ['3.12', '3.13']
@@ -55,11 +56,6 @@ jobs:
 
     - name: Set up test environment
       run: |
-        echo "APP_ENV=testing" >> $GITHUB_ENV
-        echo "DATABASE_URL=sqlite:///:memory:" >> $GITHUB_ENV
-        echo "CORE_DATABASE_URL=sqlite:///:memory:" >> $GITHUB_ENV
-        echo "LOG_LEVEL=INFO" >> $GITHUB_ENV
-        echo "OTEL_SDK_DISABLED=true" >> $GITHUB_ENV
         # Create instance directory for any file-based operations
         mkdir -p instance
 
@@ -95,6 +91,7 @@ jobs:
 
   lint:
     runs-on: ubuntu-latest
+    environment: Testing
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -149,6 +146,7 @@ jobs:
 
   security:
     runs-on: ubuntu-latest
+    environment: Testing
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
