@@ -5,6 +5,7 @@
     "context": ".."
   },
   "forwardPorts": [5000],
+  "runArgs": ["--name", "admin-assistant-dev"],
   "postCreateCommand": "pip install -e .[dev]",
   "remoteUser": "devuser",
   "workspaceFolder": "/workspace",
