@@ -74,7 +74,7 @@ jobs:
         OTEL_SDK_DISABLED: true
 
     - name: Upload coverage reports to Codecov
-      uses: codecov/codecov-action@v4
+      uses: codecov/codecov-action@v5
       with:
         file: ./coverage.xml
         flags: unittests
