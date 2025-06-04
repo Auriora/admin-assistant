@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "admin-assistant"
-version = "0.1.0"
+version = "0.1.0alpha1"
 description = "Admin Assistant CLI and core"
 authors = [{ name = "Bruce Cherrington", email = "aurioraproject@gmail.com" }]
 readme = "README.md"
