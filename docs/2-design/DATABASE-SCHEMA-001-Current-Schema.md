@@ -239,13 +239,16 @@ CREATE INDEX idx_job_config_user ON job_configurations(user_id);
 ### Migration Commands
 ```bash
 # Apply all pending migrations
-alembic upgrade head
+./dev db upgrade
 
 # Create new migration
-alembic revision --autogenerate -m "Description"
+./dev db migrate --message "Description"
 
 # Check current version
-alembic current
+./dev db current
+
+# Initialize database
+./dev db init
 ```
 
 ## Data Integrity Constraints

@@ -167,33 +167,33 @@ tests/
 
 ### Test Runner Script
 
-#### `scripts/run_tests.py`
+#### Development CLI (`./dev test`)
 Comprehensive test execution with options:
-- Unit tests only (`--unit`)
-- Integration tests only (`--integration`)
-- Archiving-specific tests (`--archiving`)
-- Observability tests (`--observability`)
-- Coverage reporting (`--coverage`)
-- Specific test execution (`--test`)
-- Marker-based filtering (`--marker`)
+- Unit tests only (`unit`)
+- Integration tests only (`integration`)
+- Archiving-specific tests (`archiving`)
+- Observability tests (`observability`)
+- Coverage reporting (`coverage`)
+- Specific test execution (`specific`)
+- Marker-based filtering (`marker`)
 
 ### Usage Examples
 
 ```bash
 # Run all tests with coverage
-python scripts/run_tests.py --all --coverage
+./dev test all --coverage
 
 # Run only archiving tests
-python scripts/run_tests.py --archiving --verbose
+./dev test archiving --verbose
 
 # Run unit tests with coverage
-python scripts/run_tests.py --unit --coverage
+./dev test unit --coverage
 
 # Run specific test file
-python scripts/run_tests.py --test tests/unit/services/test_calendar_archive_service_enhanced.py
+./dev test specific tests/unit/services/test_calendar_archive_service_enhanced.py
 
 # Run tests with specific marker
-python scripts/run_tests.py --marker integration
+./dev test marker integration
 ```
 
 ## Coverage Requirements

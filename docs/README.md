@@ -81,14 +81,14 @@ The Admin Assistant is a Microsoft 365 Calendar management system that automates
 ### Test Execution
 ```bash
 # Run all tests
-python -m pytest
+./dev test all
 
 # Run with coverage
-python -m pytest --cov=core --cov-report=html
+./dev test all --coverage
 
 # Run specific test categories
-python -m pytest tests/unit/
-python -m pytest tests/integration/
+./dev test unit
+./dev test integration
 ```
 
 ## 🔧 Development Setup
@@ -105,10 +105,13 @@ source .venv/bin/activate  # Linux/Mac
 .venv\Scripts\activate     # Windows
 
 # Install dependencies
-pip install -r requirements.txt
+pip install -e .[dev]
+
+# Initialize database
+./dev db init
 
 # Run tests
-python -m pytest
+./dev test all
 
 # Start CLI
 python -m cli.main --help
