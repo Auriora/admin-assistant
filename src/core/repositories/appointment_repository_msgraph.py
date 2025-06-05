@@ -25,60 +25,70 @@ if TYPE_CHECKING:
 DEFAULT_TIMEOUT = 30  # seconds
 
 
+# Global event loop management for MSGraph operations
+_global_loop = None
+_loop_lock = None
+
+def _get_or_create_event_loop():
+    """
+    Get or create a persistent event loop for MSGraph operations.
+    This avoids the overhead and issues of creating/destroying loops for each operation.
+    """
+    global _global_loop, _loop_lock
+
+    if _loop_lock is None:
+        import threading
+        _loop_lock = threading.Lock()
+
+    with _loop_lock:
+        if _global_loop is None or _global_loop.is_closed():
+            _global_loop = asyncio.new_event_loop()
+            # Apply nest_asyncio to allow nested event loops
+            nest_asyncio.apply(_global_loop)
+        return _global_loop
+
 def _run_async(coro, timeout=DEFAULT_TIMEOUT):
     """
     Run an async coroutine in a sync context with proper event loop handling.
-    Handles various event loop states and provides fallback mechanisms.
+    Uses a persistent event loop to avoid creation/destruction overhead and issues.
     """
     try:
-        # Try to get the current event loop
-        loop = asyncio.get_running_loop()
-
-        # Check if the loop is closed
-        if loop.is_closed():
-            logger.warning("Current event loop is closed, creating new one")
-            return asyncio.run(asyncio.wait_for(coro, timeout=timeout))
-
-        # If we're already in an event loop, we need to handle this carefully
-        import nest_asyncio
-        nest_asyncio.apply()
-
-        # Use asyncio.create_task for better compatibility with nest_asyncio
-        task = asyncio.create_task(asyncio.wait_for(coro, timeout=timeout))
-        return loop.run_until_complete(task)
-
-    except RuntimeError as e:
-        error_msg = str(e).lower()
-        if "no running event loop" in error_msg:
-            # No running event loop, create a new one
-            try:
-                return asyncio.run(asyncio.wait_for(coro, timeout=timeout))
-            except Exception as inner_e:
-                logger.exception(f"Error creating new event loop: {inner_e}")
-                raise
-        elif "event loop is closed" in error_msg or "event loop is running" in error_msg:
-            # Event loop is closed or other runtime error
-            logger.warning(f"Event loop runtime error: {e}, trying to create new loop")
-            try:
-                # Create a completely new event loop
-                new_loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(new_loop)
-                try:
-                    return new_loop.run_until_complete(asyncio.wait_for(coro, timeout=timeout))
-                finally:
-                    new_loop.close()
-                    # Reset to no event loop
-                    asyncio.set_event_loop(None)
-            except Exception as inner_e:
-                logger.exception(f"Error creating new event loop after runtime error: {inner_e}")
-                raise
-        else:
-            # Other runtime error, re-raise
-            logger.exception(f"Unexpected runtime error in _run_async: {e}")
-            raise
+        # Try to get the current running event loop
+        try:
+            current_loop = asyncio.get_running_loop()
+            # If we're already in an event loop, use nest_asyncio
+            nest_asyncio.apply()
+            # Create a task and run it
+            task = asyncio.create_task(asyncio.wait_for(coro, timeout=timeout))
+            return current_loop.run_until_complete(task)
+        except RuntimeError:
+            # No running event loop, use our persistent loop
+            pass
     except Exception as e:
-        logger.exception(f"Unexpected error in _run_async: {e}")
-        raise
+        logger.debug(f"Failed to use current event loop: {e}")
+
+    # Use our persistent event loop
+    try:
+        loop = _get_or_create_event_loop()
+
+        # Check if we need to start the loop in a thread
+        if loop.is_running():
+            # Loop is already running, use nest_asyncio
+            nest_asyncio.apply(loop)
+            task = asyncio.create_task(asyncio.wait_for(coro, timeout=timeout))
+            return loop.run_until_complete(task)
+        else:
+            # Loop is not running, run the coroutine
+            return loop.run_until_complete(asyncio.wait_for(coro, timeout=timeout))
+
+    except Exception as e:
+        logger.exception(f"Error in persistent event loop: {e}")
+        # Fallback: create a new temporary loop
+        try:
+            return asyncio.run(asyncio.wait_for(coro, timeout=timeout))
+        except Exception as fallback_e:
+            logger.exception(f"Fallback event loop also failed: {fallback_e}")
+            raise
 
 
 # TODO extend repositories to handle bulk operations so that updates and deletes are not done one by one
@@ -198,6 +208,27 @@ class MSGraphAppointmentRepository(BaseAppointmentRepository):
                     f"Error in aadd for user {self.get_user_email()} and appointment {getattr(appointment, 'subject', None)}"
                 )
             raise AppointmentRepositoryException("Failed to add appointment") from e
+
+    async def aadd_bulk(self, appointments: List[Appointment]) -> List[str]:
+        """
+        Async: Add multiple appointments to MS Graph for this user's calendar.
+        Returns a list of error messages for failed appointments.
+        :param appointments: List of Appointment model instances.
+        :return: List of error messages (empty if all successful).
+        """
+        errors = []
+        for i, appointment in enumerate(appointments):
+            try:
+                await self.aadd(appointment)
+            except Exception as e:
+                error_msg = f"Failed to add appointment {getattr(appointment, 'subject', f'#{i+1}')}: {str(e)}"
+                errors.append(error_msg)
+                logger.exception(f"Bulk add error for appointment {i+1}: {e}")
+        return errors
+
+    def add_bulk(self, appointments: List[Appointment]) -> List[str]:
+        """Sync wrapper for aadd_bulk."""
+        return _run_async(self.aadd_bulk(appointments))
 
     async def alist_for_user(self, start_date=None, end_date=None) -> List[Appointment]:
         """

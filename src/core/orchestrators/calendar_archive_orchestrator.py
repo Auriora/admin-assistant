@@ -327,6 +327,7 @@ class CalendarArchiveOrchestrator:
                 audit_ctx.add_detail("category_stats", category_stats)
 
                 # Apply privacy flags to personal appointments
+                print("[DEBUG] Applying privacy automation...")
                 privacy_applied_count = 0
                 for appt in expanded:
                     if category_service.should_mark_private(appt):
@@ -335,6 +336,7 @@ class CalendarArchiveOrchestrator:
                             appt.sensitivity = "Private"
                             privacy_applied_count += 1
 
+                print(f"[DEBUG] Privacy automation: {privacy_applied_count} appointments marked as private")
                 audit_ctx.add_detail("privacy_applied_count", privacy_applied_count)
 
                 # 2b. Process meeting modifications
@@ -475,14 +477,33 @@ class CalendarArchiveOrchestrator:
                 archived_count = 0
                 archive_errors = []
 
-                for appt in appointments_to_archive:
+                # Use bulk operation for MSGraph repositories if available
+                if hasattr(archive_repo, 'add_bulk'):
                     try:
-                        archive_repo.add(appt)
-                        archived_count += 1
+                        bulk_errors = archive_repo.add_bulk(appointments_to_archive)
+                        archive_errors.extend(bulk_errors)
+                        archived_count = len(appointments_to_archive) - len(bulk_errors)
                     except Exception as e:
-                        archive_errors.append(
-                            f"Failed to archive appointment {getattr(appt, 'subject', 'Unknown')}: {str(e)}"
-                        )
+                        # Fallback to individual operations if bulk fails
+                        logger.warning(f"Bulk operation failed, falling back to individual operations: {e}")
+                        for appt in appointments_to_archive:
+                            try:
+                                archive_repo.add(appt)
+                                archived_count += 1
+                            except Exception as individual_e:
+                                archive_errors.append(
+                                    f"Failed to archive appointment {getattr(appt, 'subject', 'Unknown')}: {str(individual_e)}"
+                                )
+                else:
+                    # Repository doesn't support bulk operations, use individual operations
+                    for appt in appointments_to_archive:
+                        try:
+                            archive_repo.add(appt)
+                            archived_count += 1
+                        except Exception as e:
+                            archive_errors.append(
+                                f"Failed to archive appointment {getattr(appt, 'subject', 'Unknown')}: {str(e)}"
+                            )
 
                 print(f"[DEBUG] Archived {archived_count} events.")
                 audit_ctx.add_detail("archived_count", archived_count)
@@ -591,6 +612,7 @@ class CalendarArchiveOrchestrator:
                     "category_issue_count": category_issue_count,
                     "resolution_stats": resolution_stats,
                     "modification_count": modification_count,
+                    "privacy_applied_count": privacy_applied_count,
                     "errors": archive_errors,
                     "correlation_id": correlation_id,  # Include correlation ID in response
                 }

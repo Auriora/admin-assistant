@@ -15,7 +15,15 @@ logger = logging.getLogger(__name__)
 
 
 class CategoryProcessingService:
-    """Service for processing Outlook categories according to workflow format."""
+    """
+    Service for processing Outlook categories according to workflow format.
+
+    Supports flexible category formats:
+    - Standard format: "Customer Name - billing type" (e.g., "Modena - billable")
+    - Alternative format: "billing type - Customer Name" (e.g., "Billable - Modena")
+
+    Both formats are automatically parsed to extract customer name and billing type.
+    """
 
     # Valid billing types according to workflow
     VALID_BILLING_TYPES = {"billable", "non-billable"}
@@ -31,7 +39,7 @@ class CategoryProcessingService:
         self, category_string: str
     ) -> Tuple[Optional[str], Optional[str]]:
         """
-        Parse category string in format '<customer name> - <billing type>'
+        Parse category string in format '<customer name> - <billing type>' or '<billing type> - <customer name>'
 
         Args:
             category_string: Category string to parse
@@ -41,7 +49,9 @@ class CategoryProcessingService:
 
         Examples:
             "Acme Corp - billable" -> ("Acme Corp", "billable")
+            "billable - Acme Corp" -> ("Acme Corp", "billable")
             "Client XYZ - non-billable" -> ("Client XYZ", "non-billable")
+            "non-billable - Client XYZ" -> ("Client XYZ", "non-billable")
             "Invalid Category" -> (None, None)
         """
         if not category_string or not isinstance(category_string, str):
@@ -60,7 +70,7 @@ class CategoryProcessingService:
                 if len(parts) == 2:
                     return parts[0].title(), parts[1]
 
-        # Check for standard format: '<customer name> - <billing type>'
+        # Check for standard format: '<customer name> - <billing type>' or '<billing type> - <customer name>'
         if " - " not in category_string:
             return None, None
 
@@ -69,18 +79,28 @@ class CategoryProcessingService:
         if len(parts) != 2:
             return None, None
 
-        customer_name = parts[0].strip()
-        billing_type = parts[1].strip().lower()
+        part1 = parts[0].strip()
+        part2 = parts[1].strip()
 
-        # Validate customer name (not empty)
-        if not customer_name:
+        # Normalize both parts for comparison
+        part1_lower = part1.lower()
+        part2_lower = part2.lower()
+
+        # Validate both parts are not empty
+        if not part1 or not part2:
             return None, None
 
-        # Validate billing type
-        if billing_type not in self.VALID_BILLING_TYPES:
-            return None, None
+        # Try to determine which part is the billing type
+        # Format 1: '<customer name> - <billing type>' (original format)
+        if part2_lower in self.VALID_BILLING_TYPES:
+            return part1, part2_lower
 
-        return customer_name, billing_type
+        # Format 2: '<billing type> - <customer name>' (alternative format)
+        elif part1_lower in self.VALID_BILLING_TYPES:
+            return part2, part1_lower
+
+        # Neither part is a valid billing type
+        return None, None
 
     def validate_category_format(self, categories: List[str]) -> Dict[str, List[str]]:
         """
