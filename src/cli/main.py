@@ -313,6 +313,11 @@ def archive(
         "--date",
         help="Date or date range. Accepts: 'today', 'yesterday', 'last 7 days' (7 days ending yesterday), 'last week' (previous calendar week), 'last 30 days' (30 days ending yesterday), 'last month' (previous calendar month), a single date (e.g. 31-12-2024, 31-Dec, 31-12), or a range (e.g. 1-6 to 7-6, 1-6-2024 - 7-6-2024).",
     ),
+    replace: bool = typer.Option(
+        False,
+        "--replace",
+        help="Replace existing appointments in the archive calendar for the specified date range. WARNING: This will delete existing archived appointments before adding new ones. Use with caution.",
+    ),
     user_input: Optional[str] = user_option,
 ):
     """Manually trigger calendar archiving for the configured user and archive configuration."""
@@ -347,11 +352,21 @@ def archive(
             end_dt = start_dt
         if end_dt and not start_dt:
             start_dt = end_dt
+        # Handle replace option with confirmation
+        if replace:
+            typer.echo(f"[yellow]WARNING: Replace mode will delete existing archived appointments from {start_dt} to {end_dt}[/yellow]")
+            typer.echo(f"[yellow]Archive calendar: {archive_config.destination_calendar_uri}[/yellow]")
+
+            if not typer.confirm("Are you sure you want to proceed with replace mode?"):
+                typer.echo("Operation cancelled.")
+                raise typer.Exit(code=0)
+
         result = runner.run_archive_job(
             user_id=user.id,
             archive_config_id=archive_config.id,
             start_date=start_dt,
             end_date=end_dt,
+            replace_mode=replace,
         )
     except Exception as e:
         typer.echo(f"Archiving failed: {e}")
@@ -1271,6 +1286,10 @@ app.add_typer(category_app, name="category")
 app.add_typer(calendar_app, name="calendar")
 app.add_typer(config_app, name="config")
 app.add_typer(jobs_app, name="jobs")
+
+# Import and add reversible operations app
+from cli.reversible_operations import reversible_app
+app.add_typer(reversible_app, name="reverse")
 
 
 # --- Background Job Management Commands ---

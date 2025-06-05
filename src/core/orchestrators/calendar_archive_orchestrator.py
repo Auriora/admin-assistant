@@ -172,6 +172,7 @@ class CalendarArchiveOrchestrator:
         db_session: Session,
         logger: Optional[Any] = None,
         audit_service: Optional[Any] = None,
+        replace_mode: bool = False,
     ) -> Dict[str, Any]:
         """
         Archive appointments from a user's MS Graph calendar to an archive calendar, logging overlaps locally.
@@ -224,6 +225,7 @@ class CalendarArchiveOrchestrator:
                     correlation_id,
                     operation_start_time,
                     span,
+                    replace_mode,
                 )
         else:
             return self._archive_user_appointments_impl(
@@ -239,6 +241,7 @@ class CalendarArchiveOrchestrator:
                 correlation_id,
                 operation_start_time,
                 None,
+                replace_mode,
             )
 
     def _archive_user_appointments_impl(
@@ -255,6 +258,7 @@ class CalendarArchiveOrchestrator:
         correlation_id,
         operation_start_time,
         span,
+        replace_mode,
     ) -> Dict[str, Any]:
         """Implementation of archive_user_appointments with OpenTelemetry support."""
 
@@ -474,6 +478,79 @@ class CalendarArchiveOrchestrator:
                     audit_ctx.add_detail("archive_repository_type", "MSGraph")
                     audit_ctx.add_detail("resolved_calendar_id", msgraph_cal_id)
 
+                # Handle replace mode or duplicate checking
+                duplicate_count = 0
+                deleted_appointments = []
+                reversible_operation = None
+
+                if replace_mode:
+                    print("[DEBUG] Replace mode enabled - deleting existing appointments in date range...")
+
+                    # Start reversible operation for replace
+                    from core.services.reversible_audit_service import ReversibleAuditService
+                    reversible_service = ReversibleAuditService(db_session)
+
+                    reversible_operation, correlation_id = reversible_service.start_reversible_operation(
+                        user_id=user.id,
+                        operation_type="archive_replace",
+                        operation_name="calendar_archive_replace",
+                        correlation_id=correlation_id,
+                    )
+
+                    # Delete existing appointments in the date range
+                    if hasattr(archive_repo, 'delete_for_period'):
+                        try:
+                            deleted_appointments = archive_repo.delete_for_period(start_date, end_date)
+                            print(f"[DEBUG] Deleted {len(deleted_appointments)} existing appointments")
+
+                            # Capture deleted appointments for reversal
+                            for deleted_appt in deleted_appointments:
+                                reversible_service.capture_item_state(
+                                    operation=reversible_operation,
+                                    item_type="appointment",
+                                    item_id=deleted_appt.get("ms_event_id", "unknown"),
+                                    before_state=deleted_appt,
+                                    reverse_action="restore",
+                                    external_id=deleted_appt.get("ms_event_id"),
+                                )
+
+                            audit_ctx.add_detail("deleted_count", len(deleted_appointments))
+                            audit_ctx.add_detail("replace_mode", True)
+
+                        except Exception as e:
+                            print(f"[DEBUG] Failed to delete existing appointments: {e}")
+                            audit_ctx.add_detail("delete_error", str(e))
+                            # Mark operation as non-reversible due to failure
+                            if reversible_operation:
+                                reversible_operation.is_reversible = False
+                                reversible_operation.reverse_reason = f"Delete phase failed: {str(e)}"
+                    else:
+                        print("[DEBUG] Repository doesn't support period deletion for replace mode")
+                        audit_ctx.add_detail("replace_mode_supported", False)
+
+                else:
+                    # Normal mode - check for duplicates
+                    print("[DEBUG] Checking for duplicates in destination calendar...")
+                    original_count = len(appointments_to_archive)
+
+                    if hasattr(archive_repo, 'check_for_duplicates'):
+                        try:
+                            appointments_to_archive = archive_repo.check_for_duplicates(
+                                appointments_to_archive, start_date, end_date
+                            )
+                            duplicate_count = original_count - len(appointments_to_archive)
+                            print(f"[DEBUG] Duplicate check complete: {duplicate_count} duplicates found, {len(appointments_to_archive)} unique appointments to archive")
+                            audit_ctx.add_detail("duplicate_count", duplicate_count)
+                            audit_ctx.add_detail("unique_appointments_count", len(appointments_to_archive))
+                        except Exception as e:
+                            print(f"[DEBUG] Duplicate checking failed, proceeding with all appointments: {e}")
+                            duplicate_count = 0
+                            audit_ctx.add_detail("duplicate_check_error", str(e))
+                    else:
+                        print("[DEBUG] Repository doesn't support duplicate checking, proceeding with all appointments")
+                        duplicate_count = 0
+                        audit_ctx.add_detail("duplicate_check_supported", False)
+
                 archived_count = 0
                 archive_errors = []
 
@@ -613,9 +690,36 @@ class CalendarArchiveOrchestrator:
                     "resolution_stats": resolution_stats,
                     "modification_count": modification_count,
                     "privacy_applied_count": privacy_applied_count,
+                    "duplicate_count": duplicate_count,
+                    "replace_mode": replace_mode,
+                    "deleted_count": len(deleted_appointments) if replace_mode else 0,
+                    "reversible_operation_id": reversible_operation.id if reversible_operation else None,
                     "errors": archive_errors,
                     "correlation_id": correlation_id,  # Include correlation ID in response
                 }
+
+                # Complete the reversible operation if in replace mode
+                if replace_mode and reversible_operation:
+                    try:
+                        # Capture the final state for the reversible operation
+                        for appt in appointments_to_archive:
+                            if hasattr(appt, 'ms_event_id') and appt.ms_event_id:
+                                # Find the corresponding item and update its after_state
+                                # This would be done during the actual archiving process
+                                pass
+
+                        # Mark operation as complete
+                        from core.services.reversible_audit_service import ReversibleAuditService
+                        reversible_service = ReversibleAuditService(db_session)
+                        reversible_service.complete_operation(
+                            operation=reversible_operation,
+                            status="success" if not archive_errors else "partial",
+                            message=f"Archive replace completed: {archived_count} archived, {len(deleted_appointments)} deleted",
+                            response_data=result,
+                        )
+                    except Exception as e:
+                        logger.exception(f"Failed to complete reversible operation: {e}")
+                        # Don't fail the entire operation for audit issues
 
                 # Record metrics and span attributes
                 operation_duration = time.time() - operation_start_time

@@ -25,69 +25,83 @@ if TYPE_CHECKING:
 DEFAULT_TIMEOUT = 30  # seconds
 
 
-# Global event loop management for MSGraph operations
-_global_loop = None
-_loop_lock = None
-
-def _get_or_create_event_loop():
-    """
-    Get or create a persistent event loop for MSGraph operations.
-    This avoids the overhead and issues of creating/destroying loops for each operation.
-    """
-    global _global_loop, _loop_lock
-
-    if _loop_lock is None:
-        import threading
-        _loop_lock = threading.Lock()
-
-    with _loop_lock:
-        if _global_loop is None or _global_loop.is_closed():
-            _global_loop = asyncio.new_event_loop()
-            # Apply nest_asyncio to allow nested event loops
-            nest_asyncio.apply(_global_loop)
-        return _global_loop
+# Removed global event loop management to fix coroutine reuse issues
 
 def _run_async(coro, timeout=DEFAULT_TIMEOUT):
     """
-    Run an async coroutine in a sync context with proper event loop handling.
-    Uses a persistent event loop to avoid creation/destruction overhead and issues.
+    Run an async coroutine in a sync context with improved event loop handling.
+    Uses multiple strategies to avoid coroutine reuse and event loop issues.
     """
+    import threading
+    import concurrent.futures
+    import time
+
+    def run_in_fresh_thread():
+        """Run the coroutine in a completely fresh thread with its own event loop."""
+        try:
+            # Create a completely new event loop
+            new_loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(new_loop)
+
+            # Apply nest_asyncio to handle any nested async calls
+            nest_asyncio.apply(new_loop)
+
+            try:
+                # Run the coroutine with timeout
+                result = new_loop.run_until_complete(asyncio.wait_for(coro, timeout=timeout))
+                return result
+            finally:
+                # Clean up the event loop
+                try:
+                    # Cancel any remaining tasks
+                    pending = asyncio.all_tasks(new_loop)
+                    for task in pending:
+                        task.cancel()
+
+                    # Wait for tasks to complete cancellation
+                    if pending:
+                        new_loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
+                finally:
+                    new_loop.close()
+
+        except Exception as e:
+            logger.debug(f"Thread execution failed: {e}")
+            raise
+
     try:
-        # Try to get the current running event loop
+        # Check if we're in an existing event loop
         try:
             current_loop = asyncio.get_running_loop()
-            # If we're already in an event loop, use nest_asyncio
-            nest_asyncio.apply()
-            # Create a task and run it
-            task = asyncio.create_task(asyncio.wait_for(coro, timeout=timeout))
-            return current_loop.run_until_complete(task)
+            logger.debug("Running in existing event loop, using thread approach")
+
+            # We're in an event loop, use a separate thread
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(run_in_fresh_thread)
+                return future.result(timeout=timeout + 10)  # Add buffer for thread overhead
+
         except RuntimeError:
-            # No running event loop, use our persistent loop
-            pass
-    except Exception as e:
-        logger.debug(f"Failed to use current event loop: {e}")
-
-    # Use our persistent event loop
-    try:
-        loop = _get_or_create_event_loop()
-
-        # Check if we need to start the loop in a thread
-        if loop.is_running():
-            # Loop is already running, use nest_asyncio
-            nest_asyncio.apply(loop)
-            task = asyncio.create_task(asyncio.wait_for(coro, timeout=timeout))
-            return loop.run_until_complete(task)
-        else:
-            # Loop is not running, run the coroutine
-            return loop.run_until_complete(asyncio.wait_for(coro, timeout=timeout))
-
-    except Exception as e:
-        logger.exception(f"Error in persistent event loop: {e}")
-        # Fallback: create a new temporary loop
-        try:
+            # No running event loop, we can use asyncio.run
+            logger.debug("No existing event loop, using asyncio.run")
             return asyncio.run(asyncio.wait_for(coro, timeout=timeout))
+
+    except concurrent.futures.TimeoutError:
+        logger.error(f"Async operation timed out after {timeout + 10} seconds")
+        raise asyncio.TimeoutError(f"Operation timed out after {timeout} seconds")
+
+    except Exception as e:
+        logger.exception(f"Error running async operation: {e}")
+
+        # Final fallback: try with a simple new event loop
+        try:
+            logger.debug("Trying final fallback with new event loop")
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                return loop.run_until_complete(asyncio.wait_for(coro, timeout=timeout))
+            finally:
+                loop.close()
         except Exception as fallback_e:
-            logger.exception(f"Fallback event loop also failed: {fallback_e}")
+            logger.exception(f"All async execution methods failed: {fallback_e}")
             raise
 
 
@@ -229,6 +243,78 @@ class MSGraphAppointmentRepository(BaseAppointmentRepository):
     def add_bulk(self, appointments: List[Appointment]) -> List[str]:
         """Sync wrapper for aadd_bulk."""
         return _run_async(self.aadd_bulk(appointments))
+
+    async def acheck_for_duplicates(self, appointments: List[Appointment], start_date=None, end_date=None) -> List[Appointment]:
+        """
+        Async: Check for appointments that already exist in this calendar.
+        Returns a list of appointments that do NOT exist in the destination (safe to add).
+
+        :param appointments: List of appointments to check
+        :param start_date: Optional start date for filtering existing appointments
+        :param end_date: Optional end date for filtering existing appointments
+        :return: List of appointments that don't exist in destination
+        """
+        try:
+            # Get existing appointments from destination calendar
+            existing_appointments = await self.alist_for_user(start_date, end_date)
+
+            # Create a set of existing appointment signatures for fast lookup
+            existing_signatures = set()
+            for existing in existing_appointments:
+                signature = self._create_appointment_signature(existing)
+                if signature:
+                    existing_signatures.add(signature)
+
+            # Filter out appointments that already exist
+            unique_appointments = []
+            duplicate_count = 0
+
+            for appointment in appointments:
+                signature = self._create_appointment_signature(appointment)
+                if signature and signature not in existing_signatures:
+                    unique_appointments.append(appointment)
+                else:
+                    duplicate_count += 1
+
+            logger.debug(f"Duplicate check: {duplicate_count} duplicates found, {len(unique_appointments)} unique appointments to add")
+            return unique_appointments
+
+        except Exception as e:
+            logger.exception(f"Error checking for duplicates in destination calendar: {e}")
+            # If duplicate checking fails, return all appointments to avoid data loss
+            return appointments
+
+    def check_for_duplicates(self, appointments: List[Appointment], start_date=None, end_date=None) -> List[Appointment]:
+        """Sync wrapper for acheck_for_duplicates."""
+        return _run_async(self.acheck_for_duplicates(appointments, start_date, end_date))
+
+    def _create_appointment_signature(self, appointment: Appointment) -> Optional[str]:
+        """
+        Create a unique signature for an appointment based on key fields.
+        Used for duplicate detection.
+
+        :param appointment: Appointment to create signature for
+        :return: Unique signature string or None if appointment is invalid
+        """
+        try:
+            subject = getattr(appointment, 'subject', '') or ''
+            start_time = getattr(appointment, 'start_time', None)
+            end_time = getattr(appointment, 'end_time', None)
+
+            if not start_time or not end_time:
+                return None
+
+            # Create signature from subject, start time, and end time
+            # Use ISO format for consistent time comparison
+            start_str = start_time.isoformat() if hasattr(start_time, 'isoformat') else str(start_time)
+            end_str = end_time.isoformat() if hasattr(end_time, 'isoformat') else str(end_time)
+
+            signature = f"{subject}|{start_str}|{end_str}"
+            return signature
+
+        except Exception as e:
+            logger.debug(f"Error creating appointment signature: {e}")
+            return None
 
     async def alist_for_user(self, start_date=None, end_date=None) -> List[Appointment]:
         """
@@ -379,6 +465,477 @@ class MSGraphAppointmentRepository(BaseAppointmentRepository):
             raise AppointmentRepositoryException(
                 f"Failed to delete appointment {ms_event_id}"
             ) from e
+
+    async def adelete_bulk(self, ms_event_ids: List[str]) -> Dict[str, Any]:
+        """
+        Async: Delete multiple appointments from MS Graph using batch API.
+        Returns information about the deletion results for audit/reversal purposes.
+
+        :param ms_event_ids: List of MS Graph event IDs to delete
+        :return: Dict with 'successful_deletes', 'failed_deletes', and 'errors'
+        """
+        if not ms_event_ids:
+            return {"successful_deletes": [], "failed_deletes": [], "errors": []}
+
+        # Validate all event IDs first
+        valid_event_ids = []
+        for event_id in ms_event_ids:
+            if event_id and isinstance(event_id, str):
+                valid_event_ids.append(event_id)
+            else:
+                logger.warning(f"Invalid event ID skipped: {event_id}")
+
+        if not valid_event_ids:
+            return {"successful_deletes": [], "failed_deletes": [], "errors": ["No valid event IDs provided"]}
+
+        # MS Graph batch API supports up to 20 requests per batch
+        batch_size = 20
+        all_successful = []
+        all_failed = []
+        all_errors = []
+
+        # Process in batches of 20
+        for i in range(0, len(valid_event_ids), batch_size):
+            batch_event_ids = valid_event_ids[i:i + batch_size]
+            try:
+                batch_result = await self._delete_batch(batch_event_ids)
+                all_successful.extend(batch_result["successful_deletes"])
+                all_failed.extend(batch_result["failed_deletes"])
+                all_errors.extend(batch_result["errors"])
+            except Exception as e:
+                logger.exception(f"Batch delete failed for batch starting at index {i}: {e}")
+                # Mark all events in this batch as failed
+                all_failed.extend(batch_event_ids)
+                all_errors.append(f"Batch delete failed: {str(e)}")
+
+        return {
+            "successful_deletes": all_successful,
+            "failed_deletes": all_failed,
+            "errors": all_errors
+        }
+
+    async def _delete_batch(self, event_ids: List[str]) -> Dict[str, Any]:
+        """
+        Delete a batch of appointments using MS Graph batch API.
+        Uses a fresh HTTP client to avoid event loop issues.
+
+        :param event_ids: List of event IDs to delete (max 20)
+        :return: Dict with successful/failed deletes and errors
+        """
+        import json
+        import httpx
+
+        if len(event_ids) > 20:
+            raise ValueError("Batch size cannot exceed 20 events")
+
+        # Build batch request payload
+        batch_requests = []
+        for i, event_id in enumerate(event_ids):
+            batch_requests.append({
+                "id": str(i + 1),  # Batch request IDs must be strings
+                "method": "DELETE",
+                "url": f"/users/{self.get_user_email()}/calendar/events/{event_id}"
+            })
+
+        batch_payload = {"requests": batch_requests}
+
+        try:
+            # Get access token using a more robust method
+            access_token = await self._get_fresh_access_token()
+
+            # Make the batch request with a fresh HTTP client
+            headers = {
+                "Authorization": f"Bearer {access_token}",
+                "Content-Type": "application/json",
+                "User-Agent": "admin-assistant/1.0"
+            }
+
+            # Use a fresh HTTP client with proper timeout and connection settings
+            timeout = httpx.Timeout(30.0, connect=10.0)
+            async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as http_client:
+                response = await http_client.post(
+                    "https://graph.microsoft.com/v1.0/$batch",
+                    json=batch_payload,
+                    headers=headers
+                )
+
+            if response.status_code != 200:
+                error_text = response.text if hasattr(response, 'text') else str(response.content)
+                raise Exception(f"Batch request failed with status {response.status_code}: {error_text}")
+
+            # Parse batch response
+            batch_response = response.json()
+            return self._parse_batch_delete_response(batch_response, event_ids)
+
+        except Exception as e:
+            logger.exception(f"Failed to execute batch delete: {e}")
+            return {
+                "successful_deletes": [],
+                "failed_deletes": event_ids,
+                "errors": [f"Batch delete failed: {str(e)}"]
+            }
+
+    async def _get_fresh_access_token(self) -> str:
+        """
+        Get a fresh access token using multiple fallback methods.
+        """
+        # Method 1: Try to get from cached MSAL token (CLI context)
+        try:
+            from core.utilities.auth_utility import get_cached_access_token
+            cached_token = get_cached_access_token()
+            if cached_token:
+                logger.debug("Using cached MSAL token")
+                return cached_token
+        except Exception as e:
+            logger.debug(f"Failed to get cached MSAL token: {e}")
+
+        # Method 2: Try to get from user's stored credentials (web context)
+        if hasattr(self.user, 'ms_access_token') and self.user.ms_access_token:
+            # Check if token is still valid
+            if hasattr(self.user, 'ms_token_expires_at') and self.user.ms_token_expires_at:
+                from datetime import datetime, UTC
+                if self.user.ms_token_expires_at > datetime.now(UTC):
+                    logger.debug("Using valid stored user token")
+                    return self.user.ms_access_token
+                else:
+                    logger.debug("User token is expired, attempting refresh")
+                    # Try to refresh the token
+                    try:
+                        from web.app.services.msgraph import refresh_token
+                        refreshed_token = refresh_token(self.user)
+                        if refreshed_token:
+                            logger.debug("Successfully refreshed user token")
+                            return refreshed_token
+                    except Exception as refresh_error:
+                        logger.warning(f"Failed to refresh user token: {refresh_error}")
+
+            # Token might be expired, but try anyway as a last resort
+            logger.warning("Using potentially expired user token as fallback")
+            return self.user.ms_access_token
+
+        # Method 3: Try to extract from Graph client (if structure allows)
+        try:
+            # Try different possible client structures
+            if hasattr(self.client, '_request_adapter'):
+                auth_provider = self.client._request_adapter.authentication_provider
+                access_token_result = await auth_provider.get_authorization_token("https://graph.microsoft.com/.default")
+                return access_token_result.token
+            elif hasattr(self.client, 'credentials'):
+                # Try the credentials approach
+                token = self.client.credentials.get_token("https://graph.microsoft.com/.default")
+                return token.token
+        except Exception as e:
+            logger.debug(f"Failed to get token from Graph client: {e}")
+
+        raise Exception("No valid access token available from any source")
+
+    async def adelete_for_period_direct(self, start_date, end_date) -> List[Dict[str, Any]]:
+        """
+        Alternative implementation that uses direct HTTP requests to avoid event loop issues.
+        This method completely bypasses the MS Graph SDK.
+
+        :param start_date: Start date for deletion range
+        :param end_date: End date for deletion range
+        :return: List of deleted appointment information
+        """
+        import httpx
+
+        try:
+            access_token = await self._get_fresh_access_token()
+
+            # Step 1: Get all appointments in the date range using direct HTTP
+            appointments_to_delete = await self.alist_for_user_direct(start_date, end_date)
+
+            if not appointments_to_delete:
+                logger.info(f"No appointments found to delete for period {start_date} to {end_date}")
+                return []
+
+            # Step 2: Prepare appointment data for audit before deletion
+            appointment_data_map = {}
+            event_ids_to_delete = []
+
+            for appointment in appointments_to_delete:
+                ms_event_id = getattr(appointment, "ms_event_id", None)
+                if ms_event_id:
+                    # Capture appointment state before deletion for audit
+                    appointment_data = {
+                        "ms_event_id": ms_event_id,
+                        "subject": getattr(appointment, "subject", None),
+                        "start_time": getattr(appointment, "start_time", None),
+                        "end_time": getattr(appointment, "end_time", None),
+                        "categories": getattr(appointment, "categories", None),
+                        "body": getattr(appointment, "body", None),
+                        "location": getattr(appointment, "location", None),
+                        "sensitivity": getattr(appointment, "sensitivity", None),
+                        "show_as": getattr(appointment, "show_as", None),
+                        "importance": getattr(appointment, "importance", None),
+                        "is_all_day": getattr(appointment, "is_all_day", None),
+                        "attendees": getattr(appointment, "attendees", None),
+                    }
+                    appointment_data_map[ms_event_id] = appointment_data
+                    event_ids_to_delete.append(ms_event_id)
+
+            if not event_ids_to_delete:
+                logger.info(f"No valid event IDs found to delete for period {start_date} to {end_date}")
+                return []
+
+            # Step 3: Use bulk delete with direct HTTP
+            logger.info(f"Attempting to delete {len(event_ids_to_delete)} appointments using direct HTTP bulk operations")
+            bulk_result = await self._delete_bulk_direct(event_ids_to_delete, access_token)
+
+            # Step 4: Prepare the return data for successfully deleted appointments
+            deleted_appointments = []
+            for event_id in bulk_result["successful_deletes"]:
+                if event_id in appointment_data_map:
+                    deleted_appointments.append(appointment_data_map[event_id])
+                    logger.debug(f"Deleted appointment: {appointment_data_map[event_id]['subject']} ({event_id})")
+
+            # Log any failures
+            if bulk_result["failed_deletes"]:
+                logger.warning(f"Failed to delete {len(bulk_result['failed_deletes'])} appointments: {bulk_result['failed_deletes']}")
+
+            if bulk_result["errors"]:
+                for error in bulk_result["errors"]:
+                    logger.error(f"Bulk delete error: {error}")
+
+            logger.info(f"Successfully deleted {len(deleted_appointments)} out of {len(event_ids_to_delete)} appointments from calendar for period {start_date} to {end_date}")
+            return deleted_appointments
+
+        except Exception as e:
+            logger.exception(f"Failed to delete appointments for period {start_date} to {end_date} using direct HTTP")
+            raise AppointmentRepositoryException(f"Failed to delete appointments for period") from e
+
+    async def _delete_bulk_direct(self, event_ids: List[str], access_token: str) -> Dict[str, Any]:
+        """
+        Delete a batch of appointments using direct HTTP requests to MS Graph batch API.
+        This completely bypasses the MS Graph SDK to avoid event loop issues.
+
+        :param event_ids: List of event IDs to delete
+        :param access_token: Valid access token for MS Graph
+        :return: Dict with successful/failed deletes and errors
+        """
+        import httpx
+
+        if not event_ids:
+            return {"successful_deletes": [], "failed_deletes": [], "errors": []}
+
+        # MS Graph batch API supports up to 20 requests per batch
+        batch_size = 20
+        all_successful = []
+        all_failed = []
+        all_errors = []
+
+        # Process in batches of 20
+        for i in range(0, len(event_ids), batch_size):
+            batch_event_ids = event_ids[i:i + batch_size]
+            try:
+                batch_result = await self._delete_single_batch_direct(batch_event_ids, access_token)
+                all_successful.extend(batch_result["successful_deletes"])
+                all_failed.extend(batch_result["failed_deletes"])
+                all_errors.extend(batch_result["errors"])
+            except Exception as e:
+                logger.exception(f"Direct HTTP batch delete failed for batch starting at index {i}: {e}")
+                # Mark all events in this batch as failed
+                all_failed.extend(batch_event_ids)
+                all_errors.append(f"Direct HTTP batch delete failed: {str(e)}")
+
+        return {
+            "successful_deletes": all_successful,
+            "failed_deletes": all_failed,
+            "errors": all_errors
+        }
+
+    async def _delete_single_batch_direct(self, event_ids: List[str], access_token: str) -> Dict[str, Any]:
+        """
+        Delete a single batch of appointments using direct HTTP requests.
+
+        :param event_ids: List of event IDs to delete (max 20)
+        :param access_token: Valid access token for MS Graph
+        :return: Dict with successful/failed deletes and errors
+        """
+        import httpx
+
+        if len(event_ids) > 20:
+            raise ValueError("Batch size cannot exceed 20 events")
+
+        # Build batch request payload
+        batch_requests = []
+        for i, event_id in enumerate(event_ids):
+            batch_requests.append({
+                "id": str(i + 1),  # Batch request IDs must be strings
+                "method": "DELETE",
+                "url": f"/users/{self.get_user_email()}/calendar/events/{event_id}"
+            })
+
+        batch_payload = {"requests": batch_requests}
+
+        try:
+            # Make the batch request with a fresh HTTP client
+            headers = {
+                "Authorization": f"Bearer {access_token}",
+                "Content-Type": "application/json",
+                "User-Agent": "admin-assistant/1.0"
+            }
+
+            # Use a fresh HTTP client with proper timeout and connection settings
+            timeout = httpx.Timeout(30.0, connect=10.0)
+            async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as http_client:
+                response = await http_client.post(
+                    "https://graph.microsoft.com/v1.0/$batch",
+                    json=batch_payload,
+                    headers=headers
+                )
+
+            if response.status_code != 200:
+                error_text = response.text if hasattr(response, 'text') else str(response.content)
+                raise Exception(f"Direct HTTP batch request failed with status {response.status_code}: {error_text}")
+
+            # Parse batch response
+            batch_response = response.json()
+            return self._parse_batch_delete_response(batch_response, event_ids)
+
+        except Exception as e:
+            logger.exception(f"Failed to execute direct HTTP batch delete: {e}")
+            return {
+                "successful_deletes": [],
+                "failed_deletes": event_ids,
+                "errors": [f"Direct HTTP batch delete failed: {str(e)}"]
+            }
+
+    async def alist_for_user_direct(self, start_date=None, end_date=None) -> List[Appointment]:
+        """
+        Alternative implementation of alist_for_user using direct HTTP requests.
+        This avoids event loop issues with the MS Graph SDK.
+
+        :param start_date: Optional start date for filtering events
+        :param end_date: Optional end date for filtering events
+        :return: List of Appointment instances
+        """
+        import httpx
+
+        try:
+            access_token = await self._get_fresh_access_token()
+
+            # Build the URL
+            user_email = self.get_user_email()
+            if self.calendar_id:
+                base_url = f"https://graph.microsoft.com/v1.0/users/{user_email}/calendars/{self.calendar_id}"
+            else:
+                base_url = f"https://graph.microsoft.com/v1.0/users/{user_email}/calendar"
+
+            if start_date is not None and end_date is not None:
+                from datetime import datetime, time
+
+                if isinstance(start_date, datetime):
+                    start_str = start_date.isoformat()
+                else:
+                    start_str = datetime.combine(start_date, time.min).isoformat()
+                if isinstance(end_date, datetime):
+                    end_str = end_date.isoformat()
+                else:
+                    end_str = datetime.combine(end_date, time.max).isoformat()
+
+                url = f"{base_url}/calendarView?startDateTime={start_str}&endDateTime={end_str}"
+            else:
+                url = f"{base_url}/events"
+
+            headers = {
+                "Authorization": f"Bearer {access_token}",
+                "Content-Type": "application/json",
+                "User-Agent": "admin-assistant/1.0"
+            }
+
+            events = []
+            timeout = httpx.Timeout(30.0, connect=10.0)
+
+            async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as http_client:
+                while url:
+                    response = await http_client.get(url, headers=headers)
+
+                    if response.status_code != 200:
+                        error_text = response.text if hasattr(response, 'text') else str(response.content)
+                        raise Exception(f"Failed to fetch events: HTTP {response.status_code} - {error_text}")
+
+                    data = response.json()
+                    page_events = data.get("value", [])
+                    events.extend(page_events)
+
+                    # Check for next page
+                    url = data.get("@odata.nextLink")
+
+            # Convert to Appointment objects
+            appointments = []
+            for event_data in events:
+                try:
+                    appointment = self._map_api_to_model(event_data)
+                    appointments.append(appointment)
+                except Exception as e:
+                    logger.warning(f"Failed to map event to appointment: {e}")
+                    continue
+
+            logger.debug(f"Fetched {len(appointments)} appointments using direct HTTP")
+            return appointments
+
+        except Exception as e:
+            logger.exception(f"Failed to list appointments using direct HTTP: {e}")
+            raise AppointmentRepositoryException("Failed to list appointments") from e
+
+    def _parse_batch_delete_response(self, batch_response: Dict[str, Any], event_ids: List[str]) -> Dict[str, Any]:
+        """
+        Parse the batch response and categorize successful/failed deletions.
+
+        :param batch_response: The JSON response from the batch API
+        :param event_ids: Original list of event IDs in the same order as batch requests
+        :return: Dict with successful/failed deletes and errors
+        """
+        successful_deletes = []
+        failed_deletes = []
+        errors = []
+
+        responses = batch_response.get("responses", [])
+
+        # Create a mapping from batch request ID to event ID
+        id_to_event = {}
+        for i, event_id in enumerate(event_ids):
+            id_to_event[str(i + 1)] = event_id
+
+        for response in responses:
+            request_id = response.get("id")
+            status = response.get("status")
+            event_id = id_to_event.get(request_id)
+
+            if not event_id:
+                errors.append(f"Unknown request ID in batch response: {request_id}")
+                continue
+
+            if status == 204:  # HTTP 204 No Content - successful deletion
+                successful_deletes.append(event_id)
+                logger.debug(f"Successfully deleted appointment: {event_id}")
+            else:
+                failed_deletes.append(event_id)
+                error_body = response.get("body", {})
+                error_message = "Unknown error"
+
+                if isinstance(error_body, dict) and "error" in error_body:
+                    error_info = error_body["error"]
+                    error_message = error_info.get("message", "Unknown error")
+
+                errors.append(f"Failed to delete {event_id}: HTTP {status} - {error_message}")
+                logger.warning(f"Failed to delete appointment {event_id}: HTTP {status} - {error_message}")
+
+        # Check for any event IDs that weren't in the response
+        responded_events = set(id_to_event[resp.get("id")] for resp in responses if resp.get("id") in id_to_event)
+        missing_events = set(event_ids) - responded_events
+
+        for missing_event in missing_events:
+            failed_deletes.append(missing_event)
+            errors.append(f"No response received for event {missing_event}")
+
+        return {
+            "successful_deletes": successful_deletes,
+            "failed_deletes": failed_deletes,
+            "errors": errors
+        }
 
     def get_user_email(self) -> str:
         """
@@ -782,3 +1339,92 @@ class MSGraphAppointmentRepository(BaseAppointmentRepository):
     def delete(self, ms_event_id: str) -> None:
         """Sync wrapper for adelete."""
         return _run_async(self.adelete(ms_event_id))
+
+    def delete_bulk(self, ms_event_ids: List[str]) -> Dict[str, Any]:
+        """Sync wrapper for adelete_bulk."""
+        return _run_async(self.adelete_bulk(ms_event_ids))
+
+    async def adelete_for_period(self, start_date, end_date) -> List[Dict[str, Any]]:
+        """
+        Async: Delete all appointments in the specified date range from this calendar using bulk operations.
+        Returns information about deleted appointments for audit/reversal purposes.
+
+        :param start_date: Start date for deletion range
+        :param end_date: End date for deletion range
+        :return: List of deleted appointment information
+        """
+        try:
+            # Use the direct HTTP implementation as primary method to avoid event loop issues
+            logger.debug("Using direct HTTP implementation for delete operation")
+            return await self.adelete_for_period_direct(start_date, end_date)
+
+        except Exception as e:
+            logger.exception(f"Direct HTTP delete failed, attempting fallback to SDK method: {e}")
+
+            # Fallback to original SDK-based implementation
+            try:
+                # First, get all appointments in the date range
+                appointments_to_delete = await self.alist_for_user(start_date, end_date)
+
+                if not appointments_to_delete:
+                    logger.info(f"No appointments found to delete for period {start_date} to {end_date}")
+                    return []
+
+                # Prepare appointment data for audit before deletion
+                appointment_data_map = {}
+                event_ids_to_delete = []
+
+                for appointment in appointments_to_delete:
+                    ms_event_id = getattr(appointment, "ms_event_id", None)
+                    if ms_event_id:
+                        # Capture appointment state before deletion for audit
+                        appointment_data = {
+                            "ms_event_id": ms_event_id,
+                            "subject": getattr(appointment, "subject", None),
+                            "start_time": getattr(appointment, "start_time", None),
+                            "end_time": getattr(appointment, "end_time", None),
+                            "categories": getattr(appointment, "categories", None),
+                            "body": getattr(appointment, "body", None),
+                            "location": getattr(appointment, "location", None),
+                            "sensitivity": getattr(appointment, "sensitivity", None),
+                            "show_as": getattr(appointment, "show_as", None),
+                            "importance": getattr(appointment, "importance", None),
+                            "is_all_day": getattr(appointment, "is_all_day", None),
+                            "attendees": getattr(appointment, "attendees", None),
+                        }
+                        appointment_data_map[ms_event_id] = appointment_data
+                        event_ids_to_delete.append(ms_event_id)
+
+                if not event_ids_to_delete:
+                    logger.info(f"No valid event IDs found to delete for period {start_date} to {end_date}")
+                    return []
+
+                # Use bulk delete for efficiency
+                logger.info(f"Attempting to delete {len(event_ids_to_delete)} appointments using SDK bulk operations")
+                bulk_result = await self.adelete_bulk(event_ids_to_delete)
+
+                # Prepare the return data for successfully deleted appointments
+                deleted_appointments = []
+                for event_id in bulk_result["successful_deletes"]:
+                    if event_id in appointment_data_map:
+                        deleted_appointments.append(appointment_data_map[event_id])
+                        logger.debug(f"Deleted appointment: {appointment_data_map[event_id]['subject']} ({event_id})")
+
+                # Log any failures
+                if bulk_result["failed_deletes"]:
+                    logger.warning(f"Failed to delete {len(bulk_result['failed_deletes'])} appointments: {bulk_result['failed_deletes']}")
+
+                if bulk_result["errors"]:
+                    for error in bulk_result["errors"]:
+                        logger.error(f"Bulk delete error: {error}")
+
+                logger.info(f"Successfully deleted {len(deleted_appointments)} out of {len(event_ids_to_delete)} appointments from calendar for period {start_date} to {end_date}")
+                return deleted_appointments
+
+            except Exception as fallback_e:
+                logger.exception(f"Both direct HTTP and SDK fallback methods failed for period {start_date} to {end_date}")
+                raise AppointmentRepositoryException(f"Failed to delete appointments for period") from fallback_e
+
+    def delete_for_period(self, start_date, end_date) -> List[Dict[str, Any]]:
+        """Sync wrapper for adelete_for_period."""
+        return _run_async(self.adelete_for_period(start_date, end_date))

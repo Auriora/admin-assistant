@@ -28,6 +28,7 @@ class ArchiveJobRunner:
         archive_config_id: int,
         start_date: Optional[date] = None,
         end_date: Optional[date] = None,
+        replace_mode: bool = False,
     ) -> dict:
         """
         Run the archive job for the given user and archive configuration.
@@ -101,6 +102,7 @@ class ArchiveJobRunner:
                 end_date=end_date,
                 db_session=session,
                 logger=logger,
+                replace_mode=replace_mode,
             )
             return result
         except Exception as e:
