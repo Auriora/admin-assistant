@@ -67,7 +67,7 @@ admin-assistant timesheet export --output PDF
 #### Calendar Operations
 ```bash
 # Archive calendar events using a specific config
-admin-assistant calendar archive --user <USER_ID> --archive-config <CONFIG_ID> --date "last 7 days"
+admin-assistant calendar archive "Work Archive" --user <USER_ID> --date "last week"
 
 # List calendars for user
 admin-assistant calendar list --user <USER_ID> --store msgraph
@@ -179,7 +179,7 @@ admin-assistant login msgraph --user <YOUR_USER_ID>
 
 ### First Steps
 1. **Create an archive configuration**: `admin-assistant config calendar archive create --user <USER_ID>`
-2. **Test archiving**: `admin-assistant calendar archive --user <USER_ID> --archive-config 1 --date "yesterday"`
+2. **Test archiving**: `admin-assistant calendar archive "Work Archive" --user <USER_ID> --date "yesterday"`
 3. **Validate categories**: `admin-assistant category validate --user <USER_ID> --stats`
 
 ## 🧪 Development

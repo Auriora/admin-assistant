@@ -81,15 +81,20 @@ admin-assistant calendar archive --user <USER_ID> --archive-config <CONFIG_ID> -
 **Date Specifications**:
 - `"today"` - Archive today's appointments
 - `"yesterday"` - Archive yesterday's appointments
-- `"last 7 days"` - Archive last 7 days
-- `"last week"` - Archive previous week
-- `"last 30 days"` - Archive last 30 days
-- `"last month"` - Archive previous month
+- `"last 7 days"` - Archive last 7 days (rolling period ending yesterday)
+- `"last week"` - Archive previous calendar week (Monday-Sunday or Sunday-Saturday based on locale)
+- `"last 30 days"` - Archive last 30 days (rolling period ending yesterday)
+- `"last month"` - Archive previous calendar month (e.g., all of May if run in June)
 - `"2024-12-18"` - Specific date (YYYY-MM-DD)
 - `"31-12-2024"` - Specific date (DD-MM-YYYY)
 - `"31-Dec"` - Date without year (current year assumed)
 - `"1-6 to 7-6"` - Date range (DD-MM to DD-MM)
 - `"1-6-2024 - 7-6-2024"` - Date range with years
+
+**Note**:
+- Rolling periods ('last X days') end on yesterday to ensure only completed periods are archived
+- Calendar periods ('last week', 'last month') refer to complete calendar periods (previous week/month)
+- Week start day is determined by locale settings (Monday for most locales, Sunday for US)
 
 **Examples**:
 ```bash
@@ -353,7 +358,7 @@ admin-assistant calendar analyze-overlaps --user 1 --date "yesterday" --auto-res
 admin-assistant category validate --user 1 --start-date "last week" --stats
 
 # Archive last week if not automated
-admin-assistant calendar archive --user 1 --archive-config 1 --date "last week"
+admin-assistant calendar archive "Work Archive" --user 1 --date "last week"
 ```
 
 **Friday Afternoon**:
@@ -373,7 +378,7 @@ admin-assistant login msgraph --user 1
 admin-assistant config calendar archive create --user 1
 
 # Schedule daily archiving
-admin-assistant jobs schedule --user 1 --archive-config 1 --schedule-type daily
+admin-assistant jobs schedule --user 1 --config 1 --schedule-type daily
 ```
 
 **Category Management**:

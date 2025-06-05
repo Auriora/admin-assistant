@@ -137,8 +137,8 @@ admin-assistant config calendar archive edit --user <USER_ID> --config-id <CONFI
 1. Use smaller date ranges:
 ```bash
 # Instead of "last month", use smaller chunks
-admin-assistant calendar archive --user <USER_ID> --archive-config <CONFIG_ID> --date "2024-12-01"
-admin-assistant calendar archive --user <USER_ID> --archive-config <CONFIG_ID> --date "2024-12-02"
+admin-assistant calendar archive "Work Archive" --user <USER_ID> --date "2024-12-01"
+admin-assistant calendar archive "Work Archive" --user <USER_ID> --date "2024-12-02"
 ```
 
 2. Check network connectivity
@@ -294,11 +294,16 @@ admin-assistant calendar analyze-overlaps --user <USER_ID> --start-date "yesterd
 
 **Supported Date Formats**:
 - `"today"`, `"yesterday"`
-- `"last 7 days"`, `"last week"`, `"last month"`
+- `"last 7 days"`, `"last 30 days"` (rolling periods ending yesterday)
+- `"last week"` (previous calendar week), `"last month"` (previous calendar month)
 - `"2024-12-18"` (YYYY-MM-DD)
 - `"31-12-2024"` (DD-MM-YYYY)
 - `"31-Dec"` (DD-MMM, current year)
 - `"1-6 to 7-6"` (DD-MM to DD-MM)
+
+**Note**:
+- Rolling periods ('last X days') end on yesterday to ensure only completed periods are processed
+- Calendar periods ('last week', 'last month') refer to complete calendar periods
 
 **Resolution**:
 Use one of the supported formats above.
@@ -355,7 +360,7 @@ admin-assistant config calendar archive list --user <USER_ID>
 
 3. **Re-run archive if needed**:
 ```bash
-admin-assistant calendar archive --user <USER_ID> --archive-config <CONFIG_ID> --date <DATE>
+admin-assistant calendar archive "Work Archive" --user <USER_ID> --date <DATE>
 ```
 
 ### Issue: Duplicate or corrupted data

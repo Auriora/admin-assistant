@@ -266,7 +266,7 @@ Log out from Microsoft 365 (MS Graph) for the given user. Removes the token cach
 Set `ADMIN_ASSISTANT_USER` to avoid specifying `--user` repeatedly:
 ```bash
 export ADMIN_ASSISTANT_USER=123
-admin-assistant calendar archive --archive-config 1
+admin-assistant calendar archive "Work Archive"
 ```
 
 ### Help System

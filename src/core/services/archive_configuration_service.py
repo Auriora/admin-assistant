@@ -75,3 +75,7 @@ class ArchiveConfigurationService:
     def get_all_active(self) -> List[ArchiveConfiguration]:
         """Get all active ArchiveConfigurations across all users."""
         return self.repository.list_active()
+
+    def get_by_name(self, name: str, user_id: Optional[int] = None) -> Optional[ArchiveConfiguration]:
+        """Retrieve an ArchiveConfiguration by its name, optionally filtered by user."""
+        return self.repository.get_by_name(name, user_id)

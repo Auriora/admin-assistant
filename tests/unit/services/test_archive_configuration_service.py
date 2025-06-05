@@ -42,4 +42,8 @@ def test_delete_archive_configuration(service):
 
 def test_validation_errors(service):
     """Test validation errors for invalid ArchiveConfiguration data."""
-    pass 
+    pass
+
+def test_get_by_name(service):
+    """Test retrieving an ArchiveConfiguration by name."""
+    pass

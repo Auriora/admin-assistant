@@ -5,7 +5,7 @@ Admin Assistant CLI
 Usage Examples:
 ---------------
 # Archive calendar events using a specific config
-admin-assistant calendar archive --user <USER_ID> --archive-config <CONFIG_ID> --date "last 7 days"
+admin-assistant calendar archive "Work Archive" --user <USER_ID> --date "last 7 days"
 
 # List all archive configs for a user
 admin-assistant config calendar archive list --user <USER_ID>
@@ -33,6 +33,8 @@ Extending the CLI:
 - Use interactive prompts for user-friendly CLI, and provide all options for automation/scripting.
 """
 
+import calendar
+import locale
 import os
 import re
 from datetime import date, datetime, timedelta
@@ -114,6 +116,77 @@ def resolve_cli_user(cli_user_input: Optional[str] = None) -> User:
         raise typer.Exit(code=1)
 
 
+def get_week_start_day() -> int:
+    """
+    Get the first day of the week based on locale settings.
+    Returns 0 for Monday, 6 for Sunday (Python calendar module convention).
+    Falls back to Monday if locale detection fails.
+    """
+    try:
+        # Try to get locale-specific first day of week
+        # This is a bit tricky as Python's locale module doesn't directly expose this
+        # We'll use a simple heuristic: if locale is US-based, assume Sunday start
+        current_locale = locale.getlocale()[0] or ""
+        if "US" in current_locale.upper() or "en_US" in current_locale:
+            return 6  # Sunday
+        else:
+            return 0  # Monday (ISO standard)
+    except:
+        return 0  # Default to Monday
+
+
+def get_last_week_range(reference_date: date = None) -> tuple[date, date]:
+    """
+    Get the date range for the previous calendar week.
+
+    Args:
+        reference_date: Reference date (defaults to yesterday)
+
+    Returns:
+        Tuple of (start_date, end_date) for the previous week
+    """
+    if reference_date is None:
+        reference_date = datetime.now().date() - timedelta(days=1)
+
+    # Get the first day of the week (0=Monday, 6=Sunday)
+    week_start = get_week_start_day()
+
+    # Find the start of the current week
+    days_since_week_start = (reference_date.weekday() - week_start) % 7
+    current_week_start = reference_date - timedelta(days=days_since_week_start)
+
+    # Previous week is 7 days before current week start
+    last_week_start = current_week_start - timedelta(days=7)
+    last_week_end = last_week_start + timedelta(days=6)
+
+    return last_week_start, last_week_end
+
+
+def get_last_month_range(reference_date: date = None) -> tuple[date, date]:
+    """
+    Get the date range for the previous calendar month.
+
+    Args:
+        reference_date: Reference date (defaults to yesterday)
+
+    Returns:
+        Tuple of (start_date, end_date) for the previous month
+    """
+    if reference_date is None:
+        reference_date = datetime.now().date() - timedelta(days=1)
+
+    # Get the first day of the current month
+    current_month_start = reference_date.replace(day=1)
+
+    # Get the last day of the previous month
+    last_month_end = current_month_start - timedelta(days=1)
+
+    # Get the first day of the previous month
+    last_month_start = last_month_end.replace(day=1)
+
+    return last_month_start, last_month_end
+
+
 def parse_flexible_date(date_str: str) -> date:
     """
     Parses a flexible date string and returns a date object.
@@ -173,24 +246,34 @@ def parse_date_range(date_str: str) -> tuple[date, date]:
     - Phrases: today, yesterday, last 7 days, last week, last 30 days, last month
     - Single date (day-month[-year], month as number or name, year optional)
     - Date range: <date> to <date>, <date> - <date>, <day> to <date>, <day> - <date>
+
+    Note:
+    - 'last X days' periods are calculated backward from yesterday
+    - 'last week' refers to the previous calendar week (Sunday-Saturday or Monday-Sunday based on locale)
+    - 'last month' refers to the previous calendar month
+
     Returns (start_date, end_date) as date objects.
     """
     date_str = (date_str or "yesterday").strip().lower()
     now = datetime.now().date()
+    yesterday = now - timedelta(days=1)
     # Phrases
     if date_str in ("today",):
         return now, now
     if date_str in ("yesterday",):
-        yest = now - timedelta(days=1)
-        return yest, yest
-    if date_str in ("last 7 days", "last week"):
-        end = now
-        start = now - timedelta(days=6)
+        return yesterday, yesterday
+    if date_str in ("last 7 days",):
+        end = yesterday
+        start = yesterday - timedelta(days=6)
         return start, end
-    if date_str in ("last 30 days", "last month"):
-        end = now
-        start = now - timedelta(days=29)
+    if date_str in ("last week",):
+        return get_last_week_range(yesterday)
+    if date_str in ("last 30 days",):
+        end = yesterday
+        start = yesterday - timedelta(days=29)
         return start, end
+    if date_str in ("last month",):
+        return get_last_month_range(yesterday)
     # Range: <date> to <date> or <date> - <date>
     range_match = re.match(r"(.+?)(?:\s*(?:to|-)\s*)(.+)", date_str)
     if range_match:
@@ -210,7 +293,7 @@ def main(ctx: typer.Context):
     Use --help on any command for details and options.
 
     Examples:
-      admin-assistant calendar archive --user <USER_ID> --archive-config <CONFIG_ID> --date "last 7 days"
+      admin-assistant calendar archive "Work Archive" --user <USER_ID> --date "last 7 days"
       admin-assistant config calendar archive list --user <USER_ID>
       admin-assistant config calendar archive create --user <USER_ID>
       admin-assistant config calendar archive activate --user <USER_ID> --config-id <CONFIG_ID>
@@ -221,20 +304,20 @@ def main(ctx: typer.Context):
 
 @calendar_app.command("archive")
 def archive(
+    archive_config_name: str = typer.Argument(
+        ...,
+        help="Name of the archive configuration to use.",
+    ),
     date_option: str = typer.Option(
         "yesterday",
         "--date",
-        help="Date or date range. Accepts: 'today', 'yesterday', 'last 7 days', 'last week', 'last 30 days', 'last month', a single date (e.g. 31-12-2024, 31-Dec, 31-12), or a range (e.g. 1-6 to 7-6, 1-6-2024 - 7-6-2024)",
+        help="Date or date range. Accepts: 'today', 'yesterday', 'last 7 days' (7 days ending yesterday), 'last week' (previous calendar week), 'last 30 days' (30 days ending yesterday), 'last month' (previous calendar month), a single date (e.g. 31-12-2024, 31-Dec, 31-12), or a range (e.g. 1-6 to 7-6, 1-6-2024 - 7-6-2024).",
     ),
     user_input: Optional[str] = user_option,
-    archive_config_id: int = typer.Option(
-        ...,
-        "--archive-config",
-        help="Archive configuration to use.",
-        show_default=False,
-    ),
 ):
     """Manually trigger calendar archiving for the configured user and archive configuration."""
+    from core.services.archive_configuration_service import ArchiveConfigurationService
+
     runner = ArchiveJobRunner()
     session = get_session()
     try:
@@ -244,6 +327,14 @@ def archive(
         raise typer.Exit(code=1)
     try:
         user = resolve_cli_user(user_input)
+
+        # Resolve archive config name to ID
+        archive_service = ArchiveConfigurationService()
+        archive_config = archive_service.get_by_name(archive_config_name, user.id)
+        if not archive_config:
+            typer.echo(f"[red]Archive configuration '{archive_config_name}' not found for user {user.id} ({user.username or user.email}).[/red]")
+            raise typer.Exit(code=1)
+
         access_token = get_cached_access_token()
         if not access_token:
             typer.echo(
@@ -258,7 +349,7 @@ def archive(
             start_dt = end_dt
         result = runner.run_archive_job(
             user_id=user.id,
-            archive_config_id=archive_config_id,
+            archive_config_id=archive_config.id,
             start_date=start_dt,
             end_date=end_dt,
         )

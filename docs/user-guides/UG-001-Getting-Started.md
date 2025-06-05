@@ -55,7 +55,7 @@ You'll be prompted to provide:
 Archive yesterday's appointments:
 
 ```bash
-admin-assistant calendar archive --user <YOUR_USER_ID> --archive-config <CONFIG_ID> --date "yesterday"
+admin-assistant calendar archive "Daily Work Archive" --user <YOUR_USER_ID> --date "yesterday"
 ```
 
 ## Core Features
@@ -73,14 +73,22 @@ admin-assistant calendar archive --user <YOUR_USER_ID> --archive-config <CONFIG_
 **Basic Usage**:
 ```bash
 # Archive specific date
-admin-assistant calendar archive --user <USER_ID> --archive-config <CONFIG_ID> --date "2024-12-18"
+admin-assistant calendar archive "Work Archive" --user <USER_ID> --date "2024-12-18"
 
-# Archive date range
-admin-assistant calendar archive --user <USER_ID> --archive-config <CONFIG_ID> --date "last 7 days"
+# Archive last 7 days (rolling period ending yesterday)
+admin-assistant calendar archive "Work Archive" --user <USER_ID> --date "last 7 days"
 
-# Archive last week
-admin-assistant calendar archive --user <USER_ID> --archive-config <CONFIG_ID> --date "last week"
+# Archive last week (previous calendar week)
+admin-assistant calendar archive "Work Archive" --user <USER_ID> --date "last week"
+
+# Archive last month (previous calendar month)
+admin-assistant calendar archive "Work Archive" --user <USER_ID> --date "last month"
 ```
+
+**Date Period Types**:
+- **Rolling periods** ('last X days'): Fixed number of days ending yesterday
+- **Calendar periods** ('last week', 'last month'): Complete calendar periods (previous week/month)
+- **Week start day**: Determined by locale (Monday for most locales, Sunday for US)
 
 ### Category Management
 

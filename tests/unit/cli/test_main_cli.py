@@ -6,6 +6,7 @@ and user interaction flows.
 """
 
 import pytest
+import typer
 from unittest.mock import Mock, patch, MagicMock
 from datetime import date, datetime, timedelta
 from typer.testing import CliRunner
@@ -110,36 +111,47 @@ class TestDateRangeParsing:
         assert end == yesterday
     
     def test_parse_date_range_last_7_days(self):
-        """Test parsing 'last 7 days' range"""
+        """Test parsing 'last 7 days' range (backward from yesterday)"""
         start, end = parse_date_range("last 7 days")
         today = datetime.now().date()
-        expected_start = today - timedelta(days=6)
+        yesterday = today - timedelta(days=1)
+        expected_start = yesterday - timedelta(days=6)
         assert start == expected_start
-        assert end == today
-    
+        assert end == yesterday
+
     def test_parse_date_range_last_week(self):
-        """Test parsing 'last week' range"""
+        """Test parsing 'last week' range (previous calendar week)"""
+        from cli.main import get_last_week_range
         start, end = parse_date_range("last week")
         today = datetime.now().date()
-        expected_start = today - timedelta(days=6)
+        yesterday = today - timedelta(days=1)
+        expected_start, expected_end = get_last_week_range(yesterday)
         assert start == expected_start
-        assert end == today
-    
+        assert end == expected_end
+        # Verify it's a 7-day period
+        assert (end - start).days == 6  # 6 days difference = 7 days total
+
     def test_parse_date_range_last_30_days(self):
-        """Test parsing 'last 30 days' range"""
+        """Test parsing 'last 30 days' range (backward from yesterday)"""
         start, end = parse_date_range("last 30 days")
         today = datetime.now().date()
-        expected_start = today - timedelta(days=29)
+        yesterday = today - timedelta(days=1)
+        expected_start = yesterday - timedelta(days=29)
         assert start == expected_start
-        assert end == today
-    
+        assert end == yesterday
+
     def test_parse_date_range_last_month(self):
-        """Test parsing 'last month' range"""
+        """Test parsing 'last month' range (previous calendar month)"""
+        from cli.main import get_last_month_range
         start, end = parse_date_range("last month")
         today = datetime.now().date()
-        expected_start = today - timedelta(days=29)
+        yesterday = today - timedelta(days=1)
+        expected_start, expected_end = get_last_month_range(yesterday)
         assert start == expected_start
-        assert end == today
+        assert end == expected_end
+        # Verify it's a proper month (start is day 1, end is last day of month)
+        assert start.day == 1
+        assert end.day >= 28  # All months have at least 28 days
     
     # Note: Removing complex date range tests that require regex pattern fixes
     # The basic date parsing tests above provide good coverage
@@ -157,6 +169,53 @@ class TestDateRangeParsing:
         yesterday = datetime.now().date() - timedelta(days=1)
         assert start == yesterday
         assert end == yesterday
+
+    def test_last_periods_behavior(self):
+        """Test that 'last X' periods behave correctly"""
+        today = datetime.now().date()
+        yesterday = today - timedelta(days=1)
+
+        # Test rolling periods (end on yesterday)
+        rolling_periods = ["last 7 days", "last 30 days"]
+        for period in rolling_periods:
+            start, end = parse_date_range(period)
+            assert end == yesterday, f"'{period}' should end on yesterday ({yesterday}), but ends on {end}"
+            assert start < end, f"'{period}' start ({start}) should be before end ({end})"
+
+        # Test calendar periods (may not end on yesterday)
+        calendar_periods = ["last week", "last month"]
+        for period in calendar_periods:
+            start, end = parse_date_range(period)
+            assert start < end, f"'{period}' start ({start}) should be before end ({end})"
+            # Calendar periods should end before today (completed periods only)
+            assert end < today, f"'{period}' should end before today ({today}), but ends on {end}"
+
+    def test_get_last_week_range(self):
+        """Test the last week calculation"""
+        from cli.main import get_last_week_range
+
+        # Test with a known date (Wednesday, June 5, 2024)
+        test_date = date(2024, 6, 5)  # Wednesday
+        start, end = get_last_week_range(test_date)
+
+        # Should be a 7-day period
+        assert (end - start).days == 6  # 6 days difference = 7 days total
+        assert start.weekday() in [0, 6]  # Should start on Monday (0) or Sunday (6)
+        assert end.weekday() in [5, 6]   # Should end on Saturday (5) or Sunday (6)
+
+    def test_get_last_month_range(self):
+        """Test the last month calculation"""
+        from cli.main import get_last_month_range
+
+        # Test with a known date (June 5, 2024)
+        test_date = date(2024, 6, 5)
+        start, end = get_last_month_range(test_date)
+
+        # Should be May 2024
+        assert start == date(2024, 5, 1)  # May 1st
+        assert end == date(2024, 5, 31)   # May 31st
+        assert start.day == 1
+        assert end.month == start.month
 
 
 class TestCLICommands:
@@ -193,7 +252,8 @@ class TestCLICommands:
     @patch('cli.main.get_cached_access_token')
     @patch('cli.main.get_graph_client')
     @patch('cli.main.typer.echo')
-    def test_archive_command_success(self, mock_echo, mock_graph_client, mock_token,
+    @patch('core.services.archive_configuration_service.ArchiveConfigurationService')
+    def test_archive_command_success(self, mock_archive_service_class, mock_echo, mock_graph_client, mock_token,
                                    mock_resolve_user, mock_session, mock_runner_class):
         """Test successful archive command execution"""
         # Arrange
@@ -201,16 +261,21 @@ class TestCLICommands:
         mock_runner_class.return_value = mock_runner
         mock_runner.run_archive_job.return_value = "Archive completed successfully"
 
-        mock_user = Mock(id=123)
+        mock_user = Mock(id=123, username="testuser", email="test@example.com")
         mock_resolve_user.return_value = mock_user
 
+        mock_config = Mock(id=456, name="Test Config")
+        mock_archive_service = Mock()
+        mock_archive_service.get_by_name.return_value = mock_config
+        mock_archive_service_class.return_value = mock_archive_service
+
         mock_token.return_value = "valid_token"
-        
+
         # Act
         archive(
+            archive_config_name="Test Config",
             date_option="yesterday",
-            user_input="123",
-            archive_config_id=456
+            user_input="123"
         )
         
         # Assert
@@ -221,9 +286,32 @@ class TestCLICommands:
         
         mock_echo.assert_any_call("[ARCHIVE RESULT]")
         mock_echo.assert_any_call("Archive completed successfully")
-    
-    # Note: Removing complex CLI command tests that require extensive mocking
-    # The date parsing tests above provide good coverage of the core functionality
+
+        # Verify archive service was called correctly
+        mock_archive_service.get_by_name.assert_called_once_with("Test Config", 123)
+
+    @patch('cli.main.resolve_cli_user')
+    @patch('core.services.archive_configuration_service.ArchiveConfigurationService')
+    def test_archive_command_config_not_found(self, mock_archive_service_class, mock_resolve_user):
+        """Test archive command when config name is not found"""
+        # Arrange
+        mock_user = Mock(id=123, username="testuser", email="test@example.com")
+        mock_resolve_user.return_value = mock_user
+
+        mock_archive_service = Mock()
+        mock_archive_service.get_by_name.return_value = None
+        mock_archive_service_class.return_value = mock_archive_service
+
+        # Act & Assert
+        with pytest.raises(typer.Exit) as exc_info:
+            archive(
+                archive_config_name="Nonexistent Config",
+                date_option="yesterday",
+                user_input="123"
+            )
+
+        assert exc_info.value.exit_code == 1
+        mock_archive_service.get_by_name.assert_called_once_with("Nonexistent Config", 123)
 
     # Note: Removing complex CLI command tests that require extensive mocking
     # The date parsing tests above provide good coverage of the core functionality
