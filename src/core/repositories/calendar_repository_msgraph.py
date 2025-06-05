@@ -67,17 +67,26 @@ class MSGraphCalendarRepository(BaseCalendarRepository):
         """
         calendars = []
         try:
+            # Use $select to only fetch required properties to avoid 500 errors
+            # Some calendar properties cause internal server errors when fetched
+            from msgraph.generated.users.item.calendars.calendars_request_builder import CalendarsRequestBuilder
+
+            request_config = CalendarsRequestBuilder.CalendarsRequestBuilderGetRequestConfiguration()
+            request_config.query_parameters = CalendarsRequestBuilder.CalendarsRequestBuilderGetQueryParameters()
+            request_config.query_parameters.select = ["id", "name", "isDefaultCalendar"]
+
             ms_calendars = await self.client.users.by_user_id(
                 self.user.email
-            ).calendars.get()
+            ).calendars.get(request_configuration=request_config)
+
             for ms_cal in getattr(ms_calendars, "value", []):
                 calendars.append(
                     Calendar(
                         user_id=self.user.id,
                         ms_calendar_id=getattr(ms_cal, "id", None),
                         name=getattr(ms_cal, "name", None),
-                        description=getattr(ms_cal, "description", None),
-                        is_primary=getattr(ms_cal, "is_default", False),
+                        description=None,  # Description not available in calendar API
+                        is_primary=getattr(ms_cal, "is_default_calendar", False),
                         is_active=True,
                     )
                 )

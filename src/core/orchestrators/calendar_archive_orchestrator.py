@@ -68,12 +68,37 @@ class CalendarArchiveOrchestrator:
     and logging overlaps and resolution tasks in the local database.
     """
 
-    def extract_msgraph_calendar_id(self, uri: str) -> str:
+    def resolve_calendar_uri(self, uri: str, user) -> str:
         """
-        Extract the MS Graph calendar ID from a URI of the form 'msgraph://calendar' (primary) or 'msgraph://<id>'.
-        Returns an empty string for the primary calendar, or the calendar ID for others.
-        For plain IDs without scheme, returns the ID as-is.
+        Resolve a calendar URI to the actual calendar ID using the new URI resolution system.
+
+        Args:
+            uri: Calendar URI to resolve (new or legacy format)
+            user: User object
+
+        Returns:
+            Resolved calendar ID
         """
+        try:
+            from core.utilities.calendar_resolver import resolve_calendar_uri
+            from core.utilities.auth_utility import get_cached_access_token
+
+            access_token = get_cached_access_token()
+            resolved_id = resolve_calendar_uri(uri, user, access_token)
+
+            print(f"[DEBUG] Resolved calendar URI '{uri}' to ID: {resolved_id}")
+            return resolved_id
+
+        except Exception as e:
+            print(f"[WARNING] Failed to resolve calendar URI '{uri}': {e}")
+            # Fall back to legacy resolution for backward compatibility
+            return self._legacy_resolve_msgraph_calendar_id(uri, user)
+
+    def _legacy_resolve_msgraph_calendar_id(self, uri: str, user) -> str:
+        """
+        Legacy calendar resolution method for backward compatibility.
+        """
+        # Extract calendar ID using legacy logic
         if not uri:
             return ""
         if not uri.startswith("msgraph://"):
@@ -81,7 +106,60 @@ class CalendarArchiveOrchestrator:
         suffix = uri[len("msgraph://") :]
         if suffix == "calendar":
             return ""  # primary calendar
-        return suffix
+        calendar_id = suffix
+
+        # If it looks like a real MS Graph ID (long GUID), return as-is
+        if len(calendar_id) > 50 and "=" in calendar_id:
+            return calendar_id
+
+        # Otherwise, it's probably a friendly name - look it up
+        try:
+            # Use direct MS Graph API call to avoid event loop issues
+            import requests
+            from core.utilities.auth_utility import get_cached_access_token
+
+            access_token = get_cached_access_token()
+            if not access_token:
+                print(f"[WARNING] No access token available for calendar resolution")
+                return calendar_id
+
+            headers = {
+                'Authorization': f'Bearer {access_token}',
+                'Content-Type': 'application/json'
+            }
+
+            # Make direct API call to list calendars
+            url = f"https://graph.microsoft.com/v1.0/users/{user.email}/calendars?$select=id,name,isDefaultCalendar"
+            response = requests.get(url, headers=headers)
+
+            if response.status_code != 200:
+                print(f"[WARNING] Failed to fetch calendars: {response.status_code} {response.text}")
+                return calendar_id
+
+            calendars_data = response.json()
+            calendars = calendars_data.get('value', [])
+
+            # Look for calendar by friendly name
+            for cal_data in calendars:
+                name_str = str(cal_data.get('name', ''))
+                # Convert name to URI-safe format for comparison
+                import re
+                uri_safe_name = name_str.lower().strip()
+                uri_safe_name = re.sub(r"\s+", "-", uri_safe_name)
+                uri_safe_name = re.sub(r"[^a-z0-9\-_]", "", uri_safe_name)
+
+                if uri_safe_name == calendar_id:
+                    resolved_id = cal_data.get('id', '')
+                    print(f"[DEBUG] Legacy resolved '{calendar_id}' to calendar ID: {resolved_id}")
+                    return resolved_id
+
+            # If not found by friendly name, return the original ID (might be a real ID)
+            print(f"[WARNING] Calendar with friendly name '{calendar_id}' not found, using as-is")
+            return calendar_id
+
+        except Exception as e:
+            print(f"[WARNING] Failed to resolve calendar ID '{calendar_id}': {e}")
+            return calendar_id
 
     def archive_user_appointments(
         self,
@@ -203,20 +281,16 @@ class CalendarArchiveOrchestrator:
 
             try:
                 print("[DEBUG] Parsing calendar URIs...")
-                source_calendar_id = self.extract_msgraph_calendar_id(
-                    source_calendar_uri
-                )
-                archive_calendar_id = self.extract_msgraph_calendar_id(
-                    archive_calendar_id
-                )
+                # Resolve source calendar URI to actual ID
+                source_calendar_id = self.resolve_calendar_uri(source_calendar_uri, user)
                 print(
-                    f"[DEBUG] Source calendar URI: {source_calendar_uri}, Archive calendar URI: {archive_calendar_id}"
+                    f"[DEBUG] Source calendar URI: {source_calendar_uri} -> ID: {source_calendar_id}, Archive calendar URI: {archive_calendar_id}"
                 )
 
                 # Log the start of the operation
                 audit_ctx.add_detail("phase", "initialization")
                 audit_ctx.add_detail("source_calendar_id", source_calendar_id)
-                audit_ctx.add_detail("archive_calendar_id", archive_calendar_id)
+                audit_ctx.add_detail("archive_calendar_uri", archive_calendar_id)  # Keep original URI for audit
                 # 1. Fetch appointments from MS Graph (source calendar)
                 print("[DEBUG] Fetching appointments from MS Graph...")
                 audit_ctx.add_detail("phase", "fetching_appointments")
@@ -354,45 +428,49 @@ class CalendarArchiveOrchestrator:
 
                 # 3. Write non-overlapping to archive calendar (MS Graph)
                 print("[DEBUG] Selecting archive repository based on URI...")
+                print(f"[DEBUG] Archive calendar ID: '{archive_calendar_id}'")
+                print(f"[DEBUG] Archive calendar ID type: {type(archive_calendar_id)}")
+                print(f"[DEBUG] Archive calendar ID starts with 'msgraph://': {archive_calendar_id.startswith('msgraph://')}")
                 audit_ctx.add_detail("phase", "archiving")
 
-                if archive_calendar_id.startswith("local://"):
+                # Resolve archive calendar URI to determine repository type and ID
+                try:
+                    from core.utilities.uri_utility import parse_resource_uri
+                    parsed_archive_uri = parse_resource_uri(archive_calendar_id)
+                    archive_scheme = parsed_archive_uri.scheme
+                except Exception:
+                    # Fall back to legacy detection
+                    if archive_calendar_id.startswith("local://"):
+                        archive_scheme = "local"
+                    else:
+                        archive_scheme = "msgraph"
+
+                if archive_scheme == "local":
                     from core.repositories.appointment_repository_sqlalchemy import (
                         SQLAlchemyAppointmentRepository,
                     )
 
-                    # Extract local calendar ID or name from URI
-                    local_cal_id = archive_calendar_id[len("local://") :]
+                    # Resolve local calendar URI to ID
+                    local_cal_id = self.resolve_calendar_uri(archive_calendar_id, user)
                     archive_repo = SQLAlchemyAppointmentRepository(
                         user, local_cal_id, session=db_session
                     )
                     print(
-                        f"[DEBUG] Using SQLAlchemyAppointmentRepository for local calendar: {local_cal_id}"
+                        f"[DEBUG] Using SQLAlchemyAppointmentRepository for local calendar: {local_cal_id} (resolved from {archive_calendar_id})"
                     )
                     audit_ctx.add_detail("archive_repository_type", "SQLAlchemy")
-                elif archive_calendar_id == "" or archive_calendar_id.startswith(
-                    "msgraph://"
-                ):
-                    # For msgraph://calendar (primary) or msgraph://<id>
-                    msgraph_cal_id = self.extract_msgraph_calendar_id(
-                        archive_calendar_id
-                    )
+                else:
+                    # For msgraph:// URIs (including new format)
+                    # Resolve to actual MS Graph calendar ID
+                    msgraph_cal_id = self.resolve_calendar_uri(archive_calendar_id, user)
                     archive_repo = MSGraphAppointmentRepository(
                         msgraph_client, user, msgraph_cal_id
                     )
                     print(
-                        f"[DEBUG] Using MSGraphAppointmentRepository for MS Graph calendar: {msgraph_cal_id}"
+                        f"[DEBUG] Using MSGraphAppointmentRepository for MS Graph calendar: {msgraph_cal_id} (resolved from {archive_calendar_id})"
                     )
                     audit_ctx.add_detail("archive_repository_type", "MSGraph")
-                else:
-                    # Default: treat as plain MS Graph calendar ID
-                    archive_repo = MSGraphAppointmentRepository(
-                        msgraph_client, user, archive_calendar_id
-                    )
-                    print(
-                        f"[DEBUG] Using MSGraphAppointmentRepository for plain calendar ID: {archive_calendar_id}"
-                    )
-                    audit_ctx.add_detail("archive_repository_type", "MSGraph")
+                    audit_ctx.add_detail("resolved_calendar_id", msgraph_cal_id)
 
                 archived_count = 0
                 archive_errors = []

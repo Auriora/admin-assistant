@@ -1585,7 +1585,8 @@ def get_calendars_for_user(
         for cal in local_repo.list():
             name_str = safe_str(cal.name)
             id_str = safe_str(cal.id)
-            uri = f"local://{uri_safe_name(name_str) or id_str}"
+            from core.utilities.uri_utility import construct_resource_uri
+            uri = construct_resource_uri('local', 'calendars', name_str or str(id_str), user_friendly=True)
             calendars.append(
                 {
                     "name": name_str,
@@ -1616,10 +1617,11 @@ def get_calendars_for_user(
                 name_str = safe_str(cal.name)
                 ms_id_str = safe_str(getattr(cal, "ms_calendar_id", ""))
                 is_primary = safe_bool(cal.is_primary)
+                from core.utilities.uri_utility import construct_resource_uri, get_primary_calendar_uri
                 if is_primary:
-                    uri = "msgraph://calendar"
+                    uri = get_primary_calendar_uri('msgraph')
                 else:
-                    uri = f"msgraph://{uri_safe_name(name_str) or ms_id_str}"
+                    uri = construct_resource_uri('msgraph', 'calendars', name_str or ms_id_str, user_friendly=True)
                 calendars.append(
                     {
                         "name": name_str,
