@@ -51,18 +51,58 @@ def _run_async(coro, timeout=DEFAULT_TIMEOUT):
                 result = new_loop.run_until_complete(asyncio.wait_for(coro, timeout=timeout))
                 return result
             finally:
-                # Clean up the event loop
+                # Proper cleanup based on actual operation state
                 try:
-                    # Cancel any remaining tasks
-                    pending = asyncio.all_tasks(new_loop)
-                    for task in pending:
-                        task.cancel()
+                    # Check if loop is still running and has pending tasks
+                    if not new_loop.is_closed() and not new_loop.is_running():
+                        pending = asyncio.all_tasks(new_loop)
 
-                    # Wait for tasks to complete cancellation
-                    if pending:
-                        new_loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
+                        if pending:
+                            logger.debug(f"Found {len(pending)} pending tasks, cleaning up...")
+
+                            # Cancel pending tasks
+                            for task in pending:
+                                if not task.done() and not task.cancelled():
+                                    task.cancel()
+
+                            # Wait for cancellation to complete, but only if tasks exist
+                            if any(not task.done() for task in pending):
+                                try:
+                                    # Use wait_for with a reasonable timeout for cleanup
+                                    new_loop.run_until_complete(
+                                        asyncio.wait_for(
+                                            asyncio.gather(*pending, return_exceptions=True),
+                                            timeout=3.0
+                                        )
+                                    )
+                                    logger.debug("All pending tasks cleaned up successfully")
+                                except asyncio.TimeoutError:
+                                    logger.debug("Some tasks did not complete cancellation within timeout - proceeding with close")
+                                except Exception as cleanup_e:
+                                    logger.debug(f"Task cleanup error (non-critical): {cleanup_e}")
+
+                        # Check for any remaining tasks after cleanup
+                        remaining = asyncio.all_tasks(new_loop)
+                        if remaining:
+                            logger.debug(f"Warning: {len(remaining)} tasks still pending after cleanup")
+
+                except Exception as cleanup_e:
+                    logger.debug(f"Event loop cleanup error (non-critical): {cleanup_e}")
                 finally:
-                    new_loop.close()
+                    # Only close if not already closed and no critical operations pending
+                    try:
+                        if not new_loop.is_closed():
+                            # Final check - ensure no tasks are running
+                            if not new_loop.is_running():
+                                new_loop.close()
+                                logger.debug("Event loop closed successfully")
+                            else:
+                                logger.debug("Event loop still running, not closing")
+                    except RuntimeError as close_e:
+                        # This is expected if the loop is already closed or has pending operations
+                        logger.debug(f"Event loop close handled: {close_e}")
+                    except Exception as close_e:
+                        logger.debug(f"Event loop close error (non-critical): {close_e}")
 
         except Exception as e:
             logger.debug(f"Thread execution failed: {e}")
@@ -77,7 +117,7 @@ def _run_async(coro, timeout=DEFAULT_TIMEOUT):
             # We're in an event loop, use a separate thread
             with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
                 future = executor.submit(run_in_fresh_thread)
-                return future.result(timeout=timeout + 10)  # Add buffer for thread overhead
+                return future.result(timeout=timeout + 15)  # Add more buffer for cleanup
 
         except RuntimeError:
             # No running event loop, we can use asyncio.run
@@ -85,7 +125,7 @@ def _run_async(coro, timeout=DEFAULT_TIMEOUT):
             return asyncio.run(asyncio.wait_for(coro, timeout=timeout))
 
     except concurrent.futures.TimeoutError:
-        logger.error(f"Async operation timed out after {timeout + 10} seconds")
+        logger.error(f"Async operation timed out after {timeout + 15} seconds")
         raise asyncio.TimeoutError(f"Operation timed out after {timeout} seconds")
 
     except Exception as e:
@@ -99,7 +139,22 @@ def _run_async(coro, timeout=DEFAULT_TIMEOUT):
             try:
                 return loop.run_until_complete(asyncio.wait_for(coro, timeout=timeout))
             finally:
-                loop.close()
+                # State-based cleanup for fallback as well
+                try:
+                    if not loop.is_closed() and not loop.is_running():
+                        # Check for pending tasks
+                        pending = asyncio.all_tasks(loop)
+                        if pending:
+                            for task in pending:
+                                if not task.done():
+                                    task.cancel()
+
+                        # Only close if safe to do so
+                        if not loop.is_running():
+                            loop.close()
+                            logger.debug("Fallback event loop closed successfully")
+                except Exception as close_e:
+                    logger.debug(f"Fallback loop close error (non-critical): {close_e}")
         except Exception as fallback_e:
             logger.exception(f"All async execution methods failed: {fallback_e}")
             raise
@@ -226,23 +281,105 @@ class MSGraphAppointmentRepository(BaseAppointmentRepository):
     async def aadd_bulk(self, appointments: List[Appointment]) -> List[str]:
         """
         Async: Add multiple appointments to MS Graph for this user's calendar.
+        Uses direct HTTP requests to avoid event loop issues with the MS Graph SDK.
         Returns a list of error messages for failed appointments.
         :param appointments: List of Appointment model instances.
         :return: List of error messages (empty if all successful).
         """
-        errors = []
-        for i, appointment in enumerate(appointments):
-            try:
-                await self.aadd(appointment)
-            except Exception as e:
-                error_msg = f"Failed to add appointment {getattr(appointment, 'subject', f'#{i+1}')}: {str(e)}"
-                errors.append(error_msg)
-                logger.exception(f"Bulk add error for appointment {i+1}: {e}")
-        return errors
+        if not appointments:
+            return []
+
+        # Use direct HTTP implementation to avoid event loop issues
+        try:
+            return await self.aadd_bulk_direct(appointments)
+        except Exception as e:
+            logger.exception(f"Direct HTTP bulk add failed, falling back to individual operations: {e}")
+
+            # Fallback to individual operations with fresh HTTP clients
+            errors = []
+            for i, appointment in enumerate(appointments):
+                try:
+                    await self.aadd_direct(appointment)
+                except Exception as individual_e:
+                    error_msg = f"Failed to add appointment {getattr(appointment, 'subject', f'#{i+1}')}: {str(individual_e)}"
+                    errors.append(error_msg)
+                    logger.exception(f"Individual add error for appointment {i+1}: {individual_e}")
+            return errors
 
     def add_bulk(self, appointments: List[Appointment]) -> List[str]:
         """Sync wrapper for aadd_bulk."""
         return _run_async(self.aadd_bulk(appointments))
+
+    async def aadd_direct(self, appointment: Appointment) -> None:
+        """
+        Async: Add a single appointment using direct HTTP requests to avoid event loop issues.
+        This completely bypasses the MS Graph SDK.
+
+        :param appointment: Appointment model instance to add
+        """
+        import httpx
+
+        try:
+            access_token = await self._get_fresh_access_token()
+
+            # Convert appointment to JSON-serializable format for direct HTTP
+            event_data = self._map_model_to_json(appointment)
+
+            # Prepare headers
+            headers = {
+                "Authorization": f"Bearer {access_token}",
+                "Content-Type": "application/json",
+                "User-Agent": "admin-assistant/1.0"
+            }
+
+            # Determine the calendar endpoint
+            if self.calendar_id and self.calendar_id != "primary":
+                calendar_endpoint = f"/users/{self.get_user_email()}/calendars/{self.calendar_id}/events"
+            else:
+                calendar_endpoint = f"/users/{self.get_user_email()}/calendar/events"
+
+            # Make the request with a fresh HTTP client
+            timeout = httpx.Timeout(30.0, connect=10.0)
+            async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as http_client:
+                response = await http_client.post(
+                    f"https://graph.microsoft.com/v1.0{calendar_endpoint}",
+                    json=event_data,
+                    headers=headers
+                )
+
+            if response.status_code not in [200, 201]:
+                error_text = response.text if hasattr(response, 'text') else str(response.content)
+                raise Exception(f"Failed to create event: HTTP {response.status_code} - {error_text}")
+
+            logger.debug(f"Successfully created appointment via direct HTTP: {getattr(appointment, 'subject', 'Unknown')}")
+
+        except Exception as e:
+            logger.exception(f"Failed to add appointment via direct HTTP for user {self.get_user_email()}")
+            raise AppointmentRepositoryException(f"Failed to add appointment: {str(e)}") from e
+
+    async def aadd_bulk_direct(self, appointments: List[Appointment]) -> List[str]:
+        """
+        Async: Add multiple appointments using direct HTTP requests.
+        This completely bypasses the MS Graph SDK to avoid event loop issues.
+
+        :param appointments: List of Appointment model instances to add
+        :return: List of error messages for failed appointments
+        """
+        if not appointments:
+            return []
+
+        errors = []
+
+        # Process appointments individually with fresh HTTP clients
+        for i, appointment in enumerate(appointments):
+            try:
+                await self.aadd_direct(appointment)
+            except Exception as e:
+                error_msg = f"Failed to add appointment {getattr(appointment, 'subject', f'#{i+1}')}: {str(e)}"
+                errors.append(error_msg)
+                logger.exception(f"Direct HTTP add error for appointment {i+1}: {e}")
+
+        return errors
 
     async def acheck_for_duplicates(self, appointments: List[Appointment], start_date=None, end_date=None) -> List[Appointment]:
         """
@@ -531,10 +668,16 @@ class MSGraphAppointmentRepository(BaseAppointmentRepository):
         # Build batch request payload
         batch_requests = []
         for i, event_id in enumerate(event_ids):
+            # Use the correct calendar endpoint based on calendar_id
+            if self.calendar_id:
+                calendar_endpoint = f"/users/{self.get_user_email()}/calendars/{self.calendar_id}/events/{event_id}"
+            else:
+                calendar_endpoint = f"/users/{self.get_user_email()}/calendar/events/{event_id}"
+
             batch_requests.append({
                 "id": str(i + 1),  # Batch request IDs must be strings
                 "method": "DELETE",
-                "url": f"/users/{self.get_user_email()}/calendar/events/{event_id}"
+                "url": calendar_endpoint
             })
 
         batch_payload = {"requests": batch_requests}
@@ -761,10 +904,16 @@ class MSGraphAppointmentRepository(BaseAppointmentRepository):
         # Build batch request payload
         batch_requests = []
         for i, event_id in enumerate(event_ids):
+            # Use the correct calendar endpoint based on calendar_id
+            if self.calendar_id:
+                calendar_endpoint = f"/users/{self.get_user_email()}/calendars/{self.calendar_id}/events/{event_id}"
+            else:
+                calendar_endpoint = f"/users/{self.get_user_email()}/calendar/events/{event_id}"
+
             batch_requests.append({
                 "id": str(i + 1),  # Batch request IDs must be strings
                 "method": "DELETE",
-                "url": f"/users/{self.get_user_email()}/calendar/events/{event_id}"
+                "url": calendar_endpoint
             })
 
         batch_payload = {"requests": batch_requests}
@@ -1284,6 +1433,137 @@ class MSGraphAppointmentRepository(BaseAppointmentRepository):
         ]
         for field in readonly_fields:
             api_dict.pop(field, None)
+        return api_dict
+
+    def _map_model_to_json(self, appointment: Appointment) -> dict:
+        """
+        Convert an Appointment model instance to a JSON-serializable dict for direct HTTP requests.
+        This method returns plain Python dictionaries instead of MS Graph SDK objects.
+        """
+        def to_json_time(dt):
+            """Convert datetime to JSON-serializable format for MS Graph API."""
+            if not dt:
+                return None
+
+            tz = (
+                dt.tzinfo.zone
+                if dt and hasattr(dt, "tzinfo") and hasattr(dt.tzinfo, "zone")
+                else "UTC"
+            )
+
+            return {
+                "dateTime": dt.isoformat() if hasattr(dt, "isoformat") else str(dt),
+                "timeZone": tz
+            }
+
+        def ensure_json_serializable(val, default=None):
+            """Ensure value is JSON serializable."""
+            if val is None:
+                return default
+            if isinstance(val, (str, int, float, bool, list, dict)):
+                return val
+            return str(val)
+
+        def to_int(val, default=0):
+            """Convert value to int with fallback."""
+            try:
+                return int(val) if val is not None else default
+            except (ValueError, TypeError):
+                return default
+
+        def to_bool(val, default=False):
+            """Convert value to bool with fallback."""
+            if isinstance(val, bool):
+                return val
+            if isinstance(val, str):
+                return val.lower() in ('true', '1', 'yes', 'on')
+            return bool(val) if val is not None else default
+
+        # Build the JSON-serializable dictionary
+        api_dict = {}
+
+        # Basic fields
+        api_dict["subject"] = str(ensure_json_serializable(appointment.subject, ""))
+        api_dict["start"] = to_json_time(appointment.start_time)
+        api_dict["end"] = to_json_time(appointment.end_time)
+
+        # Optional fields - only include if they have valid values
+        show_as_val = ensure_json_serializable(appointment.show_as, "")
+        if show_as_val and str(show_as_val).strip():
+            # Convert enum-style values to lowercase
+            show_as_clean = str(show_as_val).lower()
+            if "." in show_as_clean:
+                show_as_clean = show_as_clean.split(".")[-1]
+            api_dict["showAs"] = show_as_clean
+
+        sensitivity_val = ensure_json_serializable(appointment.sensitivity, "")
+        if sensitivity_val and str(sensitivity_val).strip():
+            # Convert enum-style values to lowercase
+            sensitivity_clean = str(sensitivity_val).lower()
+            if "." in sensitivity_clean:
+                sensitivity_clean = sensitivity_clean.split(".")[-1]
+            api_dict["sensitivity"] = sensitivity_clean
+
+        # Location as simple dict
+        location_str = str(ensure_json_serializable(appointment.location, ""))
+        if location_str:
+            api_dict["location"] = {
+                "displayName": location_str
+            }
+
+        # Attendees as list of dicts
+        attendees_list = []
+        raw_attendees = ensure_json_serializable(appointment.attendees, [])
+        if isinstance(raw_attendees, list):
+            for attendee_data in raw_attendees:
+                if isinstance(attendee_data, dict) and "emailAddress" in attendee_data:
+                    email_data = attendee_data["emailAddress"]
+                    if isinstance(email_data, dict) and email_data.get("address"):
+                        attendee_dict = {
+                            "emailAddress": {
+                                "address": email_data.get("address", ""),
+                                "name": email_data.get("name", "")
+                            }
+                        }
+                        # Add type if present
+                        if "type" in attendee_data:
+                            attendee_dict["type"] = attendee_data["type"]
+                        attendees_list.append(attendee_dict)
+
+        api_dict["attendees"] = attendees_list
+        api_dict["categories"] = ensure_json_serializable(appointment.categories, [])
+
+        # Importance - only if valid
+        importance_val = ensure_json_serializable(appointment.importance, "")
+        if importance_val and str(importance_val).strip():
+            # Convert enum-style values to lowercase
+            importance_clean = str(importance_val).lower()
+            if "." in importance_clean:
+                importance_clean = importance_clean.split(".")[-1]
+            api_dict["importance"] = importance_clean
+
+        # Reminder and all-day settings
+        api_dict["reminderMinutesBeforeStart"] = to_int(
+            ensure_json_serializable(appointment.reminder_minutes_before_start, 0), 0
+        )
+        api_dict["isAllDay"] = to_bool(
+            ensure_json_serializable(appointment.is_all_day, False), False
+        )
+
+        # Body content
+        content_type_str = str(ensure_json_serializable(appointment.body_content_type, "text")).lower()
+        body_content = str(ensure_json_serializable(appointment.body_content, ""))
+
+        api_dict["body"] = {
+            "contentType": "html" if content_type_str == "html" else "text",
+            "content": body_content
+        }
+
+        # Recurrence if present
+        recurrence_val = ensure_json_serializable(getattr(appointment, "recurrence", None), "")
+        if recurrence_val:
+            api_dict["recurrence"] = recurrence_val
+
         return api_dict
 
     def _parse_msgraph_datetime(self, dt_obj: Optional[object]):
