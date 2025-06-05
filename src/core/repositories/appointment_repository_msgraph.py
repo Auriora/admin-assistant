@@ -26,14 +26,59 @@ DEFAULT_TIMEOUT = 30  # seconds
 
 
 def _run_async(coro, timeout=DEFAULT_TIMEOUT):
+    """
+    Run an async coroutine in a sync context with proper event loop handling.
+    Handles various event loop states and provides fallback mechanisms.
+    """
     try:
+        # Try to get the current event loop
         loop = asyncio.get_running_loop()
-        # If already in an event loop, use nest_asyncio to allow nested run
+
+        # Check if the loop is closed
+        if loop.is_closed():
+            logger.warning("Current event loop is closed, creating new one")
+            return asyncio.run(asyncio.wait_for(coro, timeout=timeout))
+
+        # If we're already in an event loop, we need to handle this carefully
+        import nest_asyncio
         nest_asyncio.apply()
-        return loop.run_until_complete(asyncio.wait_for(coro, timeout=timeout))
-    except RuntimeError:
-        # No running event loop
-        return asyncio.run(asyncio.wait_for(coro, timeout=timeout))
+
+        # Use asyncio.create_task for better compatibility with nest_asyncio
+        task = asyncio.create_task(asyncio.wait_for(coro, timeout=timeout))
+        return loop.run_until_complete(task)
+
+    except RuntimeError as e:
+        error_msg = str(e).lower()
+        if "no running event loop" in error_msg:
+            # No running event loop, create a new one
+            try:
+                return asyncio.run(asyncio.wait_for(coro, timeout=timeout))
+            except Exception as inner_e:
+                logger.exception(f"Error creating new event loop: {inner_e}")
+                raise
+        elif "event loop is closed" in error_msg or "event loop is running" in error_msg:
+            # Event loop is closed or other runtime error
+            logger.warning(f"Event loop runtime error: {e}, trying to create new loop")
+            try:
+                # Create a completely new event loop
+                new_loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(new_loop)
+                try:
+                    return new_loop.run_until_complete(asyncio.wait_for(coro, timeout=timeout))
+                finally:
+                    new_loop.close()
+                    # Reset to no event loop
+                    asyncio.set_event_loop(None)
+            except Exception as inner_e:
+                logger.exception(f"Error creating new event loop after runtime error: {inner_e}")
+                raise
+        else:
+            # Other runtime error, re-raise
+            logger.exception(f"Unexpected runtime error in _run_async: {e}")
+            raise
+    except Exception as e:
+        logger.exception(f"Unexpected error in _run_async: {e}")
+        raise
 
 
 # TODO extend repositories to handle bulk operations so that updates and deletes are not done one by one
@@ -103,15 +148,46 @@ class MSGraphAppointmentRepository(BaseAppointmentRepository):
         Async: Add a new appointment to MS Graph for this user's calendar.
         :param appointment: Appointment model instance.
         """
-        data = self._map_model_to_api(appointment)
         try:
             from msgraph.generated.models.event import Event
 
-            # Event.from_dict is not always available; fallback to manual assignment
+            # Create Event object with minimal required fields to debug the issue
             event_body = Event()
-            for k, v in data.items():
-                if hasattr(event_body, k):
-                    setattr(event_body, k, v)
+            data = self._map_model_to_api(appointment)
+
+            # Debug: Log what data we're trying to send (can be removed after testing)
+            # print(f"[DEBUG] Creating event with data keys: {list(data.keys())}")
+            # print(f"[DEBUG] Subject: {data.get('subject', '')}")
+            # print(f"[DEBUG] Start: {data.get('start')}")
+            # print(f"[DEBUG] End: {data.get('end')}")
+
+            # Set required fields
+            event_body.subject = data.get("subject", "")
+            event_body.start = data.get("start")
+            event_body.end = data.get("end")
+
+            # Set optional fields (only if they have valid values)
+            if data.get("body"):
+                event_body.body = data.get("body")
+            if data.get("location"):
+                event_body.location = data.get("location")
+            if data.get("categories"):
+                event_body.categories = data.get("categories", [])
+            if data.get("attendees"):
+                event_body.attendees = data.get("attendees", [])
+            if data.get("showAs"):
+                event_body.show_as = data.get("showAs")
+            if data.get("sensitivity"):
+                event_body.sensitivity = data.get("sensitivity")
+            if data.get("importance"):
+                event_body.importance = data.get("importance")
+            if data.get("reminderMinutesBeforeStart") is not None:
+                event_body.reminder_minutes_before_start = data.get("reminderMinutesBeforeStart", 0)
+            if data.get("isAllDay") is not None:
+                event_body.is_all_day = data.get("isAllDay", False)
+
+            # Don't set organizer - MS Graph sets this automatically for new events
+
             await self._get_calendar().events.post(body=event_body)
         except Exception as e:
             logger.exception(
@@ -202,10 +278,27 @@ class MSGraphAppointmentRepository(BaseAppointmentRepository):
         try:
             from msgraph.generated.models.event import Event
 
+            # Create Event object and set properties directly from the mapped data
             event_body = Event()
-            for k, v in data.items():
-                if hasattr(event_body, k):
-                    setattr(event_body, k, v)
+            data = self._map_model_to_api(appointment)
+
+            # Set only writable properties for updates (exclude all readonly fields)
+            event_body.subject = data.get("subject", "")
+            event_body.start = data.get("start")
+            event_body.end = data.get("end")
+            event_body.show_as = data.get("showAs", "")
+            event_body.sensitivity = data.get("sensitivity", "")
+            event_body.location = data.get("location")
+            event_body.attendees = data.get("attendees", [])
+            event_body.categories = data.get("categories", [])
+            event_body.importance = data.get("importance", "")
+            event_body.reminder_minutes_before_start = data.get("reminderMinutesBeforeStart", 0)
+            event_body.is_all_day = data.get("isAllDay", False)
+            event_body.body = data.get("body")
+            # Don't set bodyPreview - it's readonly and computed by MS Graph
+            # Don't set responseStatus - it's readonly and represents user's response
+            # Don't set seriesMasterId - it's readonly and only for recurring instances
+
             await self._get_calendar().events.by_event_id(ms_event_id).patch(
                 body=event_body
             )
@@ -375,6 +468,7 @@ class MSGraphAppointmentRepository(BaseAppointmentRepository):
 
         def to_msgraph_time(dt):
             import pytz
+            from msgraph.generated.models.date_time_time_zone import DateTimeTimeZone
 
             if not dt:
                 return None
@@ -383,10 +477,11 @@ class MSGraphAppointmentRepository(BaseAppointmentRepository):
                 if dt and hasattr(dt, "tzinfo") and hasattr(dt.tzinfo, "zone")
                 else "UTC"
             )
-            return {
-                "dateTime": dt.isoformat() if hasattr(dt, "isoformat") else str(dt),
-                "timeZone": tz,
-            }
+            # Return proper DateTimeTimeZone object instead of dict
+            dt_tz = DateTimeTimeZone()
+            dt_tz.date_time = dt.isoformat() if hasattr(dt, "isoformat") else str(dt)
+            dt_tz.time_zone = tz
+            return dt_tz
 
         # Helper to get a safe value (not a SQLAlchemy Column or subclass)
         def safe_val(val, default):
@@ -476,27 +571,72 @@ class MSGraphAppointmentRepository(BaseAppointmentRepository):
             return default
 
         api_dict = {}
-        api_dict["id"] = str(ensure_json_serializable(appointment.ms_event_id, ""))
+        # Don't include ID for new events - it will be assigned by MS Graph
+        # api_dict["id"] = str(ensure_json_serializable(appointment.ms_event_id, ""))
         api_dict["subject"] = str(ensure_json_serializable(appointment.subject, ""))
-        api_dict["start"] = ensure_json_serializable(
-            to_msgraph_time(appointment.start_time), None
-        )
-        api_dict["end"] = ensure_json_serializable(
-            to_msgraph_time(appointment.end_time), None
-        )
-        api_dict["showAs"] = str(ensure_json_serializable(appointment.show_as, ""))
-        api_dict["sensitivity"] = str(
-            ensure_json_serializable(appointment.sensitivity, "")
-        )
-        api_dict["location"] = {
-            "displayName": str(ensure_json_serializable(appointment.location, ""))
-        }
-        api_dict["attendees"] = ensure_json_serializable(appointment.attendees, [])
+        # Don't apply ensure_json_serializable to DateTimeTimeZone objects
+        api_dict["start"] = to_msgraph_time(appointment.start_time)
+        api_dict["end"] = to_msgraph_time(appointment.end_time)
+
+        # Only set showAs if it has a valid value
+        show_as_val = ensure_json_serializable(appointment.show_as, "")
+        if show_as_val and str(show_as_val).strip():
+            api_dict["showAs"] = str(show_as_val)
+
+        # Only set sensitivity if it has a valid value
+        sensitivity_val = ensure_json_serializable(appointment.sensitivity, "")
+        if sensitivity_val and str(sensitivity_val).strip():
+            api_dict["sensitivity"] = str(sensitivity_val)
+        # Create proper Location object
+        from msgraph.generated.models.location import Location
+        location_obj = Location()
+        location_obj.display_name = str(ensure_json_serializable(appointment.location, ""))
+        api_dict["location"] = location_obj
+
+        # Create proper Attendee objects
+        from msgraph.generated.models.attendee import Attendee
+        from msgraph.generated.models.email_address import EmailAddress
+        from msgraph.generated.models.attendee_type import AttendeeType
+
+        attendees_list = []
+        raw_attendees = ensure_json_serializable(appointment.attendees, [])
+        if isinstance(raw_attendees, list):
+            for attendee_data in raw_attendees:
+                if isinstance(attendee_data, dict):
+                    # Only create attendee if we have valid email address data
+                    if "emailAddress" in attendee_data:
+                        email_data = attendee_data["emailAddress"]
+                        if isinstance(email_data, dict) and email_data.get("address"):
+                            attendee_obj = Attendee()
+
+                            # Set email address
+                            email_addr = EmailAddress()
+                            email_addr.address = email_data.get("address", "")
+                            email_addr.name = email_data.get("name", "")
+                            attendee_obj.email_address = email_addr
+
+                            # Set attendee type
+                            attendee_type_str = attendee_data.get("type", "required").lower()
+                            if attendee_type_str == "required":
+                                attendee_obj.type = AttendeeType.Required
+                            elif attendee_type_str == "optional":
+                                attendee_obj.type = AttendeeType.Optional
+                            else:
+                                attendee_obj.type = AttendeeType.Required  # default
+
+                            attendees_list.append(attendee_obj)
+
+        api_dict["attendees"] = attendees_list
         api_dict["categories"] = ensure_json_serializable(appointment.categories, [])
-        api_dict["organizer"] = str(ensure_json_serializable(appointment.organizer, ""))
-        api_dict["importance"] = str(
-            ensure_json_serializable(appointment.importance, "")
-        )
+
+        # Don't set organizer for new events - MS Graph will set it automatically
+        # The organizer field is readonly for new events and causes ErrorInvalidIdMalformed
+        # api_dict["organizer"] = str(ensure_json_serializable(appointment.organizer, ""))
+
+        # Don't set importance if it's empty/None to avoid validation issues
+        importance_val = ensure_json_serializable(appointment.importance, "")
+        if importance_val and str(importance_val).strip():
+            api_dict["importance"] = str(importance_val)
         # reminderMinutesBeforeStart: must be int
         api_dict["reminderMinutesBeforeStart"] = to_int(
             ensure_json_serializable(appointment.reminder_minutes_before_start, 0), 0
@@ -504,43 +644,55 @@ class MSGraphAppointmentRepository(BaseAppointmentRepository):
         api_dict["isAllDay"] = to_bool(
             ensure_json_serializable(appointment.is_all_day, False), False
         )
-        api_dict["responseStatus"] = str(
-            ensure_json_serializable(appointment.response_status, "")
-        )
-        api_dict["seriesMasterId"] = str(
-            ensure_json_serializable(appointment.series_master_id, "")
-        )
-        api_dict["onlineMeeting"] = str(
-            ensure_json_serializable(appointment.online_meeting, "")
-        )
-        api_dict["body"] = {
-            "contentType": str(
-                ensure_json_serializable(appointment.body_content_type, "")
-            ),
-            "content": str(ensure_json_serializable(appointment.body_content, "")),
-        }
-        api_dict["bodyPreview"] = str(
-            ensure_json_serializable(appointment.body_preview, "")
-        )
+        # Don't include readonly fields in API dict
+        # api_dict["responseStatus"] = str(ensure_json_serializable(appointment.response_status, ""))
+        # api_dict["seriesMasterId"] = str(ensure_json_serializable(appointment.series_master_id, ""))
+        # api_dict["onlineMeeting"] = str(ensure_json_serializable(appointment.online_meeting, ""))
+
+        # Create proper ItemBody object
+        from msgraph.generated.models.item_body import ItemBody
+        from msgraph.generated.models.body_type import BodyType
+
+        body_obj = ItemBody()
+        content_type_str = str(ensure_json_serializable(appointment.body_content_type, "text")).lower()
+        if content_type_str == "html":
+            body_obj.content_type = BodyType.Html
+        else:
+            body_obj.content_type = BodyType.Text
+        body_obj.content = str(ensure_json_serializable(appointment.body_content, ""))
+        api_dict["body"] = body_obj
+        # Don't include bodyPreview - it's readonly and computed by MS Graph
+        # api_dict["bodyPreview"] = str(ensure_json_serializable(appointment.body_preview, ""))
         api_dict["recurrence"] = ensure_json_serializable(
             getattr(appointment, "recurrence", None), ""
         )
         # Remove readonly fields if present
         readonly_fields = [
-            "webLink",
-            "onlineMeetingUrl",
-            "onlineMeeting",
-            "changeKey",
-            "createdDateTime",
-            "lastModifiedDateTime",
-            "calendar",
-            "exceptionOccurrences",
-            "extensions",
-            "instances",
-            "multiValueExtendedProperties",
-            "singleValueExtendedProperties",
-            "cancelledOccurrences",
-            "seriesMasterId",
+            "id",  # Auto-generated unique identifier
+            "webLink",  # Computed URL
+            "onlineMeetingUrl",  # Deprecated readonly field
+            "onlineMeeting",  # Readonly after initialization
+            "changeKey",  # Version identifier
+            "createdDateTime",  # Auto-generated timestamp
+            "lastModifiedDateTime",  # Auto-generated timestamp
+            "bodyPreview",  # Computed preview
+            "responseStatus",  # User's response, not organizer setting
+            "seriesMasterId",  # Only for recurring instances
+            "type",  # Computed event type
+            "hasAttachments",  # Computed field
+            "isCancelled",  # Computed field
+            "isDraft",  # Computed field
+            "isOrganizer",  # Computed field
+            "originalStart",  # Only for recurring instances
+            "originalStartTimeZone",  # Only for recurring instances
+            "originalEndTimeZone",  # Only for recurring instances
+            "cancelledOccurrences",  # Only for series masters
+            "calendar",  # Navigation property
+            "exceptionOccurrences",  # Navigation property
+            "extensions",  # Navigation property
+            "instances",  # Navigation property
+            "multiValueExtendedProperties",  # Navigation property
+            "singleValueExtendedProperties",  # Navigation property
         ]
         for field in readonly_fields:
             api_dict.pop(field, None)

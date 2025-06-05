@@ -154,6 +154,7 @@ jobs:
         mypy src/core/ src/cli/ src/web/ --ignore-missing-imports || true
 
   security:
+    name: Additional Security Scanning
     runs-on: ubuntu-latest
     environment: Testing
     steps:
@@ -165,15 +166,56 @@ jobs:
       with:
         python-version: '3.12'
 
-    - name: Install security tools
+    - name: Create virtual environment
       run: |
+        python -m venv .venv
+        echo "VIRTUAL_ENV=$PWD/.venv" >> $GITHUB_ENV
+        echo "$PWD/.venv/bin" >> $GITHUB_PATH
+
+    - name: Install dependencies and security tools
+      run: |
+        source .venv/bin/activate
         python -m pip install --upgrade pip
-        pip install safety bandit
+        pip install -e .[dev]
+        pip install safety bandit semgrep
 
-    - name: Run safety check
+    - name: Run safety check for known vulnerabilities
       run: |
-        safety check --json || true
+        source .venv/bin/activate
+        echo "::group::Safety Check - Dependency Vulnerabilities"
+        echo "Checking Python dependencies for known security vulnerabilities..."
+        safety check --json --output safety-report.json || true
+        safety check --short-report || true
+        echo "::endgroup::"
 
-    - name: Run bandit security check
+    - name: Run bandit security linter
       run: |
-        bandit -r src/core/ src/cli/ src/web/ -f json || true
+        source .venv/bin/activate
+        echo "::group::Bandit Security Linter - Python Code Analysis"
+        echo "Scanning Python code for common security issues..."
+        bandit -r src/core/ src/cli/ src/web/ -f json -o bandit-report.json || true
+        bandit -r src/core/ src/cli/ src/web/ -f txt || true
+        echo "::endgroup::"
+
+    - name: Run semgrep security analysis
+      run: |
+        source .venv/bin/activate
+        echo "::group::Semgrep Security Analysis - Pattern Matching"
+        echo "Running advanced security pattern analysis..."
+        semgrep --config=auto --json --output=semgrep-report.json src/ || true
+        semgrep --config=auto src/ || true
+        echo "::endgroup::"
+
+    - name: Upload security reports
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: security-reports
+        path: |
+          safety-report.json
+          bandit-report.json
+          semgrep-report.json
+
+    - name: Security scan summary
+      run: |
+        echo "::notice::Security scanning completed. CodeQL provides primary security analysis, while Safety, Bandit, and Semgrep provide complementary vulnerability detection."
