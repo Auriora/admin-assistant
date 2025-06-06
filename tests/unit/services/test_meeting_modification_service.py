@@ -48,10 +48,13 @@ class TestMeetingModificationService:
     
     def test_detect_modification_type_extension(self):
         """Test detection of extension modifications"""
-        assert self.service.detect_modification_type("Extension") == "extension"
-        assert self.service.detect_modification_type("Meeting Extension") == "extension"
-        assert self.service.detect_modification_type("EXTENSION") == "extension"
-        assert self.service.detect_modification_type("extension for client call") == "extension"
+        assert self.service.detect_modification_type("Extended") == "extension"
+        assert self.service.detect_modification_type("EXTENDED") == "extension"
+        assert self.service.detect_modification_type("extended") == "extension"
+        # These should NOT match (subject must be exactly "Extended")
+        assert self.service.detect_modification_type("Meeting Extended") is None
+        assert self.service.detect_modification_type("Extended Meeting") is None
+        assert self.service.detect_modification_type("Extension") is None
     
     def test_detect_modification_type_shortened(self):
         """Test detection of shortened modifications"""
@@ -90,7 +93,7 @@ class TestMeetingModificationService:
         
         # 30-minute extension
         extension = self.create_mock_appointment(
-            "Extension",
+            "Extended",
             self.base_time + timedelta(hours=1),
             self.base_time + timedelta(hours=1, minutes=30)
         )
@@ -226,7 +229,7 @@ class TestMeetingModificationService:
 
         # Extension starting at end of original
         extension = self.create_mock_appointment(
-            "Extension",
+            "Extended",
             self.base_time + timedelta(hours=1),
             self.base_time + timedelta(hours=1, minutes=30)
         )
@@ -311,7 +314,7 @@ class TestMeetingModificationService:
 
         # Extension with different category
         extension = self.create_mock_appointment(
-            "Extension",
+            "Extended",
             self.base_time + timedelta(hours=1),
             self.base_time + timedelta(hours=1, minutes=30),
             categories=["Client ABC - billable"]
@@ -326,7 +329,7 @@ class TestMeetingModificationService:
         """Test when no original appointment is found"""
         # Extension with no matching original
         extension = self.create_mock_appointment(
-            "Extension",
+            "Extended",
             self.base_time + timedelta(hours=2),
             self.base_time + timedelta(hours=2, minutes=30)
         )
@@ -347,7 +350,7 @@ class TestMeetingModificationService:
 
         # Extension
         extension = self.create_mock_appointment(
-            "Extension",
+            "Extended",
             self.base_time + timedelta(hours=1),
             self.base_time + timedelta(hours=1, minutes=30)
         )
@@ -372,7 +375,7 @@ class TestMeetingModificationService:
 
         # Extension
         extension = self.create_mock_appointment(
-            "Extension",
+            "Extended",
             self.base_time + timedelta(hours=1),
             self.base_time + timedelta(hours=1, minutes=30)
         )
@@ -396,7 +399,7 @@ class TestMeetingModificationService:
         """Test processing when modification has no original"""
         # Extension with no matching original
         extension = self.create_mock_appointment(
-            "Extension",
+            "Extended",
             self.base_time + timedelta(hours=2),
             self.base_time + timedelta(hours=2, minutes=30)
         )

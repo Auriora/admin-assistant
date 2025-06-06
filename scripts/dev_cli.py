@@ -19,6 +19,7 @@ from scripts.commands.db_commands import db_app
 from scripts.commands.build_commands import build_app
 from scripts.commands.version_commands import version_app
 from scripts.commands.clean_commands import clean_app
+from scripts.commands.testdata_commands import testdata_app
 
 console = Console()
 
@@ -36,6 +37,7 @@ app.add_typer(db_app, name="db", help="Database commands")
 app.add_typer(build_app, name="build", help="Build and packaging commands")
 app.add_typer(version_app, name="version", help="Version management commands")
 app.add_typer(clean_app, name="clean", help="Cleanup commands")
+app.add_typer(testdata_app, name="testdata", help="Test data generation commands")
 
 
 @app.callback()

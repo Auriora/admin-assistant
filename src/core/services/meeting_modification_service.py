@@ -13,7 +13,7 @@ class MeetingModificationService:
 
     # Modification type patterns for subject detection
     MODIFICATION_PATTERNS = {
-        "extension": re.compile(r"\bextension\b", re.IGNORECASE),
+        "extension": re.compile(r"^Extended$", re.IGNORECASE),  # Subject must be exactly "Extended"
         "shortened": re.compile(r"\bshortened\b", re.IGNORECASE),
         "early_start": re.compile(r"\bearly\s+start\b", re.IGNORECASE),
         "late_start": re.compile(r"\blate\s+start\b", re.IGNORECASE),
