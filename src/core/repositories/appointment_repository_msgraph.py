@@ -3,7 +3,7 @@ import logging
 import sys
 from typing import TYPE_CHECKING, Any, Dict, List, NoReturn, Optional
 
-import nest_asyncio
+# Removed nest_asyncio - using enhanced async runner instead
 import pytz
 from dateutil import parser
 from sqlalchemy.orm.attributes import InstrumentedAttribute
@@ -14,6 +14,7 @@ from core.exceptions import (
 )
 from core.models.appointment import Appointment
 from core.repositories.appointment_repository_base import BaseAppointmentRepository
+from core.utilities.async_runner import run_async
 
 logger = logging.getLogger(__name__)
 if TYPE_CHECKING:
@@ -25,139 +26,7 @@ if TYPE_CHECKING:
 DEFAULT_TIMEOUT = 30  # seconds
 
 
-# Removed global event loop management to fix coroutine reuse issues
-
-def _run_async(coro, timeout=DEFAULT_TIMEOUT):
-    """
-    Run an async coroutine in a sync context with improved event loop handling.
-    Uses multiple strategies to avoid coroutine reuse and event loop issues.
-    """
-    import threading
-    import concurrent.futures
-    import time
-
-    def run_in_fresh_thread():
-        """Run the coroutine in a completely fresh thread with its own event loop."""
-        try:
-            # Create a completely new event loop
-            new_loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(new_loop)
-
-            # Apply nest_asyncio to handle any nested async calls
-            nest_asyncio.apply(new_loop)
-
-            try:
-                # Run the coroutine with timeout
-                result = new_loop.run_until_complete(asyncio.wait_for(coro, timeout=timeout))
-                return result
-            finally:
-                # Proper cleanup based on actual operation state
-                try:
-                    # Check if loop is still running and has pending tasks
-                    if not new_loop.is_closed() and not new_loop.is_running():
-                        pending = asyncio.all_tasks(new_loop)
-
-                        if pending:
-                            logger.debug(f"Found {len(pending)} pending tasks, cleaning up...")
-
-                            # Cancel pending tasks
-                            for task in pending:
-                                if not task.done() and not task.cancelled():
-                                    task.cancel()
-
-                            # Wait for cancellation to complete, but only if tasks exist
-                            if any(not task.done() for task in pending):
-                                try:
-                                    # Use wait_for with a reasonable timeout for cleanup
-                                    new_loop.run_until_complete(
-                                        asyncio.wait_for(
-                                            asyncio.gather(*pending, return_exceptions=True),
-                                            timeout=3.0
-                                        )
-                                    )
-                                    logger.debug("All pending tasks cleaned up successfully")
-                                except asyncio.TimeoutError:
-                                    logger.debug("Some tasks did not complete cancellation within timeout - proceeding with close")
-                                except Exception as cleanup_e:
-                                    logger.debug(f"Task cleanup error (non-critical): {cleanup_e}")
-
-                        # Check for any remaining tasks after cleanup
-                        remaining = asyncio.all_tasks(new_loop)
-                        if remaining:
-                            logger.debug(f"Warning: {len(remaining)} tasks still pending after cleanup")
-
-                except Exception as cleanup_e:
-                    logger.debug(f"Event loop cleanup error (non-critical): {cleanup_e}")
-                finally:
-                    # Only close if not already closed and no critical operations pending
-                    try:
-                        if not new_loop.is_closed():
-                            # Final check - ensure no tasks are running
-                            if not new_loop.is_running():
-                                new_loop.close()
-                                logger.debug("Event loop closed successfully")
-                            else:
-                                logger.debug("Event loop still running, not closing")
-                    except RuntimeError as close_e:
-                        # This is expected if the loop is already closed or has pending operations
-                        logger.debug(f"Event loop close handled: {close_e}")
-                    except Exception as close_e:
-                        logger.debug(f"Event loop close error (non-critical): {close_e}")
-
-        except Exception as e:
-            logger.debug(f"Thread execution failed: {e}")
-            raise
-
-    try:
-        # Check if we're in an existing event loop
-        try:
-            current_loop = asyncio.get_running_loop()
-            logger.debug("Running in existing event loop, using thread approach")
-
-            # We're in an event loop, use a separate thread
-            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-                future = executor.submit(run_in_fresh_thread)
-                return future.result(timeout=timeout + 15)  # Add more buffer for cleanup
-
-        except RuntimeError:
-            # No running event loop, we can use asyncio.run
-            logger.debug("No existing event loop, using asyncio.run")
-            return asyncio.run(asyncio.wait_for(coro, timeout=timeout))
-
-    except concurrent.futures.TimeoutError:
-        logger.error(f"Async operation timed out after {timeout + 15} seconds")
-        raise asyncio.TimeoutError(f"Operation timed out after {timeout} seconds")
-
-    except Exception as e:
-        logger.exception(f"Error running async operation: {e}")
-
-        # Final fallback: try with a simple new event loop
-        try:
-            logger.debug("Trying final fallback with new event loop")
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            try:
-                return loop.run_until_complete(asyncio.wait_for(coro, timeout=timeout))
-            finally:
-                # State-based cleanup for fallback as well
-                try:
-                    if not loop.is_closed() and not loop.is_running():
-                        # Check for pending tasks
-                        pending = asyncio.all_tasks(loop)
-                        if pending:
-                            for task in pending:
-                                if not task.done():
-                                    task.cancel()
-
-                        # Only close if safe to do so
-                        if not loop.is_running():
-                            loop.close()
-                            logger.debug("Fallback event loop closed successfully")
-                except Exception as close_e:
-                    logger.debug(f"Fallback loop close error (non-critical): {close_e}")
-        except Exception as fallback_e:
-            logger.exception(f"All async execution methods failed: {fallback_e}")
-            raise
+# Using enhanced async runner to resolve event loop issues
 
 
 # TODO extend repositories to handle bulk operations so that updates and deletes are not done one by one
@@ -308,7 +177,7 @@ class MSGraphAppointmentRepository(BaseAppointmentRepository):
 
     def add_bulk(self, appointments: List[Appointment]) -> List[str]:
         """Sync wrapper for aadd_bulk."""
-        return _run_async(self.aadd_bulk(appointments))
+        return run_async(self.aadd_bulk(appointments))
 
     async def aadd_direct(self, appointment: Appointment) -> None:
         """
@@ -392,8 +261,15 @@ class MSGraphAppointmentRepository(BaseAppointmentRepository):
         :return: List of appointments that don't exist in destination
         """
         try:
-            # Get existing appointments from destination calendar
-            existing_appointments = await self.alist_for_user(start_date, end_date)
+            # Try direct HTTP approach first to avoid event loop issues
+            try:
+                existing_appointments = await self.alist_for_user_direct(start_date, end_date)
+                logger.debug(f"Successfully retrieved {len(existing_appointments)} existing appointments via direct HTTP")
+            except Exception as direct_e:
+                logger.warning(f"Direct HTTP approach failed, trying SDK approach: {direct_e}")
+                # Fallback to SDK approach
+                existing_appointments = await self.alist_for_user(start_date, end_date)
+                logger.debug(f"Successfully retrieved {len(existing_appointments)} existing appointments via SDK")
 
             # Create a set of existing appointment signatures for fast lookup
             existing_signatures = set()
@@ -419,11 +295,12 @@ class MSGraphAppointmentRepository(BaseAppointmentRepository):
         except Exception as e:
             logger.exception(f"Error checking for duplicates in destination calendar: {e}")
             # If duplicate checking fails, return all appointments to avoid data loss
+            logger.warning("Duplicate checking failed completely - proceeding with all appointments to avoid data loss")
             return appointments
 
     def check_for_duplicates(self, appointments: List[Appointment], start_date=None, end_date=None) -> List[Appointment]:
         """Sync wrapper for acheck_for_duplicates."""
-        return _run_async(self.acheck_for_duplicates(appointments, start_date, end_date))
+        return run_async(self.acheck_for_duplicates(appointments, start_date, end_date))
 
     def _create_appointment_signature(self, appointment: Appointment) -> Optional[str]:
         """
@@ -1600,29 +1477,29 @@ class MSGraphAppointmentRepository(BaseAppointmentRepository):
     # Synchronous wrappers for compatibility with sync interface (if needed)
     def get_by_id(self, ms_event_id: str) -> Optional[Appointment]:
         """Sync wrapper for aget_by_id."""
-        return _run_async(self.aget_by_id(ms_event_id))
+        return run_async(self.aget_by_id(ms_event_id))
 
     def add(self, appointment: Appointment) -> None:
         """Sync wrapper for aadd."""
-        return _run_async(self.aadd(appointment))
+        return run_async(self.aadd(appointment))
 
     def list_for_user(self, start_date=None, end_date=None) -> List[Appointment]:
         """Sync wrapper for alist_for_user."""
-        return _run_async(self.alist_for_user(start_date, end_date))
+        return run_async(self.alist_for_user(start_date, end_date))
 
     def update(self, appointment: Appointment) -> None:
         """Sync wrapper for aupdate."""
         # Check immutability before async call for better error handling
         appointment.validate_modification_allowed(self.user)
-        return _run_async(self.aupdate(appointment))
+        return run_async(self.aupdate(appointment))
 
     def delete(self, ms_event_id: str) -> None:
         """Sync wrapper for adelete."""
-        return _run_async(self.adelete(ms_event_id))
+        return run_async(self.adelete(ms_event_id))
 
     def delete_bulk(self, ms_event_ids: List[str]) -> Dict[str, Any]:
         """Sync wrapper for adelete_bulk."""
-        return _run_async(self.adelete_bulk(ms_event_ids))
+        return run_async(self.adelete_bulk(ms_event_ids))
 
     async def adelete_for_period(self, start_date, end_date) -> List[Dict[str, Any]]:
         """
@@ -1707,4 +1584,4 @@ class MSGraphAppointmentRepository(BaseAppointmentRepository):
 
     def delete_for_period(self, start_date, end_date) -> List[Dict[str, Any]]:
         """Sync wrapper for adelete_for_period."""
-        return _run_async(self.adelete_for_period(start_date, end_date))
+        return run_async(self.adelete_for_period(start_date, end_date))

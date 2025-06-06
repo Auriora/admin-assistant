@@ -638,15 +638,22 @@ class CalendarArchiveOrchestrator:
                             },
                         )
                         action_log_repo.add(log)
-                        assoc = EntityAssociation(
-                            source_type="action_log",
-                            source_id=log.id,
-                            target_type="appointment",
-                            target_id=getattr(appt, "id", None)
-                            or getattr(appt, "ms_event_id", None),
-                            association_type="overlap",
-                        )
-                        assoc_helper.add(db_session, assoc)
+
+                        # Get target_id for the appointment - ensure it's not None
+                        target_id = getattr(appt, "id", None) or getattr(appt, "ms_event_id", None)
+
+                        # Only create association if we have a valid target_id
+                        if target_id is not None:
+                            assoc = EntityAssociation(
+                                source_type="action_log",
+                                source_id=log.id,
+                                target_type="appointment",
+                                target_id=target_id,
+                                association_type="overlap",
+                            )
+                            assoc_helper.add(db_session, assoc)
+                        else:
+                            logger.warning(f"Skipping entity association for overlap - appointment has no valid ID: {getattr(appt, 'subject', 'Unknown')}")
                         overlap_count += 1
 
                 # Log category validation issues
