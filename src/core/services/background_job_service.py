@@ -24,6 +24,7 @@ from flask_apscheduler import APScheduler
 
 from core.services.archive_configuration_service import ArchiveConfigurationService
 from core.services.job_configuration_service import JobConfigurationService
+from core.services.backup_job_configuration_service import BackupJobConfigurationService
 from core.services.user_service import UserService
 
 logger = logging.getLogger(__name__)
@@ -43,7 +44,9 @@ class BackgroundJobService:
         self.user_service = UserService()
         self.archive_config_service = ArchiveConfigurationService()
         self.job_config_service = JobConfigurationService()
+        self._backup_job_config_service = None
         self._archive_runner = None
+        self._backup_service = None
 
     def set_scheduler(self, scheduler: APScheduler):
         """Set the scheduler instance (used when initializing from Flask app)."""
@@ -57,6 +60,27 @@ class BackgroundJobService:
 
             self._archive_runner = ArchiveJobRunner()
         return self._archive_runner
+
+    @property
+    def backup_service(self):
+        """Lazy initialization of CalendarBackupService to avoid circular imports."""
+        if self._backup_service is None:
+            from core.services.calendar_backup_service import CalendarBackupService
+
+            self._backup_service = CalendarBackupService()
+        return self._backup_service
+
+    @property
+    def backup_job_config_service(self):
+        """Lazy initialization of BackupJobConfigurationService to avoid circular imports."""
+        if self._backup_job_config_service is None:
+            from core.db import get_session
+            from core.repositories.backup_job_configuration_repository import BackupJobConfigurationRepository
+
+            session = get_session()
+            repository = BackupJobConfigurationRepository(session)
+            self._backup_job_config_service = BackupJobConfigurationService(repository, self.user_service)
+        return self._backup_job_config_service
 
     def schedule_daily_archive_job(
         self, user_id: int, archive_config_id: int, hour: int = 23, minute: int = 59
@@ -233,6 +257,171 @@ class BackgroundJobService:
         )
         return job_id
 
+    def schedule_daily_backup_job(
+        self, user_id: int, backup_config_id: int, hour: int = 2, minute: int = 0
+    ) -> str:
+        """
+        Schedule a daily backup job for a user.
+
+        Args:
+            user_id: User ID to schedule backup for
+            backup_config_id: Backup configuration ID to use
+            hour: Hour to run the job (0-23, default 2)
+            minute: Minute to run the job (0-59, default 0)
+
+        Returns:
+            Job ID for the scheduled job
+
+        Raises:
+            ValueError: If scheduler is not initialized or user/config not found
+        """
+        if not self.scheduler:
+            raise ValueError("Scheduler not initialized")
+
+        # Validate user and config exist
+        user = self.user_service.get_by_id(user_id)
+        if not user:
+            raise ValueError(f"User with ID {user_id} not found")
+
+        backup_config = self.backup_job_config_service.get_by_id(backup_config_id)
+        if not backup_config:
+            raise ValueError(
+                f"Backup configuration with ID {backup_config_id} not found"
+            )
+
+        if not backup_config.is_active:
+            raise ValueError(f"Backup configuration {backup_config_id} is not active")
+
+        job_id = f"daily_backup_user_{user_id}_config_{backup_config_id}"
+
+        # Remove existing job if it exists
+        if self.scheduler.get_job(job_id):
+            self.scheduler.remove_job(job_id)
+            logger.info(f"Removed existing backup job {job_id}")
+
+        # Schedule new job
+        self.scheduler.add_job(
+            id=job_id,
+            func=self._run_scheduled_backup,
+            args=[user_id, backup_config_id],
+            trigger="cron",
+            hour=hour,
+            minute=minute,
+            timezone="UTC",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+        )
+
+        logger.info(
+            f"Scheduled daily backup job {job_id} for user {user.email} at {hour:02d}:{minute:02d} UTC"
+        )
+        return job_id
+
+    def schedule_weekly_backup_job(
+        self,
+        user_id: int,
+        backup_config_id: int,
+        day_of_week: int = 0,
+        hour: int = 2,
+        minute: int = 0,
+    ) -> str:
+        """
+        Schedule a weekly backup job for a user.
+
+        Args:
+            user_id: User ID to schedule backup for
+            backup_config_id: Backup configuration ID to use
+            day_of_week: Day of week (0=Monday, 6=Sunday, default 0)
+            hour: Hour to run the job (0-23, default 2)
+            minute: Minute to run the job (0-59, default 0)
+
+        Returns:
+            Job ID for the scheduled job
+        """
+        if not self.scheduler:
+            raise ValueError("Scheduler not initialized")
+
+        # Validate user and config exist
+        user = self.user_service.get_by_id(user_id)
+        if not user:
+            raise ValueError(f"User with ID {user_id} not found")
+
+        backup_config = self.backup_job_config_service.get_by_id(backup_config_id)
+        if not backup_config:
+            raise ValueError(
+                f"Backup configuration with ID {backup_config_id} not found"
+            )
+
+        if not backup_config.is_active:
+            raise ValueError(f"Backup configuration {backup_config_id} is not active")
+
+        job_id = f"weekly_backup_user_{user_id}_config_{backup_config_id}"
+
+        # Remove existing job if it exists
+        if self.scheduler.get_job(job_id):
+            self.scheduler.remove_job(job_id)
+            logger.info(f"Removed existing backup job {job_id}")
+
+        # Schedule new job
+        self.scheduler.add_job(
+            id=job_id,
+            func=self._run_scheduled_backup,
+            args=[user_id, backup_config_id],
+            trigger="cron",
+            day_of_week=day_of_week,
+            hour=hour,
+            minute=minute,
+            timezone="UTC",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+        )
+
+        logger.info(
+            f"Scheduled weekly backup job {job_id} for user {user.email} on day {day_of_week} at {hour:02d}:{minute:02d} UTC"
+        )
+        return job_id
+
+    def trigger_manual_backup(
+        self,
+        user_id: int,
+        backup_config_id: int,
+        start_date: Optional[date] = None,
+        end_date: Optional[date] = None,
+    ) -> str:
+        """
+        Trigger a manual backup job immediately.
+
+        Args:
+            user_id: User ID to run backup for
+            backup_config_id: Backup configuration ID to use
+            start_date: Start date for backup (optional)
+            end_date: End date for backup (optional)
+
+        Returns:
+            Job ID for the manual job
+        """
+        if not self.scheduler:
+            raise ValueError("Scheduler not initialized")
+
+        job_id = f"manual_backup_{user_id}_{backup_config_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+
+        # Schedule immediate job
+        self.scheduler.add_job(
+            id=job_id,
+            func=self._run_manual_backup,
+            args=[user_id, backup_config_id, start_date, end_date],
+            trigger="date",
+            run_date=datetime.now(),
+            max_instances=1,
+        )
+
+        logger.info(
+            f"Triggered manual backup job {job_id} for user {user_id}"
+        )
+        return job_id
+
     def remove_job(self, job_id: str) -> bool:
         """
         Remove a scheduled job.
@@ -391,6 +580,112 @@ class BackgroundJobService:
         except Exception as e:
             logger.exception(
                 f"Manual archive job failed for user {user_id}, config {archive_config_id}: {e}"
+            )
+
+    def _run_scheduled_backup(self, user_id: int, backup_config_id: int):
+        """
+        Internal method to run scheduled backup job.
+        """
+        try:
+            backup_config = self.backup_job_config_service.get_by_id(backup_config_id)
+            if not backup_config:
+                logger.error(f"Backup configuration {backup_config_id} not found")
+                return
+
+            logger.info(
+                f"Starting scheduled backup for user {user_id}, config {backup_config_id}, "
+                f"source '{backup_config.source_calendar_name}' to '{backup_config.backup_destination}'"
+            )
+
+            # Initialize backup service with the user
+            from core.services.calendar_backup_service import CalendarBackupService
+            backup_service = CalendarBackupService(user_id=user_id)
+
+            if backup_config.backup_format == 'local_calendar':
+                result = backup_service.backup_calendar_to_local_calendar(
+                    source_calendar_name=backup_config.source_calendar_name,
+                    backup_calendar_name=backup_config.backup_destination
+                )
+            else:
+                from core.services.calendar_backup_service import BackupFormat
+                backup_format_enum = BackupFormat(backup_config.backup_format)
+                result = backup_service.backup_calendar_to_file(
+                    calendar_name=backup_config.source_calendar_name,
+                    backup_path=backup_config.backup_destination,
+                    backup_format=backup_format_enum,
+                    include_metadata=backup_config.include_metadata
+                )
+
+            if result.failed > 0:
+                logger.warning(
+                    f"Scheduled backup completed with errors for user {user_id}: "
+                    f"{result.backed_up} backed up, {result.failed} failed"
+                )
+            else:
+                logger.info(
+                    f"Scheduled backup completed successfully for user {user_id}: "
+                    f"{result.backed_up} appointments backed up"
+                )
+
+        except Exception as e:
+            logger.exception(
+                f"Scheduled backup job failed for user {user_id}, config {backup_config_id}: {e}"
+            )
+
+    def _run_manual_backup(
+        self, user_id: int, backup_config_id: int, start_date: Optional[date], end_date: Optional[date]
+    ):
+        """
+        Internal method to run manual backup job.
+        """
+        try:
+            backup_config = self.backup_job_config_service.get_by_id(backup_config_id)
+            if not backup_config:
+                logger.error(f"Backup configuration {backup_config_id} not found")
+                return
+
+            logger.info(
+                f"Starting manual backup for user {user_id}, config {backup_config_id}, "
+                f"source '{backup_config.source_calendar_name}' to '{backup_config.backup_destination}'"
+            )
+
+            # Initialize backup service with the user
+            from core.services.calendar_backup_service import CalendarBackupService
+            backup_service = CalendarBackupService(user_id=user_id)
+
+            if backup_config.backup_format == 'local_calendar':
+                result = backup_service.backup_calendar_to_local_calendar(
+                    source_calendar_name=backup_config.source_calendar_name,
+                    backup_calendar_name=backup_config.backup_destination,
+                    start_date=start_date,
+                    end_date=end_date
+                )
+            else:
+                from core.services.calendar_backup_service import BackupFormat
+                backup_format_enum = BackupFormat(backup_config.backup_format)
+                result = backup_service.backup_calendar_to_file(
+                    calendar_name=backup_config.source_calendar_name,
+                    backup_path=backup_config.backup_destination,
+                    backup_format=backup_format_enum,
+                    start_date=start_date,
+                    end_date=end_date,
+                    include_metadata=backup_config.include_metadata
+                )
+
+            if result.failed > 0:
+                logger.warning(
+                    f"Manual backup completed with errors for user {user_id}: "
+                    f"{result.backed_up} backed up, {result.failed} failed"
+                )
+            else:
+                logger.info(
+                    f"Manual backup completed successfully for user {user_id}: "
+                    f"{result.backed_up} appointments backed up"
+                )
+
+        except Exception as e:
+            logger.exception(
+                f"Manual backup job failed for user {user_id}, config {backup_config_id}: {e}"
             )
 
     def schedule_job_from_configuration(self, job_config_id: int) -> str:

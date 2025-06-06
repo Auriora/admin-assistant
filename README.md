@@ -77,6 +77,12 @@ admin-assistant calendar create --user <USER_ID> --store msgraph --name "Archive
 
 # Analyze overlapping appointments
 admin-assistant calendar analyze-overlaps --user <USER_ID> --start-date "2024-01-01"
+
+# Backup calendar to file
+admin-assistant calendar backup --user <USER_ID> --source "Work Calendar" --destination "/backups/work.csv" --format csv
+
+# Backup calendar to another calendar
+admin-assistant calendar backup --user <USER_ID> --source "Work Calendar" --destination "Work Backup" --format local_calendar
 ```
 
 #### Category Management
@@ -127,6 +133,12 @@ admin-assistant jobs status --user <USER_ID>
 
 # Trigger manual archive
 admin-assistant jobs trigger --user <USER_ID> --config <CONFIG_ID>
+
+# Schedule automatic backup
+admin-assistant jobs schedule-backup --user <USER_ID> --source "Work Calendar" --destination "/backups/work.csv" --type daily --hour 2
+
+# Check backup job status
+admin-assistant jobs backup-status --user <USER_ID>
 ```
 
 #### Appointment Restoration

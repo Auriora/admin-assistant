@@ -22,6 +22,7 @@ The CLI is organized into logical groups based on functionality:
 admin-assistant
 ├── calendar                    # Calendar operations
 │   ├── archive                # Execute calendar archiving
+│   ├── backup                 # Backup calendar to file or another calendar
 │   ├── travel                 # Auto-plan travel
 │   ├── analyze-overlaps       # Analyze overlapping appointments
 │   ├── list                   # List calendars for user
@@ -46,8 +47,10 @@ admin-assistant
 │   └── upload                 # Upload timesheet to external systems
 ├── jobs                       # Background job management
 │   ├── schedule               # Schedule recurring archive jobs
+│   ├── schedule-backup        # Schedule backup jobs
 │   ├── trigger                # Trigger manual archive job
 │   ├── status                 # Get job status for user
+│   ├── backup-status          # Get backup job status for user
 │   ├── remove                 # Remove scheduled jobs
 │   └── health                 # Job scheduler health check
 ├── restore                    # Appointment restoration operations
@@ -107,6 +110,33 @@ Auto-plan travel appointments.
 admin-assistant calendar analyze-overlaps --user <USER_ID> [--start-date <DATE>] [--end-date <DATE>] [--auto-resolve] [--details/--no-details]
 ```
 Analyze overlapping appointments and optionally auto-resolve conflicts.
+
+### Calendar Backup
+```bash
+admin-assistant calendar backup --user <USER_ID> --source <SOURCE_CALENDAR> --destination <DESTINATION> [--format <FORMAT>] [--start-date <DATE>] [--end-date <DATE>] [--metadata/--no-metadata]
+```
+
+**Purpose**: Backup a calendar to file or another calendar.
+
+**Options**:
+- `--source <SOURCE_CALENDAR>`: Source calendar name (required)
+- `--destination <DESTINATION>`: Backup destination - file path or calendar name (required)
+- `--format <FORMAT>`: Backup format: csv, json, ics, local_calendar (default: csv)
+- `--start-date <DATE>`: Start date filter (YYYY-MM-DD, optional)
+- `--end-date <DATE>`: End date filter (YYYY-MM-DD, optional)
+- `--metadata/--no-metadata`: Include metadata in backup (default: metadata)
+
+**Examples**:
+```bash
+# Backup to CSV file
+admin-assistant calendar backup --user 1 --source "Work Calendar" --destination "/backups/work.csv" --format csv
+
+# Backup to another calendar
+admin-assistant calendar backup --user 1 --source "Work Calendar" --destination "Work Backup" --format local_calendar
+
+# Backup specific date range to JSON
+admin-assistant calendar backup --user 1 --source "Personal" --destination "/backups/personal_june.json" --format json --start-date "2025-06-01" --end-date "2025-06-30"
+```
 
 ## Configuration Management (`admin-assistant config`)
 

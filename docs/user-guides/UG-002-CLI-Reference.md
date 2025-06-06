@@ -157,6 +157,39 @@ admin-assistant calendar analyze-overlaps --user 1 --start-date "2024-12-01" --e
 admin-assistant calendar analyze-overlaps --user 1 --auto-resolve --start-date "2024-12-01"
 ```
 
+#### Backup Calendar
+```bash
+admin-assistant calendar backup --user <USER_ID> --source <SOURCE_CALENDAR> --destination <DESTINATION> [OPTIONS]
+```
+
+**Required Options**:
+- `--source <SOURCE_CALENDAR>`: Source calendar name to backup
+- `--destination <DESTINATION>`: Backup destination (file path or calendar name)
+
+**Optional Options**:
+- `--format <FORMAT>`: Backup format (`csv`, `json`, `ics`, `local_calendar`) [default: csv]
+- `--start-date <DATE>`: Start date filter (YYYY-MM-DD)
+- `--end-date <DATE>`: End date filter (YYYY-MM-DD)
+- `--metadata/--no-metadata`: Include metadata in backup [default: metadata]
+
+**Backup Formats**:
+- `csv` - Comma-separated values file
+- `json` - JSON format with metadata
+- `ics` - iCalendar format (RFC 5545)
+- `local_calendar` - Backup to another local calendar
+
+**Examples**:
+```bash
+# Backup calendar to CSV file
+admin-assistant calendar backup --user 1 --source "Work Calendar" --destination "/backups/work.csv" --format csv
+
+# Backup calendar to another calendar
+admin-assistant calendar backup --user 1 --source "Work Calendar" --destination "Work Backup" --format local_calendar
+
+# Backup specific date range
+admin-assistant calendar backup --user 1 --source "Work Calendar" --destination "/backups/work_june.json" --format json --start-date "2024-06-01" --end-date "2024-06-30"
+```
+
 ### Category Commands (`admin-assistant category`)
 
 #### List Categories
@@ -307,6 +340,39 @@ admin-assistant jobs remove --user <USER_ID> [--confirm]
 # Health check
 admin-assistant jobs health
 ```
+
+#### Schedule Backup Jobs
+```bash
+admin-assistant jobs schedule-backup --user <USER_ID> --source <SOURCE_CALENDAR> --destination <DESTINATION> [OPTIONS]
+```
+
+**Required Options**:
+- `--source <SOURCE_CALENDAR>`: Source calendar name to backup
+- `--destination <DESTINATION>`: Backup destination (file path or calendar name)
+
+**Optional Options**:
+- `--format <FORMAT>`: Backup format (`csv`, `json`, `ics`, `local_calendar`) [default: csv]
+- `--type <TYPE>`: Schedule type (`daily`, `weekly`) [default: daily]
+- `--hour <HOUR>`: Hour to run backup (0-23) [default: 2]
+- `--minute <MINUTE>`: Minute to run backup (0-59) [default: 0]
+- `--day-of-week <DAY>`: Day of week for weekly jobs (0=Monday, 6=Sunday)
+- `--metadata/--no-metadata`: Include metadata in backup [default: metadata]
+
+**Examples**:
+```bash
+# Schedule daily backup at 2:00 AM
+admin-assistant jobs schedule-backup --user 1 --source "Work Calendar" --destination "/backups/work.csv" --type daily --hour 2
+
+# Schedule weekly backup on Mondays at 3:30 AM
+admin-assistant jobs schedule-backup --user 1 --source "Work Calendar" --destination "Work Backup" --format local_calendar --type weekly --day-of-week 0 --hour 3 --minute 30
+```
+
+#### Backup Job Status
+```bash
+admin-assistant jobs backup-status --user <USER_ID>
+```
+
+**Purpose**: Display all backup job configurations for a user, including schedule details and status.
 
 ### Timesheet Commands (`admin-assistant timesheet`)
 

@@ -76,6 +76,7 @@ timesheet_app = typer.Typer(help="Timesheet operations")
 config_app = typer.Typer(help="Configuration operations")
 archive_config_app = typer.Typer(help="Calendar configuration operations")
 archive_archive_config_app = typer.Typer(help="Archive configuration management")
+backup_config_app = typer.Typer(help="Backup configuration management")
 login_app = typer.Typer(help="Authentication commands")
 jobs_app = typer.Typer(help="Background job management")
 
@@ -1238,6 +1239,104 @@ def delete_config(
         raise typer.Exit(code=1)
 
 
+# Backup configuration commands
+@backup_config_app.command("list")
+def list_backup_configs(user_input: Optional[str] = user_option):
+    """List all backup configurations for a user."""
+    from rich.console import Console
+    from rich.table import Table
+
+    from core.services.backup_configuration_service import BackupConfigurationService
+
+    console = Console()
+
+    try:
+        user = resolve_cli_user(user_input)
+
+        backup_service = BackupConfigurationService()
+        configs = backup_service.list(user_id=user.id)
+
+        if not configs:
+            console.print(f"[yellow]No backup configurations found for user {user.id} ({user.username or user.email})[/yellow]")
+            return
+
+        table = Table(title=f"Backup Configurations for {user.username or user.email}")
+        table.add_column("ID", style="cyan")
+        table.add_column("Name", style="green")
+        table.add_column("Source URI", style="blue")
+        table.add_column("Destination URI", style="blue")
+        table.add_column("Format", style="yellow")
+        table.add_column("Active", style="red")
+
+        for config in configs:
+            table.add_row(
+                str(config.id),
+                config.name,
+                config.source_calendar_uri,
+                config.destination_uri,
+                config.backup_format,
+                "✓" if config.is_active else "✗"
+            )
+
+        console.print(table)
+
+    except Exception as e:
+        console.print(f"[red]Error listing backup configurations: {e}[/red]")
+        raise typer.Exit(code=1)
+
+
+@backup_config_app.command("create")
+def create_backup_config(
+    user_input: Optional[str] = user_option,
+    name: str = typer.Option(None, "--name", help="Name for the backup configuration"),
+    source_calendar_uri: str = typer.Option(
+        None, "--source-uri", help="Source calendar URI (e.g., msgraph://calendars/Work Calendar)"
+    ),
+    destination_uri: str = typer.Option(
+        None, "--destination-uri", help="Destination URI (e.g., file:///backups/work.csv, local://calendars/Backup)"
+    ),
+    backup_format: str = typer.Option("csv", "--format", help="Backup format: csv, json, ics, local_calendar"),
+    include_metadata: bool = typer.Option(True, "--metadata/--no-metadata", help="Include metadata in backup"),
+    timezone: str = typer.Option("UTC", "--timezone", help="Timezone for backup operations"),
+):
+    """Create a new backup configuration."""
+    from rich.console import Console
+
+    from core.services.backup_configuration_service import BackupConfigurationService
+
+    console = Console()
+
+    # Prompt for missing fields
+    if not name:
+        name = typer.prompt("Backup configuration name")
+    if not source_calendar_uri:
+        source_calendar_uri = typer.prompt("Source calendar URI (e.g., msgraph://calendars/Work Calendar)")
+    if not destination_uri:
+        destination_uri = typer.prompt("Destination URI (e.g., file:///backups/work.csv)")
+
+    try:
+        user = resolve_cli_user(user_input)
+
+        backup_service = BackupConfigurationService()
+        backup_config = backup_service.create_from_parameters(
+            user_id=user.id,
+            name=name,
+            source_calendar_uri=source_calendar_uri,
+            destination_uri=destination_uri,
+            backup_format=backup_format,
+            include_metadata=include_metadata,
+            timezone=timezone,
+        )
+
+        console.print(f"[green]Backup configuration '{name}' created successfully with ID {backup_config.id}[/green]")
+
+    except Exception as e:
+        console.print(f"[red]Failed to create backup configuration: {e}[/red]")
+        raise typer.Exit(code=1)
+
+
+# Add backup config commands to archive_config_app as "backup" subcommand
+archive_config_app.add_typer(backup_config_app, name="backup")
 # Add archive config commands to archive_config_app as "archive" subcommand
 archive_config_app.add_typer(archive_archive_config_app, name="archive")
 # Add archive_config_app to config_app as "calendar" subcommand
@@ -1622,6 +1721,168 @@ def job_health_check():
         raise typer.Exit(code=1)
 
 
+@jobs_app.command("schedule-backup")
+def schedule_backup_job(
+    user_input: Optional[str] = user_option,
+    source_uri: str = typer.Option(..., "--source", help="Source calendar URI (e.g., msgraph://calendars/Work Calendar)"),
+    destination_uri: str = typer.Option(..., "--destination", help="Destination URI (file:///path/to/backup.csv, local://calendars/Backup)"),
+    backup_format: str = typer.Option("csv", "--format", help="Backup format: csv, json, ics, local_calendar"),
+    schedule_type: str = typer.Option("daily", "--type", help="Schedule type: daily or weekly"),
+    schedule_hour: int = typer.Option(2, "--hour", help="Hour to run backup (0-23)"),
+    schedule_minute: int = typer.Option(0, "--minute", help="Minute to run backup (0-59)"),
+    schedule_day_of_week: Optional[int] = typer.Option(None, "--day-of-week", help="Day of week for weekly jobs (0=Monday, 6=Sunday)"),
+    include_metadata: bool = typer.Option(True, "--metadata/--no-metadata", help="Include metadata in backup"),
+):
+    """
+    Schedule a backup job for a user using URI-based addressing.
+
+    Examples:
+        admin-assistant jobs schedule-backup --user 1 --source "msgraph://calendars/Work Calendar" --destination "file:///backups/work.csv" --type daily --hour 2
+        admin-assistant jobs schedule-backup --user 1 --source "msgraph://calendars/primary" --destination "local://calendars/Work Backup" --format local_calendar --type weekly --day-of-week 0
+    """
+    from rich.console import Console
+    from rich.panel import Panel
+    from flask_apscheduler import APScheduler
+
+    from core.services.background_job_service import BackgroundJobService
+    from core.db import get_session
+    from core.repositories.backup_job_configuration_repository import BackupJobConfigurationRepository
+    from core.services.backup_job_configuration_service import BackupJobConfigurationService
+    from core.services.user_service import UserService
+
+    console = Console()
+
+    console.print(Panel.fit(
+        f"[bold blue]Schedule Backup Job[/bold blue]\n"
+        f"Source: {source_uri}\n"
+        f"Destination: {destination_uri}\n"
+        f"Format: {backup_format}\n"
+        f"Schedule: {schedule_type}",
+        title="Backup Job Scheduling"
+    ))
+
+    try:
+        user = resolve_cli_user(user_input)
+
+        # Validate schedule parameters
+        if schedule_type == "weekly" and schedule_day_of_week is None:
+            schedule_day_of_week = 0  # Default to Monday
+
+        # Create backup job configuration
+        session = get_session()
+        repository = BackupJobConfigurationRepository(session)
+        user_service = UserService()
+        backup_config_service = BackupJobConfigurationService(repository, user_service)
+
+        backup_config = backup_config_service.create_from_parameters(
+            user_id=user.id,
+            source_calendar_name=source_calendar,
+            backup_destination=backup_destination,
+            backup_format=backup_format,
+            schedule_type=schedule_type,
+            schedule_hour=schedule_hour,
+            schedule_minute=schedule_minute,
+            schedule_day_of_week=schedule_day_of_week,
+            include_metadata=include_metadata
+        )
+
+        # Schedule the job
+        scheduler = APScheduler()
+        background_job_service = BackgroundJobService(scheduler)
+
+        if schedule_type == "daily":
+            job_id = background_job_service.schedule_daily_backup_job(
+                user_id=user.id,
+                backup_config_id=backup_config.id,
+                hour=schedule_hour,
+                minute=schedule_minute
+            )
+        elif schedule_type == "weekly":
+            job_id = background_job_service.schedule_weekly_backup_job(
+                user_id=user.id,
+                backup_config_id=backup_config.id,
+                day_of_week=schedule_day_of_week,
+                hour=schedule_hour,
+                minute=schedule_minute
+            )
+        else:
+            console.print(f"[red]Invalid schedule type '{schedule_type}'. Must be 'daily' or 'weekly'.[/red]")
+            raise typer.Exit(code=1)
+
+        console.print(f"\n[green]✓ Backup job scheduled successfully![/green]")
+        console.print(f"Job ID: {job_id}")
+        console.print(f"Configuration ID: {backup_config.id}")
+        console.print(f"Schedule: {schedule_type} at {schedule_hour:02d}:{schedule_minute:02d}")
+        if schedule_type == "weekly":
+            days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+            console.print(f"Day: {days[schedule_day_of_week]}")
+
+    except Exception as e:
+        console.print(f"[red]Failed to schedule backup job: {e}[/red]")
+        raise typer.Exit(code=1)
+
+
+@jobs_app.command("backup-status")
+def backup_job_status(user_input: Optional[str] = user_option):
+    """Get backup job status for a user."""
+    from rich.console import Console
+    from rich.table import Table
+
+    from core.db import get_session
+    from core.repositories.backup_job_configuration_repository import BackupJobConfigurationRepository
+    from core.services.backup_job_configuration_service import BackupJobConfigurationService
+    from core.services.user_service import UserService
+
+    console = Console()
+
+    try:
+        user = resolve_cli_user(user_input)
+
+        # Get backup job configurations
+        session = get_session()
+        repository = BackupJobConfigurationRepository(session)
+        user_service = UserService()
+        backup_config_service = BackupJobConfigurationService(repository, user_service)
+
+        configs = backup_config_service.get_active_configs_for_user(user.id)
+
+        if not configs:
+            console.print(f"[yellow]No backup job configurations found for user {user.id} ({user.email})[/yellow]")
+            return
+
+        table = Table(title=f"Backup Job Configurations for {user.email}")
+        table.add_column("ID", style="cyan")
+        table.add_column("Source Calendar", style="green")
+        table.add_column("Destination", style="blue")
+        table.add_column("Format", style="yellow")
+        table.add_column("Schedule", style="magenta")
+        table.add_column("Active", style="red")
+
+        for config in configs:
+            schedule_desc = f"{config.schedule_type}"
+            if config.schedule_type == "daily":
+                schedule_desc += f" at {config.schedule_hour:02d}:{config.schedule_minute:02d}"
+            elif config.schedule_type == "weekly":
+                days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+                day_name = days[config.schedule_day_of_week] if config.schedule_day_of_week is not None else "?"
+                schedule_desc += f" {day_name} at {config.schedule_hour:02d}:{config.schedule_minute:02d}"
+
+            table.add_row(
+                str(config.id),
+                config.source_calendar_name,
+                config.backup_destination,
+                config.backup_format,
+                schedule_desc,
+                "✓" if config.is_active else "✗"
+            )
+
+        console.print(table)
+
+    except Exception as e:
+        console.print(f"[red]Failed to get backup job status: {e}[/red]")
+        raise typer.Exit(code=1)
+
+
 def uri_safe_name(name: str) -> str:
     """
     Convert a calendar name to a URI-safe string (lowercase, dashes for spaces, alphanumerics and dashes/underscores only).
@@ -1948,6 +2209,142 @@ def create_calendar(
         )
     except Exception as e:
         console.print(f"[red]Failed to create calendar: {e}[/red]")
+        raise typer.Exit(code=1)
+
+
+@calendar_app.command("backup")
+def backup_calendar(
+    backup_config_name: str = typer.Argument(
+        ...,
+        help="Name of the backup configuration to use.",
+    ),
+    date_option: str = typer.Option(
+        "all",
+        "--date",
+        help="Date or date range. Accepts: 'all' (entire calendar), 'today', 'yesterday', 'last 7 days', 'last week', 'last 30 days', 'last month', a single date (e.g. 31-12-2024), or a range (e.g. 1-6 to 7-6).",
+    ),
+    replace: bool = typer.Option(
+        False,
+        "--replace",
+        help="Replace existing backup data for the specified date range. WARNING: This will overwrite existing backup files or calendar data. Use with caution.",
+    ),
+    user_input: Optional[str] = user_option,
+):
+    """
+    Manually trigger calendar backup using a backup configuration.
+
+    Examples:
+        admin-assistant calendar backup work-backup --date "last 7 days"
+        admin-assistant calendar backup daily-backup --date "yesterday"
+        admin-assistant calendar backup full-backup --date "all" --replace
+    """
+    from rich.console import Console
+    from rich.panel import Panel
+
+    from core.services.backup_configuration_service import BackupConfigurationService
+
+    console = Console()
+
+    try:
+        # Parse date range (similar to archive command)
+        if date_option == "all":
+            start_dt = None
+            end_dt = None
+        else:
+            start_dt, end_dt = parse_date_range(date_option)
+    except Exception as e:
+        console.print(f"[red]Error parsing date: {e}[/red]")
+        raise typer.Exit(code=1)
+
+    try:
+        user = resolve_cli_user(user_input)
+
+        # Get backup configuration by name
+        backup_service = BackupConfigurationService()
+        backup_config = backup_service.get_by_name(backup_config_name, user.id)
+        if not backup_config:
+            console.print(f"[red]Backup configuration '{backup_config_name}' not found for user {user.id} ({user.username or user.email}).[/red]")
+            raise typer.Exit(code=1)
+
+        console.print(Panel.fit(
+            f"[bold blue]Calendar Backup[/bold blue]\n"
+            f"Configuration: {backup_config.name}\n"
+            f"Source: {backup_config.source_calendar_uri}\n"
+            f"Destination: {backup_config.destination_uri}\n"
+            f"Format: {backup_config.backup_format}\n"
+            f"Date Range: {date_option}",
+            title="Backup Operation"
+        ))
+
+        # Handle replace option with confirmation
+        if replace:
+            console.print(f"[yellow]WARNING: Replace mode will overwrite existing backup data[/yellow]")
+            console.print(f"[yellow]Destination: {backup_config.destination_uri}[/yellow]")
+            if start_dt and end_dt:
+                console.print(f"[yellow]Date range: {start_dt} to {end_dt}[/yellow]")
+            elif date_option == "all":
+                console.print(f"[yellow]Date range: entire calendar[/yellow]")
+
+            if not typer.confirm("Are you sure you want to proceed with replace mode?"):
+                console.print("Operation cancelled.")
+                raise typer.Exit(code=0)
+
+        # Execute backup using the backup runner (similar to archive runner)
+        from core.orchestrators.backup_job_runner import BackupJobRunner
+
+        runner = BackupJobRunner()
+        result = runner.run_backup_job(
+            user_id=user.id,
+            backup_config_id=backup_config.id,
+            start_date=start_dt,
+            end_date=end_dt,
+            replace_mode=replace,
+        )
+
+        # Display results
+        if result.get("status") == "success":
+            console.print(f"\n[green]✓ Backup completed successfully![/green]")
+            console.print(f"Total appointments: {result.get('total_appointments', 0)}")
+            console.print(f"Successfully backed up: {result.get('backed_up', 0)}")
+            if result.get('failed', 0) > 0:
+                console.print(f"[yellow]Failed: {result.get('failed', 0)}[/yellow]")
+            console.print(f"Backup location: {result.get('backup_location', 'N/A')}")
+
+            errors = result.get('errors', [])
+            if errors:
+                console.print(f"\n[yellow]Errors encountered:[/yellow]")
+                for error in errors[:5]:  # Show first 5 errors
+                    console.print(f"  • {error}")
+                if len(errors) > 5:
+                    console.print(f"  ... and {len(errors) - 5} more errors")
+        else:
+            console.print(f"[red]Backup failed: {result.get('error', 'Unknown error')}[/red]")
+            raise typer.Exit(code=1)
+
+    except Exception as e:
+        console.print(f"[red]Backup operation failed: {e}[/red]")
+        raise typer.Exit(code=1)
+
+        # Display results
+        console.print(f"\n[green]✓ Backup completed successfully![/green]")
+        console.print(f"Total appointments: {result.total_appointments}")
+        console.print(f"Successfully backed up: {result.backed_up}")
+        if result.failed > 0:
+            console.print(f"[yellow]Failed: {result.failed}[/yellow]")
+        console.print(f"Backup location: {result.backup_location}")
+
+        if result.errors:
+            console.print(f"\n[yellow]Errors encountered:[/yellow]")
+            for error in result.errors[:5]:  # Show first 5 errors
+                console.print(f"  • {error}")
+            if len(result.errors) > 5:
+                console.print(f"  ... and {len(result.errors) - 5} more errors")
+
+    except ValueError as e:
+        console.print(f"[red]Invalid backup format '{backup_format}'. Supported formats: csv, json, ics, local_calendar[/red]")
+        raise typer.Exit(code=1)
+    except Exception as e:
+        console.print(f"[red]Backup failed: {e}[/red]")
         raise typer.Exit(code=1)
 
 

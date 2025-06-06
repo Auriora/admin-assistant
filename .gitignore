@@ -46,3 +46,4 @@ ms_token.json
 .idea/
 /.coverage
 /htmlcov/
+/exports/

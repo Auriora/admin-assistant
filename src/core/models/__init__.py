@@ -2,6 +2,8 @@ from .action_log import ActionLog
 from .appointment import Appointment
 from .archive_configuration import ArchiveConfiguration
 from .audit_log import AuditLog
+from .backup_configuration import BackupConfiguration
+from .backup_job_configuration import BackupJobConfiguration
 from .calendar import Calendar
 from .category import Category
 from .chat_session import ChatSession
@@ -9,5 +11,6 @@ from .entity_association import EntityAssociation
 from .job_configuration import JobConfiguration
 from .location import Location
 from .prompt import Prompt
+from .restoration_configuration import RestorationConfiguration
 from .timesheet import Timesheet
 from .user import User
