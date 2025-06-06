@@ -129,6 +129,24 @@ admin-assistant jobs status --user <USER_ID>
 admin-assistant jobs trigger --user <USER_ID> --config <CONFIG_ID>
 ```
 
+#### Appointment Restoration
+```bash
+# Restore appointments from audit logs (failed operations)
+admin-assistant restore from-audit-logs --user <USER_ID> --start-date "2025-05-29" --end-date "2025-06-06"
+
+# Restore from backup calendars
+admin-assistant restore from-backup-calendars --user <USER_ID> --source "Recovered" "Recovered Missing" --destination "Consolidated Recovery"
+
+# Backup a calendar to file
+admin-assistant restore backup-calendar --user <USER_ID> --source "Main Calendar" --destination "backup.csv" --format csv
+
+# List restoration configurations
+admin-assistant restore list-configs --user <USER_ID>
+
+# Dry run (preview without making changes)
+admin-assistant restore from-audit-logs --dry-run
+```
+
 For complete CLI documentation, see [CLI Command Structure](docs/2-design/CLI-001-Command-Structure.md).
 
 ## 🏗️ Architecture
@@ -208,12 +226,14 @@ See [Development Guidelines](docs/guidelines/) for detailed coding standards.
 
 ### ✅ Implemented
 - **Calendar Archiving**: Automated daily archiving with overlap detection
+- **Appointment Restoration**: Generic restoration from audit logs, backup calendars, and export files
+- **Calendar Backup**: Backup calendars to various formats (CSV, JSON, ICS) or other calendars
 - **Category Management**: Appointment categorization with validation
 - **Privacy Automation**: Automatic privacy marking and out-of-office detection
 - **Overlap Resolution**: Smart detection and resolution of conflicting appointments
-- **CLI Interface**: Comprehensive command-line tools
+- **CLI Interface**: Comprehensive command-line tools with restoration commands
 - **Background Jobs**: Scheduled archiving and maintenance tasks
-- **Audit Logging**: Complete audit trail for all operations
+- **Audit Logging**: Complete audit trail for all operations with reversible operations support
 
 ### 🔄 In Development
 - **PDF Timesheet Generation**: Extract and format billable hours

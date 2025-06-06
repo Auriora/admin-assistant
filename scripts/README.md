@@ -90,6 +90,39 @@ The following legacy scripts have been removed and replaced by the unified CLI:
 - **`init_core_db.py`** - ✅ **Replaced by**: `./dev db init`
 - **`run_tests.py`** - ✅ **Replaced by**: `./dev test` commands
 
+### Appointment Restoration Scripts (Removed)
+
+The following appointment restoration scripts have been **removed** and replaced by integrated CLI commands in the main admin-assistant CLI:
+
+- **`restore_lost_appointments.py`** - ✅ **Replaced by**: `admin-assistant restore from-audit-logs`
+- **`restore_missing_appointments.py`** - ✅ **Replaced by**: `admin-assistant restore from-audit-logs` (with custom date ranges)
+- **`restore_to_msgraph_recovery.py`** - ✅ **Replaced by**: `admin-assistant restore from-backup-calendars`
+- **`export_appointments_for_msgraph.py`** - ✅ **Replaced by**: `admin-assistant restore backup-calendar`
+- **`verify_restored_appointments.py`** - ✅ **Replaced by**: `admin-assistant restore list-configs` and dry-run options
+- **`run_appointment_restoration.sh`** - ✅ **Replaced by**: Direct CLI commands
+- **`run_export_for_msgraph.sh`** - ✅ **Replaced by**: Direct CLI commands
+- **`run_msgraph_restoration.sh`** - ✅ **Replaced by**: Direct CLI commands
+
+**Migration Examples:**
+
+```bash
+# Old way (scripts removed)
+./scripts/run_appointment_restoration.sh --dry-run
+python scripts/restore_lost_appointments.py --start-date 2025-05-29
+
+# New way (integrated into main CLI)
+admin-assistant restore from-audit-logs --dry-run
+admin-assistant restore from-audit-logs --start-date 2025-05-29
+
+# Old way (scripts removed)
+python scripts/restore_to_msgraph_recovery.py --dry-run
+
+# New way (integrated into main CLI)
+admin-assistant restore from-backup-calendars --source "Recovered" "Recovered Missing" --destination "MSGraph Recovery" --dry-run
+```
+
+See the [Appointment Restoration Guide](../docs/user-guides/appointment-restoration-guide.md) for complete usage instructions.
+
 ## Architecture
 
 The development CLI is built using [Typer](https://typer.tiangolo.com/) and [Rich](https://rich.readthedocs.io/) for a modern CLI experience with:

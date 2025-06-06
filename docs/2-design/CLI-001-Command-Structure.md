@@ -50,6 +50,11 @@ admin-assistant
 │   ├── status                 # Get job status for user
 │   ├── remove                 # Remove scheduled jobs
 │   └── health                 # Job scheduler health check
+├── restore                    # Appointment restoration operations
+│   ├── from-audit-logs        # Restore appointments from audit logs
+│   ├── from-backup-calendars  # Restore from backup calendars
+│   ├── backup-calendar        # Backup calendar to file or another calendar
+│   └── list-configs           # List restoration configurations
 └── login                      # Authentication
     ├── msgraph                # Login to Microsoft 365
     └── logout                 # Logout (remove cached tokens)
@@ -204,6 +209,102 @@ admin-assistant timesheet upload --user <USER_ID> --destination <DEST>
 ```
 Upload timesheet to external systems. Options:
 - `--destination`: Upload destination (e.g., Xero)
+
+## Appointment Restoration (`admin-assistant restore`)
+
+Restore appointments from various sources (audit logs, backup calendars, export files) to various destinations.
+
+### Restore from Audit Logs
+```bash
+admin-assistant restore from-audit-logs --user <USER_ID> [--start-date <DATE>] [--end-date <DATE>] [--destination <CALENDAR>] [--action-types <TYPES>] [--dry-run]
+```
+
+**Purpose**: Restore appointments from audit log entries (typically failed operations).
+
+**Options**:
+- `--user <USER_ID>`: User to restore appointments for (required)
+- `--start-date <DATE>`: Start date for restoration (YYYY-MM-DD, default: 2025-05-29)
+- `--end-date <DATE>`: End date for restoration (YYYY-MM-DD, default: today)
+- `--destination <CALENDAR>`: Destination calendar name (default: "Recovered")
+- `--action-types <TYPES>`: Action types to restore from (default: archive restore)
+- `--dry-run`: Perform analysis without actually restoring appointments
+
+**Examples**:
+```bash
+# Restore failed appointments from specific date range
+admin-assistant restore from-audit-logs --user 1 --start-date "2025-05-29" --end-date "2025-06-06"
+
+# Dry run to preview what would be restored
+admin-assistant restore from-audit-logs --user 1 --dry-run
+
+# Restore only archive failures to custom calendar
+admin-assistant restore from-audit-logs --user 1 --action-types archive --destination "Archive Recovery"
+```
+
+### Restore from Backup Calendars
+```bash
+admin-assistant restore from-backup-calendars --user <USER_ID> --source <CALENDARS> --destination <CALENDAR> [--start-date <DATE>] [--end-date <DATE>] [--dry-run]
+```
+
+**Purpose**: Restore appointments from existing backup calendars.
+
+**Options**:
+- `--user <USER_ID>`: User to restore appointments for (required)
+- `--source <CALENDARS>`: Source calendar names (required, can specify multiple)
+- `--destination <CALENDAR>`: Destination calendar name (required)
+- `--start-date <DATE>`: Start date filter (YYYY-MM-DD, optional)
+- `--end-date <DATE>`: End date filter (YYYY-MM-DD, optional)
+- `--dry-run`: Perform analysis without actually restoring appointments
+
+**Examples**:
+```bash
+# Restore from multiple backup calendars
+admin-assistant restore from-backup-calendars --user 1 --source "Recovered" "Recovered Missing" --destination "Consolidated Recovery"
+
+# Restore with date filtering
+admin-assistant restore from-backup-calendars --user 1 --source "Backup Calendar" --destination "Restored" --start-date "2025-06-01" --end-date "2025-06-30"
+```
+
+### Backup Calendar
+```bash
+admin-assistant restore backup-calendar --user <USER_ID> --source <CALENDAR> --destination <DEST> [--format <FORMAT>] [--start-date <DATE>] [--end-date <DATE>] [--include-metadata]
+```
+
+**Purpose**: Backup a calendar to file or another calendar for future restoration.
+
+**Options**:
+- `--user <USER_ID>`: User to backup calendar for (required)
+- `--source <CALENDAR>`: Source calendar name (required)
+- `--destination <DEST>`: Backup destination - file path or calendar name (required)
+- `--format <FORMAT>`: Backup format: csv, json, ics, local_calendar (default: csv)
+- `--start-date <DATE>`: Start date filter (YYYY-MM-DD, optional)
+- `--end-date <DATE>`: End date filter (YYYY-MM-DD, optional)
+- `--include-metadata/--no-metadata`: Include metadata in backup (default: include)
+
+**Examples**:
+```bash
+# Backup to CSV file
+admin-assistant restore backup-calendar --user 1 --source "Main Calendar" --destination "backups/main_calendar.csv" --format csv
+
+# Backup to another local calendar
+admin-assistant restore backup-calendar --user 1 --source "Work Calendar" --destination "Work Calendar Backup" --format local_calendar
+
+# Backup with date range to JSON
+admin-assistant restore backup-calendar --user 1 --source "Personal" --destination "backups/personal_june.json" --format json --start-date "2025-06-01" --end-date "2025-06-30"
+```
+
+### List Restoration Configurations
+```bash
+admin-assistant restore list-configs --user <USER_ID>
+```
+
+**Purpose**: List all restoration configurations for the user.
+
+**Examples**:
+```bash
+# List all restoration configurations
+admin-assistant restore list-configs --user 1
+```
 
 ## Background Job Management (`admin-assistant jobs`)
 

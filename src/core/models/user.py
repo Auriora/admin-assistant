@@ -28,3 +28,5 @@ class User(Base):
     calendars = relationship("Calendar", back_populates="user")
     # Relationship to JobConfiguration
     job_configurations = relationship("JobConfiguration", back_populates="user")
+    # Relationship to RestorationConfiguration
+    restoration_configurations = relationship("RestorationConfiguration", back_populates="user")

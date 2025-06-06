@@ -1291,6 +1291,10 @@ app.add_typer(jobs_app, name="jobs")
 from cli.reversible_operations import reversible_app
 app.add_typer(reversible_app, name="reverse")
 
+# Import and add restoration app
+from cli.restoration import restoration_app
+app.add_typer(restoration_app, name="restore")
+
 
 # --- Background Job Management Commands ---
 
