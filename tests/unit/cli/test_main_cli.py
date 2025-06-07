@@ -275,6 +275,7 @@ class TestCLICommands:
         archive(
             archive_config_name="Test Config",
             date_option="yesterday",
+            replace=False,
             user_input="123"
         )
         
@@ -307,6 +308,7 @@ class TestCLICommands:
             archive(
                 archive_config_name="Nonexistent Config",
                 date_option="yesterday",
+                replace=False,
                 user_input="123"
             )
 

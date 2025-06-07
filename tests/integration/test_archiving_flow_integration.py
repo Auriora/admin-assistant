@@ -79,6 +79,9 @@ class TestArchivingFlowIntegration:
         
         # Mock archive repository
         mock_archive_repo.add = MagicMock()
+        mock_archive_repo.add_bulk = MagicMock(return_value=[])  # Return empty list (no errors)
+        # Mock duplicate check to return all appointments (no duplicates)
+        mock_archive_repo.check_for_duplicates = MagicMock(side_effect=lambda appts, start, end: appts)
         
         # Create audit service with test session
         from core.repositories.audit_log_repository import AuditLogRepository
@@ -106,7 +109,11 @@ class TestArchivingFlowIntegration:
         
         # Verify appointments were processed
         mock_source_repo.list_for_user.assert_called_once()
-        assert mock_archive_repo.add.call_count == 3
+        # Should use bulk add instead of individual add calls
+        mock_archive_repo.add_bulk.assert_called_once()
+        # Verify 3 appointments were passed to add_bulk
+        call_args = mock_archive_repo.add_bulk.call_args[0]
+        assert len(call_args[0]) == 3
 
     @patch('core.orchestrators.calendar_archive_orchestrator.MSGraphAppointmentRepository')
     def test_archiving_with_overlaps(
@@ -140,6 +147,9 @@ class TestArchivingFlowIntegration:
         mock_repo_class.side_effect = [mock_source_repo, mock_archive_repo]
         
         mock_source_repo.list_for_user.return_value = overlapping_appointments
+        mock_archive_repo.add_bulk = MagicMock(return_value=[])  # Return empty list (no errors)
+        # Mock duplicate check to return all appointments (no duplicates)
+        mock_archive_repo.check_for_duplicates = MagicMock(side_effect=lambda appts, start, end: appts)
 
         # Create audit service with test session
         from core.repositories.audit_log_repository import AuditLogRepository
@@ -253,13 +263,19 @@ class TestArchivingFlowIntegration:
         mock_repo_class.side_effect = [mock_source_repo, mock_archive_repo]
         
         mock_source_repo.list_for_user.return_value = sample_appointments
-        
-        # Mock archive repository to fail on second appointment
-        def mock_add(appointment):
-            if appointment.subject == "Client Call":
-                raise Exception("Archive failed")
-        
-        mock_archive_repo.add.side_effect = mock_add
+
+        # Mock duplicate check to return all appointments (no duplicates)
+        mock_archive_repo.check_for_duplicates = MagicMock(side_effect=lambda appts, start, end: appts)
+
+        # Mock archive repository to fail on second appointment using add_bulk
+        def mock_add_bulk(appointments):
+            errors = []
+            for appointment in appointments:
+                if appointment.subject == "Client Call":
+                    errors.append("Archive failed")
+            return errors
+
+        mock_archive_repo.add_bulk = MagicMock(side_effect=mock_add_bulk)
 
         # Create audit service with test session
         from core.repositories.audit_log_repository import AuditLogRepository

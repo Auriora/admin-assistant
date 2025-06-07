@@ -50,7 +50,7 @@ class TestMeetingModificationIntegration:
         )
         
         extension = self.create_appointment(
-            "Extension",
+            "Extended",
             self.base_time + timedelta(hours=1),
             self.base_time + timedelta(hours=1, minutes=30)
         )
@@ -147,7 +147,7 @@ class TestMeetingModificationIntegration:
         )
         
         extension1 = self.create_appointment(
-            "Extension",
+            "Extended",
             self.base_time + timedelta(hours=1),
             self.base_time + timedelta(hours=1, minutes=30),
             categories=["Client A - billable"]
@@ -203,7 +203,7 @@ class TestMeetingModificationIntegration:
         """Test workflow with orphaned modifications (no matching original)"""
         # Extension with no matching original
         orphaned_extension = self.create_appointment(
-            "Extension",
+            "Extended",
             self.base_time + timedelta(hours=2),
             self.base_time + timedelta(hours=2, minutes=30)
         )
@@ -242,7 +242,7 @@ class TestMeetingModificationIntegration:
         
         # Extension
         extension = self.create_appointment(
-            "Extension",
+            "Extended",
             self.base_time + timedelta(hours=1),
             self.base_time + timedelta(hours=1, minutes=30)
         )

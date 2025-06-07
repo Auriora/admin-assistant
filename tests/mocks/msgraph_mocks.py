@@ -100,9 +100,9 @@ class MockCalendars:
         self._calendars = {}
         self.get_called = False
         self.post_called = False
-    async def get(self):
+    async def get(self, request_configuration=None):
         self.get_called = True
-        print("[MOCK DEBUG] MockCalendars.get() called.")
+        print(f"[MOCK DEBUG] MockCalendars.get() called with request_configuration={request_configuration}")
         # Return a mock response with a 'value' attribute (list of calendars)
         return type('MsCalendars', (), {
             'value': [
@@ -110,7 +110,7 @@ class MockCalendars:
                     'id': 'abc123',
                     'name': 'Mock Calendar',
                     'description': 'Mock Desc',
-                    'is_default': True
+                    'is_default_calendar': True
                 })()
             ]
         })()
