@@ -48,7 +48,7 @@ dependencies = [
     "sqlalchemy[asyncio]~=2.0.0",
     "sqlalchemy-utils~=0.41.2",
     "asyncpg~=0.30.0",
-    "alembic[async]~=1.12.0",
+    "alembic[async]~=1.16.1",
 
     # Utilities
     "python-dotenv~=1.1.0",
