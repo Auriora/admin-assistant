@@ -1776,8 +1776,8 @@ def schedule_backup_job(
 
         backup_config = backup_config_service.create_from_parameters(
             user_id=user.id,
-            source_calendar_name=source_calendar,
-            backup_destination=backup_destination,
+            source_calendar_name=source_uri,
+            backup_destination=destination_uri,
             backup_format=backup_format,
             schedule_type=schedule_type,
             schedule_hour=schedule_hour,
@@ -2325,27 +2325,7 @@ def backup_calendar(
         console.print(f"[red]Backup operation failed: {e}[/red]")
         raise typer.Exit(code=1)
 
-        # Display results
-        console.print(f"\n[green]✓ Backup completed successfully![/green]")
-        console.print(f"Total appointments: {result.total_appointments}")
-        console.print(f"Successfully backed up: {result.backed_up}")
-        if result.failed > 0:
-            console.print(f"[yellow]Failed: {result.failed}[/yellow]")
-        console.print(f"Backup location: {result.backup_location}")
 
-        if result.errors:
-            console.print(f"\n[yellow]Errors encountered:[/yellow]")
-            for error in result.errors[:5]:  # Show first 5 errors
-                console.print(f"  • {error}")
-            if len(result.errors) > 5:
-                console.print(f"  ... and {len(result.errors) - 5} more errors")
-
-    except ValueError as e:
-        console.print(f"[red]Invalid backup format '{backup_format}'. Supported formats: csv, json, ics, local_calendar[/red]")
-        raise typer.Exit(code=1)
-    except Exception as e:
-        console.print(f"[red]Backup failed: {e}[/red]")
-        raise typer.Exit(code=1)
 
 
 if __name__ == "__main__":

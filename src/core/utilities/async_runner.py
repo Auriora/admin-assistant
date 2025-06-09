@@ -64,17 +64,12 @@ class AsyncRunner:
                     # Run until shutdown is requested
                     while not self._shutdown_event.is_set():
                         try:
-                            # Run pending tasks with timeout to allow shutdown checks
-                            self._loop.run_until_complete(
-                                asyncio.wait_for(
-                                    asyncio.sleep(0.1), 
-                                    timeout=1.0
-                                )
-                            )
-                        except asyncio.TimeoutError:
-                            continue  # Normal timeout, check for shutdown
+                            # Process pending tasks and callbacks
+                            self._loop.run_until_complete(asyncio.sleep(0.1))
                         except Exception as e:
-                            logger.exception(f"Error in background event loop: {e}")
+                            if not self._shutdown_event.is_set():
+                                logger.exception(f"Error in background event loop: {e}")
+                            break
                             
                 except Exception as e:
                     logger.exception(f"Failed to start background event loop: {e}")
@@ -85,18 +80,27 @@ class AsyncRunner:
                             # Cancel all pending tasks
                             pending = asyncio.all_tasks(self._loop)
                             for task in pending:
-                                task.cancel()
-                            
-                            # Wait for cancellations to complete
+                                if not task.done():
+                                    task.cancel()
+
+                            # Wait for cancellations to complete with timeout
                             if pending:
-                                self._loop.run_until_complete(
-                                    asyncio.gather(*pending, return_exceptions=True)
-                                )
-                            
+                                try:
+                                    self._loop.run_until_complete(
+                                        asyncio.wait_for(
+                                            asyncio.gather(*pending, return_exceptions=True),
+                                            timeout=2.0
+                                        )
+                                    )
+                                except asyncio.TimeoutError:
+                                    logger.warning("Some tasks did not cancel within timeout")
+                                except Exception as e:
+                                    logger.debug(f"Expected exception during task cancellation: {e}")
+
                             self._loop.close()
                         except Exception as e:
                             logger.exception(f"Error during loop cleanup: {e}")
-                    
+
                     logger.debug("Background event loop stopped")
             
             self._loop_thread = threading.Thread(
@@ -222,15 +226,22 @@ class AsyncRunner:
             # Shutdown executor
             if self._executor:
                 try:
-                    self._executor.shutdown(wait=True, timeout=timeout)
+                    # Try with timeout parameter first (Python 3.9+)
+                    try:
+                        self._executor.shutdown(wait=True, timeout=timeout)
+                    except TypeError:
+                        # Fallback for older Python versions or implementations
+                        logger.debug("ThreadPoolExecutor.shutdown() doesn't support timeout parameter, using fallback")
+                        self._executor.shutdown(wait=True)
                 except Exception as e:
                     logger.exception(f"Error shutting down executor: {e}")
                 finally:
                     self._executor = None
             
-            # Stop the event loop
+            # Stop the event loop gracefully
             if self._loop and not self._loop.is_closed():
                 try:
+                    # Simply stop the loop - the background thread cleanup will handle tasks
                     self._loop.call_soon_threadsafe(self._loop.stop)
                 except Exception as e:
                     logger.exception(f"Error stopping event loop: {e}")
