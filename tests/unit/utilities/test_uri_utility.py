@@ -375,6 +375,220 @@ class TestEnhancedAccountSupport:
         result = parse_resource_uri('msgraph:///username/calendars/primary')
         assert result.account == 'username'
 
+    def test_validate_account_function(self):
+        """Test the validate_account function with various inputs"""
+        # Valid email formats
+        assert validate_account('user@example.com') == True
+        assert validate_account('test.user+tag@domain.co.uk') == True
+
+        # Valid domain formats
+        assert validate_account('subdomain.domain.com') == True
+        assert validate_account('localhost') == True
+
+        # Valid username formats
+        assert validate_account('username123') == True
+        assert validate_account('user_name') == True
+
+        # Invalid formats
+        assert validate_account('') == False
+        assert validate_account('   ') == False
+        assert validate_account('user@') == False
+        assert validate_account('@domain.com') == False
+        assert validate_account('user space@domain.com') == False
+
+    def test_migrate_legacy_uri_function(self):
+        """Test the migrate_legacy_uri function"""
+        # Test migration with account
+        result = migrate_legacy_uri('msgraph://calendars/primary', 'user@example.com')
+        assert result == 'msgraph://user@example.com/calendars/primary'
+
+        # Test migration without account (should return original)
+        result = migrate_legacy_uri('msgraph://calendars/primary', None)
+        assert result == 'msgraph://calendars/primary'
+
+        # Test migration with empty account
+        result = migrate_legacy_uri('msgraph://calendars/primary', '')
+        assert result == 'msgraph://calendars/primary'
+
+        # Test migration of already migrated URI
+        result = migrate_legacy_uri('msgraph://user@example.com/calendars/primary', 'user@example.com')
+        assert result == 'msgraph://user@example.com/calendars/primary'
+
+    def test_account_context_edge_cases(self):
+        """Test edge cases for account context handling"""
+        # Account with special characters
+        result = parse_resource_uri('msgraph://user+tag@example.com/calendars/primary')
+        assert result.account == 'user+tag@example.com'
+
+        # Account with subdomain
+        result = parse_resource_uri('msgraph://user@mail.example.com/calendars/primary')
+        assert result.account == 'user@mail.example.com'
+
+        # Numeric account (user ID)
+        result = parse_resource_uri('msgraph://12345/calendars/primary')
+        assert result.account == '12345'
+
+        # Account with hyphens
+        result = parse_resource_uri('msgraph://test-user@example-domain.com/calendars/primary')
+        assert result.account == 'test-user@example-domain.com'
+
+    def test_uri_validation_with_account_context(self):
+        """Test URI validation with account context"""
+        # Valid URIs with account context
+        valid_uris = [
+            'msgraph://user@example.com/calendars/primary',
+            'msgraph://subdomain.domain.com/calendars/archive',
+            'msgraph://username/calendars/"Custom Calendar"',
+            'local://user@local.com/calendars/backup'
+        ]
+
+        for uri in valid_uris:
+            try:
+                result = parse_resource_uri(uri)
+                assert result.account is not None
+                assert len(result.account) > 0
+            except Exception as e:
+                pytest.fail(f"Valid URI failed to parse: {uri}, error: {e}")
+
+    def test_construct_uri_with_special_characters(self):
+        """Test URI construction with special characters in account"""
+        # Email with plus sign
+        result = construct_resource_uri('msgraph', 'calendars', 'primary', account='user+tag@example.com')
+        assert result == 'msgraph://user+tag@example.com/calendars/primary'
+
+        # Account with hyphens
+        result = construct_resource_uri('msgraph', 'calendars', 'primary', account='test-user@example.com')
+        assert result == 'msgraph://test-user@example.com/calendars/primary'
+
+        # Identifier with spaces (should be quoted)
+        result = construct_resource_uri('msgraph', 'calendars', 'Custom Calendar', account='user@example.com')
+        assert result == 'msgraph://user@example.com/calendars/"Custom Calendar"'
+
+
+class TestURIValidationAndErrorHandling:
+    """Test suite for URI validation and comprehensive error handling"""
+
+    def test_validate_uri_components_success(self):
+        """Test successful URI component validation"""
+        # Valid components
+        validate_uri_components('msgraph', 'calendars', 'primary')  # Should not raise
+        validate_uri_components('local', 'calendars', 'archive')  # Should not raise
+        validate_uri_components('msgraph', 'calendars', 'Custom Calendar')  # Should not raise
+
+    def test_validate_uri_components_failures(self):
+        """Test URI component validation failures"""
+        # Empty scheme
+        with pytest.raises(URIValidationError, match="Scheme cannot be empty"):
+            validate_uri_components('', 'calendars', 'primary')
+
+        # Empty namespace
+        with pytest.raises(URIValidationError, match="Namespace cannot be empty"):
+            validate_uri_components('msgraph', '', 'primary')
+
+        # Empty identifier
+        with pytest.raises(URIValidationError, match="Identifier cannot be empty"):
+            validate_uri_components('msgraph', 'calendars', '')
+
+        # None values
+        with pytest.raises(URIValidationError):
+            validate_uri_components(None, 'calendars', 'primary')
+
+    def test_parse_malformed_uris(self):
+        """Test parsing of malformed URIs"""
+        malformed_uris = [
+            'not-a-uri',
+            'msgraph://',
+            'msgraph:///',
+            'msgraph://account/',
+            'msgraph://account/namespace/',
+            '://calendars/primary',
+            'msgraph:calendars/primary',  # Missing //
+            'msgraph://account//calendars/primary',  # Double slash
+        ]
+
+        for uri in malformed_uris:
+            with pytest.raises(URIParseError):
+                parse_resource_uri(uri)
+
+    def test_account_validation_edge_cases(self):
+        """Test account validation with edge cases"""
+        # Test with whitespace
+        assert validate_account('  user@example.com  ') == True  # Should trim whitespace
+
+        # Test with tabs and newlines
+        assert validate_account('\tuser@example.com\n') == True
+
+        # Test with only whitespace
+        assert validate_account('   \t\n   ') == False
+
+        # Test with None
+        assert validate_account(None) == False
+
+    def test_uri_encoding_edge_cases(self):
+        """Test URI encoding with edge cases"""
+        # Special characters in identifier
+        special_identifiers = [
+            'Calendar with spaces',
+            'Calendar@with@symbols',
+            'Calendar#with#hash',
+            'Calendar%with%percent',
+            'Calendar&with&ampersand'
+        ]
+
+        for identifier in special_identifiers:
+            # Test encoding
+            encoded_uri = construct_resource_uri_encoded('msgraph', 'calendars', identifier)
+            assert encoded_uri is not None
+
+            # Test that parsing the encoded URI works
+            parsed = parse_resource_uri(encoded_uri)
+            assert parsed.identifier == identifier
+
+    def test_user_friendly_conversion_edge_cases(self):
+        """Test user-friendly conversion with edge cases"""
+        # Test with already quoted identifier
+        uri = 'msgraph://calendars/"Already Quoted"'
+        friendly = convert_uri_to_user_friendly(uri)
+        assert 'Already Quoted' in friendly
+
+        # Test with encoded identifier
+        uri = 'msgraph://calendars/Encoded%20Calendar'
+        friendly = convert_uri_to_user_friendly(uri)
+        assert 'Encoded Calendar' in friendly
+
+        # Test with account context
+        uri = 'msgraph://user@example.com/calendars/primary'
+        friendly = convert_uri_to_user_friendly(uri)
+        assert 'user@example.com' in friendly
+        assert 'primary' in friendly
+
+    def test_parse_user_friendly_identifier_edge_cases(self):
+        """Test parsing user-friendly identifiers with edge cases"""
+        # Test with various formats
+        test_cases = [
+            ('Calendar: "My Calendar"', 'My Calendar'),
+            ('Calendar: My Calendar', 'My Calendar'),
+            ('Calendar: primary', 'primary'),
+            ('Calendar: "Calendar with quotes"', 'Calendar with quotes'),
+        ]
+
+        for input_str, expected in test_cases:
+            result = parse_user_friendly_identifier(input_str)
+            assert result == expected
+
+    def test_format_user_friendly_identifier_edge_cases(self):
+        """Test formatting user-friendly identifiers with edge cases"""
+        # Test with various identifiers
+        test_cases = [
+            ('primary', 'Calendar: primary'),
+            ('My Calendar', 'Calendar: "My Calendar"'),
+            ('Calendar with "quotes"', 'Calendar: "Calendar with \\"quotes\\""'),
+        ]
+
+        for identifier, expected in test_cases:
+            result = format_user_friendly_identifier(identifier)
+            assert result == expected
+
     def test_construct_with_various_account_formats(self):
         """Test constructing URIs with various valid account formats"""
         # Email format

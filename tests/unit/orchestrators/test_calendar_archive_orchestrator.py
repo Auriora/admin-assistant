@@ -337,4 +337,246 @@ def test_archive_appointments_time_zone_conversion(user, msgraph_client, db_sess
     assert archived.start_time.tzinfo is not None
     assert archived.start_time.utcoffset() == timedelta(0)
     assert result["archived_count"] == 1
-    assert result["errors"] == [] 
+    assert result["errors"] == []
+
+
+class TestCalendarArchiveOrchestratorTimesheet:
+    """Test suite for timesheet-specific archive functionality"""
+
+    @pytest.fixture
+    def orchestrator(self):
+        """Create orchestrator instance"""
+        return CalendarArchiveOrchestrator()
+
+    @pytest.fixture
+    def timesheet_appointments(self, user):
+        """Create sample appointments for timesheet testing"""
+        return [
+            make_appointment(
+                "Client Meeting",
+                datetime.now(timezone.utc),
+                datetime.now(timezone.utc) + timedelta(hours=1),
+                "evt1",
+                categories=["Acme Corp - billable"]
+            ),
+            make_appointment(
+                "Internal Meeting",
+                datetime.now(timezone.utc) + timedelta(hours=2),
+                datetime.now(timezone.utc) + timedelta(hours=3),
+                "evt2",
+                categories=["Admin - non-billable"]
+            ),
+            make_appointment(
+                "Travel to Client",
+                datetime.now(timezone.utc) + timedelta(hours=4),
+                datetime.now(timezone.utc) + timedelta(hours=5),
+                "evt3"
+            ),
+            make_appointment(
+                "Personal Appointment",
+                datetime.now(timezone.utc) + timedelta(hours=6),
+                datetime.now(timezone.utc) + timedelta(hours=7),
+                "evt4"
+            ),
+        ]
+
+    @patch('core.orchestrators.calendar_archive_orchestrator.MSGraphAppointmentRepository')
+    def test_archive_with_timesheet_purpose(
+        self, mock_repo_class, orchestrator, user, msgraph_client,
+        db_session, timesheet_appointments
+    ):
+        """Test archiving with timesheet purpose"""
+        # Setup mock repository
+        mock_source_repo = MagicMock()
+        mock_archive_repo = MagicMock()
+        mock_repo_class.side_effect = [mock_source_repo, mock_archive_repo]
+
+        mock_source_repo.list_for_user.return_value = timesheet_appointments
+        mock_archive_repo.add_bulk = MagicMock(return_value=[])
+        mock_archive_repo.check_for_duplicates = MagicMock(side_effect=lambda appts, start, end: appts)
+
+        # Create audit service
+        from core.repositories.audit_log_repository import AuditLogRepository
+        from core.services.audit_log_service import AuditLogService
+        audit_repo = AuditLogRepository(session=db_session)
+        audit_service = AuditLogService(repository=audit_repo)
+
+        # Execute timesheet archiving
+        result = orchestrator.archive_user_appointments(
+            user=user,
+            msgraph_client=msgraph_client,
+            source_calendar_uri="msgraph://calendars/primary",
+            archive_calendar_id="timesheet-archive",
+            start_date=date.today(),
+            end_date=date.today() + timedelta(days=1),
+            db_session=db_session,
+            audit_service=audit_service,
+            archive_purpose='timesheet'
+        )
+
+        # Verify timesheet-specific results
+        assert result["status"] == "success"
+        assert result["archive_type"] == "timesheet"
+        assert "business_appointments" in result
+        assert "excluded_appointments" in result
+        assert "timesheet_statistics" in result
+        assert "correlation_id" in result
+
+        # Verify appointments were processed through timesheet service
+        # Should have filtered out personal appointment
+        assert result["business_appointments"] >= 2  # At least billable + non-billable
+
+    @patch('core.orchestrators.calendar_archive_orchestrator.MSGraphAppointmentRepository')
+    def test_archive_with_general_purpose_allow_overlaps(
+        self, mock_repo_class, orchestrator, user, msgraph_client,
+        db_session, timesheet_appointments
+    ):
+        """Test archiving with general purpose and allow_overlaps=True"""
+        # Create overlapping appointments
+        overlapping_appointments = [
+            make_appointment(
+                "Meeting 1",
+                datetime.now(timezone.utc),
+                datetime.now(timezone.utc) + timedelta(hours=1),
+                "evt1"
+            ),
+            make_appointment(
+                "Overlapping Meeting",
+                datetime.now(timezone.utc) + timedelta(minutes=30),
+                datetime.now(timezone.utc) + timedelta(hours=1, minutes=30),
+                "evt2"
+            ),
+        ]
+
+        # Setup mock repository
+        mock_source_repo = MagicMock()
+        mock_archive_repo = MagicMock()
+        mock_repo_class.side_effect = [mock_source_repo, mock_archive_repo]
+
+        mock_source_repo.list_for_user.return_value = overlapping_appointments
+        mock_archive_repo.add_bulk = MagicMock(return_value=[])
+        mock_archive_repo.check_for_duplicates = MagicMock(side_effect=lambda appts, start, end: appts)
+
+        # Create audit service
+        from core.repositories.audit_log_repository import AuditLogRepository
+        from core.services.audit_log_service import AuditLogService
+        audit_repo = AuditLogRepository(session=db_session)
+        audit_service = AuditLogService(repository=audit_repo)
+
+        # Execute general archiving with allow_overlaps=True
+        result = orchestrator.archive_user_appointments(
+            user=user,
+            msgraph_client=msgraph_client,
+            source_calendar_uri="msgraph://calendars/primary",
+            archive_calendar_id="general-archive",
+            start_date=date.today(),
+            end_date=date.today() + timedelta(days=1),
+            db_session=db_session,
+            audit_service=audit_service,
+            archive_purpose='general',
+            allow_overlaps=True
+        )
+
+        # Verify overlaps were allowed
+        assert result["archived_count"] == 2  # Both appointments archived despite overlap
+        assert result["overlap_count"] >= 1  # Overlaps detected but allowed
+
+    @patch('core.orchestrators.calendar_archive_orchestrator.MSGraphAppointmentRepository')
+    @patch('core.services.timesheet_archive_service.TimesheetArchiveService.process_appointments_for_timesheet')
+    def test_timesheet_service_integration(
+        self, mock_timesheet_process, mock_repo_class, orchestrator,
+        user, msgraph_client, db_session, timesheet_appointments
+    ):
+        """Test integration with TimesheetArchiveService"""
+        # Setup mock timesheet service response
+        mock_timesheet_process.return_value = {
+            "filtered_appointments": timesheet_appointments[:3],  # Exclude personal
+            "excluded_appointments": timesheet_appointments[3:],  # Personal only
+            "overlap_resolutions": [],
+            "statistics": {
+                "total_appointments": 4,
+                "business_appointments": 3,
+                "excluded_appointments": 1,
+                "overlap_groups_processed": 0
+            },
+            "issues": []
+        }
+
+        # Setup mock repository
+        mock_source_repo = MagicMock()
+        mock_archive_repo = MagicMock()
+        mock_repo_class.side_effect = [mock_source_repo, mock_archive_repo]
+
+        mock_source_repo.list_for_user.return_value = timesheet_appointments
+        mock_archive_repo.add_bulk = MagicMock(return_value=[])
+        mock_archive_repo.check_for_duplicates = MagicMock(side_effect=lambda appts, start, end: appts)
+
+        # Create audit service
+        from core.repositories.audit_log_repository import AuditLogRepository
+        from core.services.audit_log_service import AuditLogService
+        audit_repo = AuditLogRepository(session=db_session)
+        audit_service = AuditLogService(repository=audit_repo)
+
+        # Execute timesheet archiving
+        result = orchestrator.archive_user_appointments(
+            user=user,
+            msgraph_client=msgraph_client,
+            source_calendar_uri="msgraph://calendars/primary",
+            archive_calendar_id="timesheet-archive",
+            start_date=date.today(),
+            end_date=date.today() + timedelta(days=1),
+            db_session=db_session,
+            audit_service=audit_service,
+            archive_purpose='timesheet'
+        )
+
+        # Verify timesheet service was called
+        mock_timesheet_process.assert_called_once()
+        call_args = mock_timesheet_process.call_args[0]
+        assert len(call_args[0]) == 4  # All appointments passed to timesheet service
+
+        # Verify results include timesheet-specific data
+        assert result["archive_type"] == "timesheet"
+        assert result["business_appointments"] == 3
+        assert result["excluded_appointments"] == 1
+        assert "timesheet_statistics" in result
+
+    def test_archive_purpose_routing(self, orchestrator):
+        """Test that archive_purpose parameter routes to correct service"""
+        # This test verifies the routing logic without full integration
+
+        # Test timesheet purpose routing
+        with patch.object(orchestrator, '_archive_with_timesheet_service') as mock_timesheet:
+            mock_timesheet.return_value = {"status": "success", "archive_type": "timesheet"}
+
+            result = orchestrator.archive_user_appointments(
+                user=Mock(),
+                msgraph_client=Mock(),
+                source_calendar_uri="msgraph://calendars/primary",
+                archive_calendar_id="archive",
+                start_date=date.today(),
+                end_date=date.today(),
+                db_session=Mock(),
+                archive_purpose='timesheet'
+            )
+
+            mock_timesheet.assert_called_once()
+            assert result["archive_type"] == "timesheet"
+
+        # Test general purpose routing
+        with patch.object(orchestrator, '_archive_with_general_logic') as mock_general:
+            mock_general.return_value = {"status": "success", "archive_type": "general"}
+
+            result = orchestrator.archive_user_appointments(
+                user=Mock(),
+                msgraph_client=Mock(),
+                source_calendar_uri="msgraph://calendars/primary",
+                archive_calendar_id="archive",
+                start_date=date.today(),
+                end_date=date.today(),
+                db_session=Mock(),
+                archive_purpose='general'
+            )
+
+            mock_general.assert_called_once()
+            assert result["archive_type"] == "general"
