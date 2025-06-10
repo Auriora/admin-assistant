@@ -7,22 +7,40 @@ Usage Examples:
 # Archive calendar events using a specific config
 admin-assistant calendar archive "Work Archive" --user <USER_ID> --date "last 7 days"
 
+# Timesheet calendar events using a specific config (business categories only)
+admin-assistant calendar timesheet "Timesheet Config" --user <USER_ID> --date "last 7 days"
+
 # List all archive configs for a user
 admin-assistant config calendar archive list --user <USER_ID>
+
+# List all timesheet configs for a user
+admin-assistant config calendar timesheet list --user <USER_ID>
 
 # Create a new archive config (interactive prompts for missing fields)
 admin-assistant config calendar archive create --user <USER_ID>
 
+# Create a new timesheet config (interactive prompts for missing fields)
+admin-assistant config calendar timesheet create --user <USER_ID>
+
 # Create a new archive config (all options provided)
 admin-assistant config calendar archive create --user <USER_ID> --name "Work Archive" --source-uri "msgraph://source" --dest-uri "msgraph://dest" --timezone "Europe/London" --active
+
+# Create a new timesheet config (all options provided)
+admin-assistant config calendar timesheet create --user <USER_ID> --name "Timesheet Archive" --source-uri "msgraph://source" --dest-uri "msgraph://dest" --timezone "Europe/London" --active
 
 # Activate/deactivate/delete a config
 admin-assistant config calendar archive activate --user <USER_ID> --config-id <CONFIG_ID>
 admin-assistant config calendar archive deactivate --user <USER_ID> --config-id <CONFIG_ID>
 admin-assistant config calendar archive delete --user <USER_ID> --config-id <CONFIG_ID>
 
+# Timesheet config management (same commands as archive)
+admin-assistant config calendar timesheet activate --user <USER_ID> --config-id <CONFIG_ID>
+admin-assistant config calendar timesheet deactivate --user <USER_ID> --config-id <CONFIG_ID>
+admin-assistant config calendar timesheet delete --user <USER_ID> --config-id <CONFIG_ID>
+
 # Set a config as default (prints usage instructions)
 admin-assistant config calendar archive set-default --user <USER_ID> --config-id <CONFIG_ID>
+admin-assistant config calendar timesheet set-default --user <USER_ID> --config-id <CONFIG_ID>
 
 All commands support --help for detailed options and descriptions.
 
@@ -76,6 +94,7 @@ timesheet_app = typer.Typer(help="Timesheet operations")
 config_app = typer.Typer(help="Configuration operations")
 archive_config_app = typer.Typer(help="Calendar configuration operations")
 archive_archive_config_app = typer.Typer(help="Archive configuration management")
+timesheet_config_app = typer.Typer(help="Timesheet configuration management")
 backup_config_app = typer.Typer(help="Backup configuration management")
 login_app = typer.Typer(help="Authentication commands")
 jobs_app = typer.Typer(help="Background job management")
@@ -294,10 +313,17 @@ def main(ctx: typer.Context):
     Use --help on any command for details and options.
 
     Examples:
+      # Archive operations
       admin-assistant calendar archive "Work Archive" --user <USER_ID> --date "last 7 days"
       admin-assistant config calendar archive list --user <USER_ID>
       admin-assistant config calendar archive create --user <USER_ID>
       admin-assistant config calendar archive activate --user <USER_ID> --config-id <CONFIG_ID>
+
+      # Timesheet operations (business categories only)
+      admin-assistant calendar timesheet "Timesheet Config" --user <USER_ID> --date "last 7 days"
+      admin-assistant config calendar timesheet list --user <USER_ID>
+      admin-assistant config calendar timesheet create --user <USER_ID>
+      admin-assistant config calendar timesheet activate --user <USER_ID> --config-id <CONFIG_ID>
     """
     if ctx.invoked_subcommand is None:
         typer.echo(ctx.get_help())
@@ -373,6 +399,93 @@ def archive(
         typer.echo(f"Archiving failed: {e}")
         raise typer.Exit(code=1)
     typer.echo("[ARCHIVE RESULT]")
+    typer.echo(result)
+
+
+@calendar_app.command("timesheet")
+def timesheet(
+    timesheet_config_name: str = typer.Argument(
+        ...,
+        help="Name of the timesheet configuration to use.",
+    ),
+    date_option: str = typer.Option(
+        "yesterday",
+        "--date",
+        help="Date or date range. Accepts: 'today', 'yesterday', 'last 7 days' (7 days ending yesterday), 'last week' (previous calendar week), 'last 30 days' (30 days ending yesterday), 'last month' (previous calendar month), a single date (e.g. 31-12-2024, 31-Dec, 31-12), or a range (e.g. 1-6 to 7-6, 1-6-2024 - 7-6-2024).",
+    ),
+    replace: bool = typer.Option(
+        False,
+        "--replace",
+        help="Replace existing appointments in the timesheet calendar for the specified date range. WARNING: This will delete existing archived appointments before adding new ones. Use with caution.",
+    ),
+    include_travel: bool = typer.Option(
+        True,
+        "--travel/--no-travel",
+        help="Include travel appointments in timesheet archive (default: True).",
+    ),
+    user_input: Optional[str] = user_option,
+):
+    """Archive calendar appointments for timesheet/billing purposes using business category filtering.
+
+    This command filters appointments to include only business categories (billable, non-billable, travel),
+    excludes personal appointments and 'Free' status appointments, and applies automatic overlap resolution.
+    """
+    from core.services.archive_configuration_service import ArchiveConfigurationService
+
+    runner = ArchiveJobRunner()
+    session = get_session()
+    try:
+        start_dt, end_dt = parse_date_range(date_option)
+    except Exception as e:
+        typer.echo(f"Error parsing date: {e}")
+        raise typer.Exit(code=1)
+    try:
+        user = resolve_cli_user(user_input)
+
+        # Resolve timesheet config name to ID
+        archive_service = ArchiveConfigurationService()
+        timesheet_config = archive_service.get_by_name(timesheet_config_name, user.id)
+        if not timesheet_config:
+            typer.echo(f"[red]Timesheet configuration '{timesheet_config_name}' not found for user {user.id} ({user.username or user.email}).[/red]")
+            raise typer.Exit(code=1)
+
+        # Verify this is a timesheet configuration
+        if getattr(timesheet_config, 'archive_purpose', 'general') != 'timesheet':
+            typer.echo(f"[yellow]Warning: Configuration '{timesheet_config_name}' has purpose '{getattr(timesheet_config, 'archive_purpose', 'general')}', not 'timesheet'.[/yellow]")
+            typer.echo("[yellow]Consider using a timesheet-specific configuration for best results.[/yellow]")
+
+        access_token = get_cached_access_token()
+        if not access_token:
+            typer.echo(
+                "[yellow]No valid MS Graph token found. Please login with 'admin-assistant login msgraph'.[/yellow]"
+            )
+            raise typer.Exit(code=1)
+        graph_client = get_graph_client(user, access_token)
+        # If only one date is present, set both to the same value
+        if start_dt and not end_dt:
+            end_dt = start_dt
+        if end_dt and not start_dt:
+            start_dt = end_dt
+        # Handle replace option with confirmation
+        if replace:
+            typer.echo(f"[yellow]WARNING: Replace mode will delete existing timesheet appointments from {start_dt} to {end_dt}[/yellow]")
+            typer.echo(f"[yellow]Timesheet calendar: {timesheet_config.destination_calendar_uri}[/yellow]")
+
+            if not typer.confirm("Are you sure you want to proceed with replace mode?"):
+                typer.echo("Operation cancelled.")
+                raise typer.Exit(code=0)
+
+        result = runner.run_archive_job(
+            user_id=user.id,
+            archive_config_id=timesheet_config.id,
+            start_date=start_dt,
+            end_date=end_dt,
+            replace_mode=replace,
+        )
+    except Exception as e:
+        typer.echo(f"Timesheet archiving failed: {e}")
+        raise typer.Exit(code=1)
+    typer.echo("[TIMESHEET RESULT]")
     typer.echo(result)
 
 
@@ -1335,10 +1448,245 @@ def create_backup_config(
         raise typer.Exit(code=1)
 
 
+# Timesheet configuration commands
+@timesheet_config_app.command("list")
+def list_timesheet_configs(user_input: Optional[str] = user_option):
+    """List all timesheet configurations for a user."""
+    from core.services.archive_configuration_service import ArchiveConfigurationService
+
+    try:
+        # Get user
+        user = resolve_cli_user(user_input)
+
+        service = ArchiveConfigurationService()
+        # Filter for timesheet configurations only
+        all_configs = service.list_for_user(user.id)
+        configs = [c for c in all_configs if getattr(c, 'archive_purpose', 'general') == 'timesheet']
+
+        console = Console()
+        if not configs:
+            console.print(
+                f"[yellow]No timesheet configurations found for user {user.id} ({user.username or user.email}).[/yellow]"
+            )
+            return
+        table = Table(
+            title=f"Timesheet Configurations for user {user.id} ({user.username or user.email})"
+        )
+        table.add_column("ID", style="cyan", no_wrap=True)
+        table.add_column("Name", style="green")
+        table.add_column("Source", style="magenta")
+        table.add_column("Dest", style="magenta")
+        table.add_column("Active", style="yellow")
+        table.add_column("TZ", style="blue")
+        for c in configs:
+            table.add_row(
+                str(getattr(c, "id", "")),
+                str(getattr(c, "name", "")),
+                str(getattr(c, "source_calendar_uri", "")),
+                str(getattr(c, "destination_calendar_uri", "")),
+                "✔" if getattr(c, "is_active", False) else "✗",
+                str(getattr(c, "timezone", "")),
+            )
+        console.print(table)
+    except Exception as e:
+        console = Console()
+        console.print(f"[red]Error listing timesheet configurations: {e}[/red]")
+        raise typer.Exit(code=1)
+
+
+@timesheet_config_app.command("create")
+def create_timesheet_config(
+    user_input: Optional[str] = user_option,
+    name: str = typer.Option(None, "--name", help="Name for the timesheet configuration"),
+    source_calendar_uri: str = typer.Option(
+        None, "--source-uri", help="Source calendar URI (e.g., msgraph://id)"
+    ),
+    destination_calendar_uri: str = typer.Option(
+        None,
+        "--dest-uri",
+        help="Destination (timesheet) calendar URI (e.g., msgraph://id)",
+    ),
+    timezone: str = typer.Option(
+        None, "--timezone", help="Timezone (IANA format, e.g., Europe/London)"
+    ),
+    is_active: bool = typer.Option(
+        True, "--active/--inactive", help="Whether this config is active"
+    ),
+):
+    """Create a new timesheet configuration for a user.
+
+    Timesheet configurations are specialized archive configurations that filter appointments
+    for business categories (billable, non-billable, travel) and exclude personal appointments.
+    """
+    from core.models.archive_configuration import ArchiveConfiguration
+    from core.services.archive_configuration_service import ArchiveConfigurationService
+
+    try:
+        # Get user
+        user = resolve_cli_user(user_input)
+
+        # Get system timezone
+        system_timezone = tzlocal.get_localzone_name()
+        # Prompt for missing fields
+        if not name:
+            name = typer.prompt("Name for the timesheet configuration")
+        if not source_calendar_uri:
+            source_calendar_uri = typer.prompt(
+                "Source calendar URI (e.g., msgraph://id)"
+            )
+        if not destination_calendar_uri:
+            destination_calendar_uri = typer.prompt(
+                "Destination (timesheet) calendar URI (e.g., msgraph://id)"
+            )
+        if not timezone:
+            timezone = typer.prompt(
+                "Timezone (IANA format, e.g., Europe/London)", default=system_timezone
+            )
+        config = ArchiveConfiguration(
+            user_id=user.id,
+            name=name,
+            source_calendar_uri=source_calendar_uri,
+            destination_calendar_uri=destination_calendar_uri,
+            is_active=is_active,
+            timezone=timezone,
+            archive_purpose='timesheet',  # Set timesheet purpose
+            allow_overlaps=False,  # Timesheet configs typically resolve overlaps
+        )
+        service = ArchiveConfigurationService()
+        service.create(config)
+        typer.echo(f"Created timesheet configuration: {config}")
+        typer.echo("[blue]This configuration will filter appointments for business categories only.[/blue]")
+    except Exception as e:
+        typer.echo(f"Failed to create timesheet configuration: {e}")
+        raise typer.Exit(code=1)
+
+
+@timesheet_config_app.command("set-default")
+def set_default_timesheet_config(
+    user_input: Optional[str] = user_option,
+    config_id: int = typer.Option(
+        ..., "--config-id", help="ID of the timesheet config to set as default"
+    ),
+):
+    """Set a timesheet config as the default for a user (prints instructions if persistent storage is not available)."""
+    typer.echo(
+        f"To use this timesheet config as default, use --timesheet-config {config_id} in timesheet commands."
+    )
+    typer.echo(
+        "(Persistent default config storage is not implemented in this CLI. Consider scripting this or request a feature update.)"
+    )
+
+
+@timesheet_config_app.command("activate")
+def activate_timesheet_config(
+    user_input: Optional[str] = user_option,
+    config_id: int = typer.Option(
+        ..., "--config-id", help="ID of the timesheet config to activate"
+    ),
+):
+    """Activate a timesheet configuration (set is_active=True)."""
+    from core.services.archive_configuration_service import ArchiveConfigurationService
+
+    try:
+        # Get user
+        user = resolve_cli_user(user_input)
+
+        service = ArchiveConfigurationService()
+        config = service.get_by_id(config_id)
+        if not config or getattr(config, "user_id", None) != user.id:
+            typer.echo(
+                f"Timesheet config {config_id} not found for user {user.id} ({user.username or user.email})."
+            )
+            raise typer.Exit(code=1)
+
+        # Verify this is a timesheet configuration
+        if getattr(config, 'archive_purpose', 'general') != 'timesheet':
+            typer.echo(f"[red]Config {config_id} is not a timesheet configuration (purpose: {getattr(config, 'archive_purpose', 'general')}).[/red]")
+            raise typer.Exit(code=1)
+
+        setattr(config, "is_active", True)
+        service.update(config)
+        typer.echo(f"Timesheet config {config_id} activated.")
+    except Exception as e:
+        typer.echo(f"Failed to activate timesheet config: {e}")
+        raise typer.Exit(code=1)
+
+
+@timesheet_config_app.command("deactivate")
+def deactivate_timesheet_config(
+    user_input: Optional[str] = user_option,
+    config_id: int = typer.Option(
+        ..., "--config-id", help="ID of the timesheet config to deactivate"
+    ),
+):
+    """Deactivate a timesheet configuration (set is_active=False)."""
+    from core.services.archive_configuration_service import ArchiveConfigurationService
+
+    try:
+        # Get user
+        user = resolve_cli_user(user_input)
+
+        service = ArchiveConfigurationService()
+        config = service.get_by_id(config_id)
+        if not config or getattr(config, "user_id", None) != user.id:
+            typer.echo(
+                f"Timesheet config {config_id} not found for user {user.id} ({user.username or user.email})."
+            )
+            raise typer.Exit(code=1)
+
+        # Verify this is a timesheet configuration
+        if getattr(config, 'archive_purpose', 'general') != 'timesheet':
+            typer.echo(f"[red]Config {config_id} is not a timesheet configuration (purpose: {getattr(config, 'archive_purpose', 'general')}).[/red]")
+            raise typer.Exit(code=1)
+
+        setattr(config, "is_active", False)
+        service.update(config)
+        typer.echo(f"Timesheet config {config_id} deactivated.")
+    except Exception as e:
+        typer.echo(f"Failed to deactivate timesheet config: {e}")
+        raise typer.Exit(code=1)
+
+
+@timesheet_config_app.command("delete")
+def delete_timesheet_config(
+    user_input: Optional[str] = user_option,
+    config_id: int = typer.Option(
+        ..., "--config-id", help="ID of the timesheet config to delete"
+    ),
+):
+    """Delete a timesheet configuration by ID."""
+    from core.services.archive_configuration_service import ArchiveConfigurationService
+
+    try:
+        # Get user
+        user = resolve_cli_user(user_input)
+
+        service = ArchiveConfigurationService()
+        config = service.get_by_id(config_id)
+        if not config or getattr(config, "user_id", None) != user.id:
+            typer.echo(
+                f"Timesheet config {config_id} not found for user {user.id} ({user.username or user.email})."
+            )
+            raise typer.Exit(code=1)
+
+        # Verify this is a timesheet configuration
+        if getattr(config, 'archive_purpose', 'general') != 'timesheet':
+            typer.echo(f"[red]Config {config_id} is not a timesheet configuration (purpose: {getattr(config, 'archive_purpose', 'general')}).[/red]")
+            raise typer.Exit(code=1)
+
+        service.delete(config_id)
+        typer.echo(f"Timesheet config {config_id} deleted.")
+    except Exception as e:
+        typer.echo(f"Failed to delete timesheet config: {e}")
+        raise typer.Exit(code=1)
+
+
 # Add backup config commands to archive_config_app as "backup" subcommand
 archive_config_app.add_typer(backup_config_app, name="backup")
 # Add archive config commands to archive_config_app as "archive" subcommand
 archive_config_app.add_typer(archive_archive_config_app, name="archive")
+# Add timesheet config commands to archive_config_app as "timesheet" subcommand
+archive_config_app.add_typer(timesheet_config_app, name="timesheet")
 # Add archive_config_app to config_app as "calendar" subcommand
 config_app.add_typer(archive_config_app, name="calendar")
 
