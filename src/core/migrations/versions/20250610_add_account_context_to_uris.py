@@ -33,7 +33,7 @@ branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 
-def get_user_account_context(connection, user_id: int) -> str:
+def get_account_context_for_user(connection, user_id: int) -> str:
     """
     Get the best available account context for a user.
     
@@ -233,7 +233,7 @@ def upgrade() -> None:
             try:
                 # Get account context for this user
                 if user_id not in migration_stats['user_contexts']:
-                    account_context = get_user_account_context(connection, user_id)
+                    account_context = get_account_context_for_user(connection, user_id)
                     migration_stats['user_contexts'][user_id] = account_context
                 else:
                     account_context = migration_stats['user_contexts'][user_id]
