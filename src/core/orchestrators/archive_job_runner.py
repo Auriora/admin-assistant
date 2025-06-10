@@ -93,11 +93,11 @@ class ArchiveJobRunner:
 
             session = get_session()
 
-            result = self.orchestrator.archive_user_appointments(
+            # Use the new configuration-based method for better archive type support
+            result = self.orchestrator.archive_user_appointments_with_config(
                 user=user,
                 msgraph_client=graph_client,
-                source_calendar_uri=source_calendar_uri,
-                archive_calendar_id=archive_calendar_uri,
+                archive_config=archive_config,
                 start_date=start_date,
                 end_date=end_date,
                 db_session=session,

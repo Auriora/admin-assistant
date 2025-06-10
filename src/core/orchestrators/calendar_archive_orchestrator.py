@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from core.models.action_log import ActionLog
 from core.models.appointment import Appointment
+from core.models.archive_configuration import ArchiveConfiguration
 from core.models.entity_association import EntityAssociation
 from core.repositories.action_log_repository import ActionLogRepository
 from core.repositories.appointment_repository_msgraph import (
@@ -20,6 +21,7 @@ from core.services.enhanced_overlap_resolution_service import (
     EnhancedOverlapResolutionService,
 )
 from core.services.meeting_modification_service import MeetingModificationService
+from core.services.timesheet_archive_service import TimesheetArchiveService
 from core.utilities.audit_logging_utility import AuditContext, AuditLogHelper
 from core.utilities.calendar_overlap_utility import detect_overlaps, merge_duplicates
 from core.utilities.calendar_recurrence_utility import expand_recurring_events_range
@@ -161,6 +163,74 @@ class CalendarArchiveOrchestrator:
             print(f"[WARNING] Failed to resolve calendar ID '{calendar_id}': {e}")
             return calendar_id
 
+    def archive_user_appointments_with_config(
+        self,
+        user: Any,
+        msgraph_client: Any,
+        archive_config: ArchiveConfiguration,
+        start_date: date,
+        end_date: date,
+        db_session: Session,
+        logger: Optional[Any] = None,
+        audit_service: Optional[Any] = None,
+        replace_mode: bool = False,
+    ) -> Dict[str, Any]:
+        """
+        Archive appointments using an ArchiveConfiguration object with support for timesheet-specific archiving.
+
+        Args:
+            user: User model instance.
+            msgraph_client: Authenticated MS Graph client.
+            archive_config: ArchiveConfiguration object containing source/destination URIs and archive settings.
+            start_date: Start of the period.
+            end_date: End of the period.
+            db_session: SQLAlchemy session for local DB.
+            logger: Optional logger.
+            audit_service: Optional audit service.
+            replace_mode: Whether to replace existing appointments in the archive.
+
+        Returns:
+            Dict with archive results including status, counts, and any errors.
+        """
+        # Extract URIs from configuration
+        source_calendar_uri = archive_config.source_calendar_uri
+        archive_calendar_id = archive_config.destination_calendar_uri
+
+        # Log archive type and configuration
+        archive_purpose = getattr(archive_config, 'archive_purpose', 'general')
+        allow_overlaps = getattr(archive_config, 'allow_overlaps', True)
+
+        if logger:
+            logger.info(f"Starting archive with purpose='{archive_purpose}', allow_overlaps={allow_overlaps}")
+
+        # Route to appropriate archive processing based on purpose
+        if archive_purpose == 'timesheet':
+            return self._archive_with_timesheet_service(
+                user=user,
+                msgraph_client=msgraph_client,
+                archive_config=archive_config,
+                start_date=start_date,
+                end_date=end_date,
+                db_session=db_session,
+                logger=logger,
+                audit_service=audit_service,
+                replace_mode=replace_mode,
+            )
+        else:
+            # Use general archive logic with simplified overlap handling if configured
+            return self._archive_with_general_logic(
+                user=user,
+                msgraph_client=msgraph_client,
+                archive_config=archive_config,
+                start_date=start_date,
+                end_date=end_date,
+                db_session=db_session,
+                logger=logger,
+                audit_service=audit_service,
+                replace_mode=replace_mode,
+                allow_overlaps=allow_overlaps,
+            )
+
     def archive_user_appointments(
         self,
         user: Any,
@@ -176,6 +246,9 @@ class CalendarArchiveOrchestrator:
     ) -> Dict[str, Any]:
         """
         Archive appointments from a user's MS Graph calendar to an archive calendar, logging overlaps locally.
+
+        This method maintains backward compatibility. For new implementations, use archive_user_appointments_with_config.
+
         Args:
             user: User model instance.
             msgraph_client: Authenticated MS Graph client.
@@ -185,9 +258,650 @@ class CalendarArchiveOrchestrator:
             end_date: End of the period.
             db_session: SQLAlchemy session for local DB.
             logger: Optional logger.
+            audit_service: Optional audit service.
+            replace_mode: Whether to replace existing appointments in the archive.
+
         Returns:
             dict: Summary of the operation (archived_count, overlap_count, errors).
         """
+        # Create a temporary ArchiveConfiguration for backward compatibility
+        temp_config = ArchiveConfiguration(
+            user_id=user.id,
+            name="Temporary Config (Legacy)",
+            source_calendar_uri=source_calendar_uri,
+            destination_calendar_uri=archive_calendar_id,
+            is_active=True,
+            timezone="UTC",  # Default timezone for legacy calls
+            allow_overlaps=True,  # Default to allowing overlaps for backward compatibility
+            archive_purpose='general'  # Default to general purpose
+        )
+
+        if logger:
+            logger.info("Using legacy archive method - consider migrating to archive_user_appointments_with_config")
+
+        # Delegate to the new implementation
+        return self._archive_with_general_logic(
+            user=user,
+            msgraph_client=msgraph_client,
+            archive_config=temp_config,
+            start_date=start_date,
+            end_date=end_date,
+            db_session=db_session,
+            logger=logger,
+            audit_service=audit_service,
+            replace_mode=replace_mode,
+            allow_overlaps=True,
+        )
+
+    def _archive_with_timesheet_service(
+        self,
+        user: Any,
+        msgraph_client: Any,
+        archive_config: ArchiveConfiguration,
+        start_date: date,
+        end_date: date,
+        db_session: Session,
+        logger: Optional[Any] = None,
+        audit_service: Optional[Any] = None,
+        replace_mode: bool = False,
+    ) -> Dict[str, Any]:
+        """
+        Archive appointments using TimesheetArchiveService for business category filtering.
+
+        Args:
+            user: User model instance.
+            msgraph_client: Authenticated MS Graph client.
+            archive_config: ArchiveConfiguration object.
+            start_date: Start of the period.
+            end_date: End of the period.
+            db_session: SQLAlchemy session for local DB.
+            logger: Optional logger.
+            audit_service: Optional audit service.
+            replace_mode: Whether to replace existing appointments in the archive.
+
+        Returns:
+            Dict with archive results including timesheet-specific statistics.
+        """
+        import uuid
+        correlation_id = str(uuid.uuid4())
+        operation_start_time = time.time()
+
+        if logger:
+            logger.info(f"Starting timesheet archive for user {user.id} with correlation_id {correlation_id}")
+
+        # Create audit context for timesheet archiving
+        with AuditContext(
+            audit_service=audit_service,
+            user_id=user.id,
+            action_type="archive",
+            operation="timesheet_archive",
+            resource_type="calendar",
+            resource_id=archive_config.source_calendar_uri,
+            correlation_id=correlation_id,
+        ) as audit_ctx:
+
+            audit_ctx.set_request_data({
+                "archive_purpose": "timesheet",
+                "source_calendar_uri": archive_config.source_calendar_uri,
+                "destination_calendar_uri": archive_config.destination_calendar_uri,
+                "start_date": start_date.isoformat(),
+                "end_date": end_date.isoformat(),
+                "allow_overlaps": archive_config.allow_overlaps,
+            })
+
+            try:
+                # Initialize timesheet service
+                timesheet_service = TimesheetArchiveService()
+                audit_ctx.add_detail("phase", "initialization")
+                audit_ctx.add_detail("service_type", "TimesheetArchiveService")
+
+                # Fetch appointments from source calendar
+                audit_ctx.add_detail("phase", "fetching_appointments")
+                source_calendar_id = self.resolve_calendar_uri(archive_config.source_calendar_uri, user)
+                source_repo = MSGraphAppointmentRepository(msgraph_client, user, source_calendar_id)
+                appointments = source_repo.list_for_user(start_date, end_date)
+
+                if logger:
+                    logger.info(f"Fetched {len(appointments)} appointments for timesheet filtering")
+
+                audit_ctx.add_detail("initial_appointment_count", len(appointments))
+
+                # Process appointments with timesheet service
+                audit_ctx.add_detail("phase", "timesheet_filtering")
+                timesheet_result = timesheet_service.filter_appointments_for_timesheet(
+                    appointments, include_travel=True
+                )
+
+                filtered_appointments = timesheet_result["filtered_appointments"]
+                excluded_appointments = timesheet_result["excluded_appointments"]
+                overlap_resolutions = timesheet_result["overlap_resolutions"]
+                timesheet_stats = timesheet_result["statistics"]
+
+                if logger:
+                    logger.info(f"Timesheet filtering: {len(filtered_appointments)} business appointments, "
+                              f"{len(excluded_appointments)} excluded")
+
+                audit_ctx.add_detail("timesheet_statistics", timesheet_stats)
+                audit_ctx.add_detail("filtered_appointment_count", len(filtered_appointments))
+                audit_ctx.add_detail("excluded_appointment_count", len(excluded_appointments))
+                audit_ctx.add_detail("overlap_resolutions", overlap_resolutions)
+
+                # Archive the filtered appointments
+                audit_ctx.add_detail("phase", "archiving_filtered_appointments")
+                archive_result = self._archive_appointments_to_destination(
+                    appointments=filtered_appointments,
+                    archive_config=archive_config,
+                    user=user,
+                    msgraph_client=msgraph_client,
+                    db_session=db_session,
+                    replace_mode=replace_mode,
+                    audit_ctx=audit_ctx,
+                    logger=logger,
+                )
+
+                # Combine results
+                result = {
+                    "status": "success",
+                    "archive_type": "timesheet",
+                    "correlation_id": correlation_id,
+                    "total_appointments_fetched": len(appointments),
+                    "business_appointments_archived": len(filtered_appointments),
+                    "personal_appointments_excluded": len(excluded_appointments),
+                    "timesheet_statistics": timesheet_stats,
+                    "overlap_resolutions": overlap_resolutions,
+                    "archive_errors": archive_result.get("errors", []),
+                    "archived_count": archive_result.get("archived_count", 0),
+                    "operation_duration": time.time() - operation_start_time,
+                }
+
+                audit_ctx.add_detail("final_result", result)
+
+                if logger:
+                    logger.info(f"Timesheet archive completed: {result['archived_count']} appointments archived")
+
+                return result
+
+            except Exception as e:
+                error_msg = f"Timesheet archive failed: {str(e)}"
+                if logger:
+                    logger.exception(error_msg)
+
+                audit_ctx.add_detail("error", error_msg)
+                audit_ctx.add_detail("phase", "error")
+
+                return {
+                    "status": "error",
+                    "archive_type": "timesheet",
+                    "correlation_id": correlation_id,
+                    "error": error_msg,
+                    "operation_duration": time.time() - operation_start_time,
+                }
+
+    def _archive_with_general_logic(
+        self,
+        user: Any,
+        msgraph_client: Any,
+        archive_config: ArchiveConfiguration,
+        start_date: date,
+        end_date: date,
+        db_session: Session,
+        logger: Optional[Any] = None,
+        audit_service: Optional[Any] = None,
+        replace_mode: bool = False,
+        allow_overlaps: bool = True,
+    ) -> Dict[str, Any]:
+        """
+        Archive appointments using general logic with optional simplified overlap handling.
+
+        Args:
+            user: User model instance.
+            msgraph_client: Authenticated MS Graph client.
+            archive_config: ArchiveConfiguration object.
+            start_date: Start of the period.
+            end_date: End of the period.
+            db_session: SQLAlchemy session for local DB.
+            logger: Optional logger.
+            audit_service: Optional audit service.
+            replace_mode: Whether to replace existing appointments in the archive.
+            allow_overlaps: Whether to allow overlapping appointments in archive.
+
+        Returns:
+            Dict with archive results.
+        """
+        import uuid
+        correlation_id = str(uuid.uuid4())
+        operation_start_time = time.time()
+
+        archive_purpose = getattr(archive_config, 'archive_purpose', 'general')
+
+        if logger:
+            logger.info(f"Starting general archive (purpose='{archive_purpose}') for user {user.id} "
+                       f"with allow_overlaps={allow_overlaps}, correlation_id {correlation_id}")
+
+        # Create audit context for general archiving
+        with AuditContext(
+            audit_service=audit_service,
+            user_id=user.id,
+            action_type="archive",
+            operation="general_archive",
+            resource_type="calendar",
+            resource_id=archive_config.source_calendar_uri,
+            correlation_id=correlation_id,
+        ) as audit_ctx:
+
+            audit_ctx.set_request_data({
+                "archive_purpose": archive_purpose,
+                "source_calendar_uri": archive_config.source_calendar_uri,
+                "destination_calendar_uri": archive_config.destination_calendar_uri,
+                "start_date": start_date.isoformat(),
+                "end_date": end_date.isoformat(),
+                "allow_overlaps": allow_overlaps,
+                "simplified_overlap_handling": allow_overlaps,
+            })
+
+            try:
+                audit_ctx.add_detail("phase", "initialization")
+                audit_ctx.add_detail("service_type", "GeneralArchive")
+                audit_ctx.add_detail("overlap_handling", "simplified" if allow_overlaps else "full")
+
+                # Fetch appointments from source calendar
+                audit_ctx.add_detail("phase", "fetching_appointments")
+                source_calendar_id = self.resolve_calendar_uri(archive_config.source_calendar_uri, user)
+                source_repo = MSGraphAppointmentRepository(msgraph_client, user, source_calendar_id)
+                appointments = source_repo.list_for_user(start_date, end_date)
+
+                if logger:
+                    logger.info(f"Fetched {len(appointments)} appointments for general archiving")
+
+                audit_ctx.add_detail("initial_appointment_count", len(appointments))
+
+                # Process appointments based on overlap handling preference
+                if allow_overlaps:
+                    # Simplified processing: expand recurrences, apply basic deduplication, but allow overlaps
+                    processed_appointments = self._process_appointments_simplified(
+                        appointments, start_date, end_date, audit_ctx, logger
+                    )
+                else:
+                    # Full processing: expand recurrences, detect overlaps, apply resolution
+                    processed_appointments = self._process_appointments_full(
+                        appointments, start_date, end_date, audit_ctx, logger, db_session
+                    )
+
+                # Archive the processed appointments
+                audit_ctx.add_detail("phase", "archiving_processed_appointments")
+                archive_result = self._archive_appointments_to_destination(
+                    appointments=processed_appointments["appointments"],
+                    archive_config=archive_config,
+                    user=user,
+                    msgraph_client=msgraph_client,
+                    db_session=db_session,
+                    replace_mode=replace_mode,
+                    audit_ctx=audit_ctx,
+                    logger=logger,
+                )
+
+                # Combine results
+                result = {
+                    "status": "success",
+                    "archive_type": "general",
+                    "archive_purpose": archive_purpose,
+                    "correlation_id": correlation_id,
+                    "total_appointments_fetched": len(appointments),
+                    "appointments_archived": len(processed_appointments["appointments"]),
+                    "allow_overlaps": allow_overlaps,
+                    "overlap_handling": "simplified" if allow_overlaps else "full",
+                    "processing_stats": processed_appointments.get("stats", {}),
+                    "conflicts": processed_appointments.get("conflicts", []),
+                    "archive_errors": archive_result.get("errors", []),
+                    "archived_count": archive_result.get("archived_count", 0),
+                    "operation_duration": time.time() - operation_start_time,
+                }
+
+                audit_ctx.add_detail("final_result", result)
+
+                if logger:
+                    logger.info(f"General archive completed: {result['archived_count']} appointments archived")
+
+                return result
+
+            except Exception as e:
+                error_msg = f"General archive failed: {str(e)}"
+                if logger:
+                    logger.exception(error_msg)
+
+                audit_ctx.add_detail("error", error_msg)
+                audit_ctx.add_detail("phase", "error")
+
+                return {
+                    "status": "error",
+                    "archive_type": "general",
+                    "archive_purpose": archive_purpose,
+                    "correlation_id": correlation_id,
+                    "error": error_msg,
+                    "operation_duration": time.time() - operation_start_time,
+                }
+
+    def _process_appointments_simplified(
+        self,
+        appointments: list,
+        start_date: date,
+        end_date: date,
+        audit_ctx: Any,
+        logger: Optional[Any] = None,
+    ) -> Dict[str, Any]:
+        """
+        Process appointments with simplified logic: expand recurrences and deduplicate, but allow overlaps.
+
+        Args:
+            appointments: List of appointments to process.
+            start_date: Start date for processing.
+            end_date: End date for processing.
+            audit_ctx: Audit context for logging.
+            logger: Optional logger.
+
+        Returns:
+            Dict with processed appointments and statistics.
+        """
+        if logger:
+            logger.info("Processing appointments with simplified overlap handling")
+
+        audit_ctx.add_detail("processing_mode", "simplified")
+
+        # Expand recurring events
+        expanded = expand_recurring_events_range(appointments, start_date, end_date)
+        audit_ctx.add_detail("expanded_appointment_count", len(expanded))
+
+        if logger:
+            logger.info(f"Expanded {len(appointments)} to {len(expanded)} appointments")
+
+        # Apply basic deduplication
+        deduplicated = merge_duplicates(expanded)
+        audit_ctx.add_detail("deduplicated_appointment_count", len(deduplicated))
+
+        if logger:
+            logger.info(f"Deduplicated to {len(deduplicated)} appointments")
+
+        # Detect overlaps for reporting but don't filter them out
+        overlap_groups = detect_overlaps(deduplicated)
+        overlapping_count = sum(len(group) for group in overlap_groups)
+
+        audit_ctx.add_detail("overlap_groups_detected", len(overlap_groups))
+        audit_ctx.add_detail("overlapping_appointments_count", overlapping_count)
+
+        if logger and overlap_groups:
+            logger.info(f"Detected {len(overlap_groups)} overlap groups with {overlapping_count} appointments, "
+                       "but allowing overlaps in archive")
+
+        return {
+            "appointments": deduplicated,
+            "stats": {
+                "original_count": len(appointments),
+                "expanded_count": len(expanded),
+                "deduplicated_count": len(deduplicated),
+                "overlap_groups": len(overlap_groups),
+                "overlapping_appointments": overlapping_count,
+                "processing_mode": "simplified",
+            },
+            "conflicts": [],  # No conflicts since we allow overlaps
+        }
+
+    def _process_appointments_full(
+        self,
+        appointments: list,
+        start_date: date,
+        end_date: date,
+        audit_ctx: Any,
+        logger: Optional[Any] = None,
+        db_session: Optional[Session] = None,
+    ) -> Dict[str, Any]:
+        """
+        Process appointments with full logic: expand recurrences, detect overlaps, and apply resolution.
+
+        Args:
+            appointments: List of appointments to process.
+            start_date: Start date for processing.
+            end_date: End date for processing.
+            audit_ctx: Audit context for logging.
+            logger: Optional logger.
+            db_session: Database session for overlap logging.
+
+        Returns:
+            Dict with processed appointments and statistics.
+        """
+        if logger:
+            logger.info("Processing appointments with full overlap resolution")
+
+        audit_ctx.add_detail("processing_mode", "full")
+
+        # Expand recurring events
+        expanded = expand_recurring_events_range(appointments, start_date, end_date)
+        audit_ctx.add_detail("expanded_appointment_count", len(expanded))
+
+        # Apply category processing and privacy automation
+        category_service = CategoryProcessingService()
+        processed_appointments = category_service.process_appointments(expanded)
+        audit_ctx.add_detail("category_processed_count", len(processed_appointments))
+
+        # Apply meeting modifications
+        modification_service = MeetingModificationService()
+        modified_appointments = modification_service.apply_modifications(processed_appointments)
+        audit_ctx.add_detail("modification_processed_count", len(modified_appointments))
+
+        # Deduplicate
+        deduplicated = merge_duplicates(modified_appointments)
+        audit_ctx.add_detail("deduplicated_appointment_count", len(deduplicated))
+
+        # Detect and resolve overlaps
+        overlap_groups = detect_overlaps(deduplicated)
+
+        if overlap_groups:
+            overlap_service = EnhancedOverlapResolutionService()
+            resolution_stats = {"resolved": 0, "filtered": 0, "conflicts": 0}
+            remaining_conflicts = []
+            appointments_to_archive = []
+
+            for group in overlap_groups:
+                resolution_result = overlap_service.apply_automatic_resolution_rules(group)
+                resolution_stats["resolved"] += len(resolution_result["resolved"])
+                resolution_stats["filtered"] += len(resolution_result["filtered"])
+                resolution_stats["conflicts"] += len(resolution_result["conflicts"])
+
+                appointments_to_archive.extend(resolution_result["resolved"])
+                remaining_conflicts.extend(resolution_result["conflicts"])
+
+            # Add non-overlapping appointments
+            overlapping_appointment_ids = set()
+            for group in overlap_groups:
+                for appt in group:
+                    overlapping_appointment_ids.add(id(appt))
+
+            for appointment in deduplicated:
+                if id(appointment) not in overlapping_appointment_ids:
+                    appointments_to_archive.append(appointment)
+
+            audit_ctx.add_detail("overlap_resolution_stats", resolution_stats)
+            audit_ctx.add_detail("remaining_conflicts_count", len(remaining_conflicts))
+
+        else:
+            appointments_to_archive = deduplicated
+            remaining_conflicts = []
+            resolution_stats = {"resolved": 0, "filtered": 0, "conflicts": 0}
+
+        return {
+            "appointments": appointments_to_archive,
+            "stats": {
+                "original_count": len(appointments),
+                "expanded_count": len(expanded),
+                "category_processed_count": len(processed_appointments),
+                "modification_processed_count": len(modified_appointments),
+                "deduplicated_count": len(deduplicated),
+                "overlap_groups": len(overlap_groups),
+                "resolution_stats": resolution_stats,
+                "final_count": len(appointments_to_archive),
+                "processing_mode": "full",
+            },
+            "conflicts": remaining_conflicts,
+        }
+
+    def _archive_appointments_to_destination(
+        self,
+        appointments: list,
+        archive_config: ArchiveConfiguration,
+        user: Any,
+        msgraph_client: Any,
+        db_session: Session,
+        replace_mode: bool = False,
+        audit_ctx: Optional[Any] = None,
+        logger: Optional[Any] = None,
+    ) -> Dict[str, Any]:
+        """
+        Archive appointments to the destination calendar.
+
+        Args:
+            appointments: List of appointments to archive.
+            archive_config: Archive configuration.
+            user: User model instance.
+            msgraph_client: MS Graph client.
+            db_session: Database session.
+            replace_mode: Whether to replace existing appointments.
+            audit_ctx: Audit context for logging.
+            logger: Optional logger.
+
+        Returns:
+            Dict with archive results including counts and errors.
+        """
+        if not appointments:
+            return {"archived_count": 0, "errors": []}
+
+        archive_calendar_id = archive_config.destination_calendar_uri
+
+        # Resolve archive calendar URI to determine repository type and ID
+        try:
+            from core.utilities.uri_utility import parse_resource_uri
+            parsed_archive_uri = parse_resource_uri(archive_calendar_id)
+            archive_scheme = parsed_archive_uri.scheme
+        except Exception:
+            # Fall back to legacy detection
+            if archive_calendar_id.startswith("local://"):
+                archive_scheme = "local"
+            else:
+                archive_scheme = "msgraph"
+
+        if archive_scheme == "local":
+            from core.repositories.appointment_repository_sqlalchemy import (
+                SQLAlchemyAppointmentRepository,
+            )
+
+            # Resolve local calendar URI to ID
+            local_cal_id = self.resolve_calendar_uri(archive_calendar_id, user)
+            archive_repo = SQLAlchemyAppointmentRepository(
+                user, local_cal_id, session=db_session
+            )
+            if logger:
+                logger.info(f"Using SQLAlchemy repository for local calendar: {local_cal_id}")
+            if audit_ctx:
+                audit_ctx.add_detail("archive_repository_type", "SQLAlchemy")
+        else:
+            # For msgraph:// URIs (including new format)
+            # Resolve to actual MS Graph calendar ID
+            msgraph_cal_id = self.resolve_calendar_uri(archive_calendar_id, user)
+            archive_repo = MSGraphAppointmentRepository(
+                msgraph_client, user, msgraph_cal_id
+            )
+            if logger:
+                logger.info(f"Using MSGraph repository for calendar: {msgraph_cal_id}")
+            if audit_ctx:
+                audit_ctx.add_detail("archive_repository_type", "MSGraph")
+                audit_ctx.add_detail("resolved_calendar_id", msgraph_cal_id)
+
+        # Handle replace mode or duplicate checking
+        duplicate_count = 0
+        deleted_appointments = []
+        archive_errors = []
+        archived_count = 0
+
+        if replace_mode:
+            if logger:
+                logger.info("Replace mode enabled - deleting existing appointments in date range")
+
+            # Delete existing appointments in the date range
+            if hasattr(archive_repo, 'delete_for_period'):
+                try:
+                    # Extract date range from appointments
+                    appointment_dates = []
+                    for appt in appointments:
+                        start_time = getattr(appt, 'start_time', None)
+                        if start_time:
+                            appointment_dates.append(start_time.date())
+
+                    if appointment_dates:
+                        range_start = min(appointment_dates)
+                        range_end = max(appointment_dates)
+                        deleted_appointments = archive_repo.delete_for_period(range_start, range_end)
+                        if logger:
+                            logger.info(f"Deleted {len(deleted_appointments)} existing appointments")
+                        if audit_ctx:
+                            audit_ctx.add_detail("deleted_count", len(deleted_appointments))
+                            audit_ctx.add_detail("replace_mode", True)
+                except Exception as e:
+                    error_msg = f"Failed to delete existing appointments: {str(e)}"
+                    archive_errors.append(error_msg)
+                    if logger:
+                        logger.error(error_msg)
+
+        # Archive appointments
+        if hasattr(archive_repo, 'add_bulk'):
+            try:
+                bulk_errors = archive_repo.add_bulk(appointments)
+                archive_errors.extend(bulk_errors)
+                archived_count = len(appointments) - len(bulk_errors)
+            except Exception as e:
+                # Fallback to individual operations if bulk fails
+                if logger:
+                    logger.warning(f"Bulk operation failed, falling back to individual operations: {e}")
+                for appt in appointments:
+                    try:
+                        archive_repo.add(appt)
+                        archived_count += 1
+                    except Exception as individual_e:
+                        archive_errors.append(
+                            f"Failed to archive appointment {getattr(appt, 'subject', 'Unknown')}: {str(individual_e)}"
+                        )
+        else:
+            # Repository doesn't support bulk operations, use individual operations
+            for appt in appointments:
+                try:
+                    archive_repo.add(appt)
+                    archived_count += 1
+                except Exception as e:
+                    archive_errors.append(
+                        f"Failed to archive appointment {getattr(appt, 'subject', 'Unknown')}: {str(e)}"
+                    )
+
+        # Mark archived appointments as immutable for local storage
+        if appointments and archive_calendar_id.startswith("local://"):
+            try:
+                make_appointments_immutable(appointments, db_session)
+                if logger:
+                    logger.info(f"Marked {len(appointments)} appointments as immutable")
+                if audit_ctx:
+                    audit_ctx.add_detail("immutable_marked", True)
+                    audit_ctx.add_detail("immutable_count", len(appointments))
+            except Exception as e:
+                error_msg = f"Failed to mark appointments as immutable: {str(e)}"
+                archive_errors.append(error_msg)
+                if logger:
+                    logger.error(error_msg)
+
+        if audit_ctx:
+            audit_ctx.add_detail("archived_count", archived_count)
+            audit_ctx.add_detail("archive_errors", archive_errors)
+
+        return {
+            "archived_count": archived_count,
+            "errors": archive_errors,
+            "deleted_count": len(deleted_appointments),
+        }
         operation_start_time = time.time()
 
         # Initialize audit logging
@@ -261,552 +975,28 @@ class CalendarArchiveOrchestrator:
         replace_mode,
     ) -> Dict[str, Any]:
         """Implementation of archive_user_appointments with OpenTelemetry support."""
-
-        # Create audit context for the entire archiving operation
-        with AuditContext(
-            audit_service=audit_service,
+        # Create a temporary ArchiveConfiguration for the legacy implementation
+        temp_config = ArchiveConfiguration(
             user_id=user.id,
-            action_type="archive",
-            operation="calendar_archive",
-            resource_type="calendar",
-            resource_id=source_calendar_uri,
-            correlation_id=correlation_id,
-        ) as audit_ctx:
-
-            # Add operation parameters to audit log
-            audit_ctx.set_request_data(
-                {
-                    "source_calendar_uri": source_calendar_uri,
-                    "archive_calendar_id": archive_calendar_id,
-                    "start_date": start_date.isoformat(),
-                    "end_date": end_date.isoformat(),
-                }
-            )
-
-            try:
-                print("[DEBUG] Parsing calendar URIs...")
-                # Resolve source calendar URI to actual ID
-                source_calendar_id = self.resolve_calendar_uri(source_calendar_uri, user)
-                print(
-                    f"[DEBUG] Source calendar URI: {source_calendar_uri} -> ID: {source_calendar_id}, Archive calendar URI: {archive_calendar_id}"
-                )
-
-                # Log the start of the operation
-                audit_ctx.add_detail("phase", "initialization")
-                audit_ctx.add_detail("source_calendar_id", source_calendar_id)
-                audit_ctx.add_detail("archive_calendar_uri", archive_calendar_id)  # Keep original URI for audit
-                # 1. Fetch appointments from MS Graph (source calendar)
-                print("[DEBUG] Fetching appointments from MS Graph...")
-                audit_ctx.add_detail("phase", "fetching_appointments")
-
-                source_repo = MSGraphAppointmentRepository(
-                    msgraph_client, user, source_calendar_id
-                )
-                appointments = source_repo.list_for_user(start_date, end_date)
-                print(f"[DEBUG] Fetched {len(appointments)} appointments.")
-
-                audit_ctx.add_detail("initial_appointment_count", len(appointments))
-
-                # 2. Process: expand recurrences, deduplicate, detect overlaps
-                print("[DEBUG] Expanding recurring events...")
-                audit_ctx.add_detail("phase", "processing_appointments")
-
-                expanded = expand_recurring_events_range(
-                    appointments, start_date, end_date
-                )
-                print(f"[DEBUG] Expanded to {len(expanded)} events.")
-
-                audit_ctx.add_detail("expanded_appointment_count", len(expanded))
-
-                # 2a. Process categories and apply privacy automation
-                print(
-                    "[DEBUG] Processing categories and applying privacy automation..."
-                )
-                category_service = CategoryProcessingService()
-                category_stats = category_service.get_category_statistics(expanded)
-                print(
-                    f"[DEBUG] Category stats: {category_stats['valid_categories']} valid, {category_stats['invalid_categories']} invalid, {category_stats['personal_appointments']} personal"
-                )
-
-                audit_ctx.add_detail("category_stats", category_stats)
-
-                # Apply privacy flags to personal appointments
-                print("[DEBUG] Applying privacy automation...")
-                privacy_applied_count = 0
-                for appt in expanded:
-                    if category_service.should_mark_private(appt):
-                        # Set sensitivity to Private for personal appointments
-                        if hasattr(appt, "sensitivity"):
-                            appt.sensitivity = "Private"
-                            privacy_applied_count += 1
-
-                print(f"[DEBUG] Privacy automation: {privacy_applied_count} appointments marked as private")
-                audit_ctx.add_detail("privacy_applied_count", privacy_applied_count)
-
-                # 2b. Process meeting modifications
-                print("[DEBUG] Processing meeting modifications...")
-                modification_service = MeetingModificationService()
-                processed_appointments = modification_service.process_modifications(
-                    expanded
-                )
-                modification_count = len(expanded) - len(processed_appointments)
-                print(
-                    f"[DEBUG] Processed {modification_count} modification appointments, resulting in {len(processed_appointments)} appointments"
-                )
-
-                audit_ctx.add_detail("modification_count", modification_count)
-                audit_ctx.add_detail(
-                    "processed_appointment_count", len(processed_appointments)
-                )
-
-                print("[DEBUG] Deduplicating events...")
-                deduped = merge_duplicates(processed_appointments)
-                print(f"[DEBUG] Deduped to {len(deduped)} events.")
-
-                audit_ctx.add_detail("deduped_appointment_count", len(deduped))
-
-                print("[DEBUG] Detecting overlaps...")
-                overlap_groups = detect_overlaps(deduped)
-                print(f"[DEBUG] Found {len(overlap_groups)} initial overlap groups.")
-
-                audit_ctx.add_detail("initial_overlap_groups", len(overlap_groups))
-
-                # Apply enhanced overlap resolution
-                print("[DEBUG] Applying enhanced overlap resolution...")
-                audit_ctx.add_detail("phase", "overlap_resolution")
-
-                overlap_service = EnhancedOverlapResolutionService()
-                auto_resolved_appointments = []
-                remaining_conflicts = []
-                resolution_stats = {
-                    "total_overlaps": len(overlap_groups),
-                    "auto_resolved": 0,
-                    "remaining_conflicts": 0,
-                    "filtered_appointments": 0,
-                }
-
-                for group in overlap_groups:
-                    resolution_result = (
-                        overlap_service.apply_automatic_resolution_rules(group)
-                    )
-
-                    # Add resolved appointments to archive list
-                    auto_resolved_appointments.extend(resolution_result["resolved"])
-
-                    # Track remaining conflicts that need manual resolution
-                    if resolution_result["conflicts"]:
-                        remaining_conflicts.append(resolution_result["conflicts"])
-
-                    # Update stats
-                    if resolution_result["resolved"]:
-                        resolution_stats["auto_resolved"] += 1
-                    if resolution_result["conflicts"]:
-                        resolution_stats["remaining_conflicts"] += 1
-                    resolution_stats["filtered_appointments"] += len(
-                        resolution_result["filtered"]
-                    )
-
-                    # Log resolution details
-                    if resolution_result["resolution_log"]:
-                        print(
-                            f"[DEBUG] Overlap resolution: {'; '.join(resolution_result['resolution_log'])}"
-                        )
-
-                # Combine non-overlapping appointments with auto-resolved ones
-                overlapping_appts = set(a for group in overlap_groups for a in group)
-                non_overlapping = [a for a in deduped if a not in overlapping_appts]
-                appointments_to_archive = non_overlapping + auto_resolved_appointments
-
-                print(
-                    f"[DEBUG] Resolution complete: {len(non_overlapping)} non-overlapping + {len(auto_resolved_appointments)} auto-resolved = {len(appointments_to_archive)} total to archive."
-                )
-                print(
-                    f"[DEBUG] Remaining conflicts: {len(remaining_conflicts)} groups need manual resolution."
-                )
-
-                audit_ctx.add_detail("resolution_stats", resolution_stats)
-                audit_ctx.add_detail(
-                    "appointments_to_archive_count", len(appointments_to_archive)
-                )
-                audit_ctx.add_detail(
-                    "remaining_conflicts_count", len(remaining_conflicts)
-                )
-
-                # 3. Write non-overlapping to archive calendar (MS Graph)
-                print("[DEBUG] Selecting archive repository based on URI...")
-                print(f"[DEBUG] Archive calendar ID: '{archive_calendar_id}'")
-                print(f"[DEBUG] Archive calendar ID type: {type(archive_calendar_id)}")
-                print(f"[DEBUG] Archive calendar ID starts with 'msgraph://': {archive_calendar_id.startswith('msgraph://')}")
-                audit_ctx.add_detail("phase", "archiving")
-
-                # Resolve archive calendar URI to determine repository type and ID
-                try:
-                    from core.utilities.uri_utility import parse_resource_uri
-                    parsed_archive_uri = parse_resource_uri(archive_calendar_id)
-                    archive_scheme = parsed_archive_uri.scheme
-                except Exception:
-                    # Fall back to legacy detection
-                    if archive_calendar_id.startswith("local://"):
-                        archive_scheme = "local"
-                    else:
-                        archive_scheme = "msgraph"
-
-                if archive_scheme == "local":
-                    from core.repositories.appointment_repository_sqlalchemy import (
-                        SQLAlchemyAppointmentRepository,
-                    )
-
-                    # Resolve local calendar URI to ID
-                    local_cal_id = self.resolve_calendar_uri(archive_calendar_id, user)
-                    archive_repo = SQLAlchemyAppointmentRepository(
-                        user, local_cal_id, session=db_session
-                    )
-                    print(
-                        f"[DEBUG] Using SQLAlchemyAppointmentRepository for local calendar: {local_cal_id} (resolved from {archive_calendar_id})"
-                    )
-                    audit_ctx.add_detail("archive_repository_type", "SQLAlchemy")
-                else:
-                    # For msgraph:// URIs (including new format)
-                    # Resolve to actual MS Graph calendar ID
-                    msgraph_cal_id = self.resolve_calendar_uri(archive_calendar_id, user)
-                    archive_repo = MSGraphAppointmentRepository(
-                        msgraph_client, user, msgraph_cal_id
-                    )
-                    print(
-                        f"[DEBUG] Using MSGraphAppointmentRepository for MS Graph calendar: {msgraph_cal_id} (resolved from {archive_calendar_id})"
-                    )
-                    audit_ctx.add_detail("archive_repository_type", "MSGraph")
-                    audit_ctx.add_detail("resolved_calendar_id", msgraph_cal_id)
-
-                # Handle replace mode or duplicate checking
-                duplicate_count = 0
-                deleted_appointments = []
-                reversible_operation = None
-
-                if replace_mode:
-                    print("[DEBUG] Replace mode enabled - deleting existing appointments in date range...")
-
-                    # Start reversible operation for replace
-                    from core.services.reversible_audit_service import ReversibleAuditService
-                    reversible_service = ReversibleAuditService(db_session)
-
-                    reversible_operation, correlation_id = reversible_service.start_reversible_operation(
-                        user_id=user.id,
-                        operation_type="archive_replace",
-                        operation_name="calendar_archive_replace",
-                        correlation_id=correlation_id,
-                    )
-
-                    # Delete existing appointments in the date range
-                    if hasattr(archive_repo, 'delete_for_period'):
-                        try:
-                            deleted_appointments = archive_repo.delete_for_period(start_date, end_date)
-                            print(f"[DEBUG] Deleted {len(deleted_appointments)} existing appointments")
-
-                            # Capture deleted appointments for reversal
-                            for deleted_appt in deleted_appointments:
-                                reversible_service.capture_item_state(
-                                    operation=reversible_operation,
-                                    item_type="appointment",
-                                    item_id=deleted_appt.get("ms_event_id", "unknown"),
-                                    before_state=deleted_appt,
-                                    reverse_action="restore",
-                                    external_id=deleted_appt.get("ms_event_id"),
-                                )
-
-                            audit_ctx.add_detail("deleted_count", len(deleted_appointments))
-                            audit_ctx.add_detail("replace_mode", True)
-
-                        except Exception as e:
-                            print(f"[DEBUG] Failed to delete existing appointments: {e}")
-                            audit_ctx.add_detail("delete_error", str(e))
-                            # Mark operation as non-reversible due to failure
-                            if reversible_operation:
-                                reversible_operation.is_reversible = False
-                                reversible_operation.reverse_reason = f"Delete phase failed: {str(e)}"
-                    else:
-                        print("[DEBUG] Repository doesn't support period deletion for replace mode")
-                        audit_ctx.add_detail("replace_mode_supported", False)
-
-                else:
-                    # Normal mode - check for duplicates
-                    print("[DEBUG] Checking for duplicates in destination calendar...")
-                    original_count = len(appointments_to_archive)
-
-                    if hasattr(archive_repo, 'check_for_duplicates'):
-                        try:
-                            appointments_to_archive = archive_repo.check_for_duplicates(
-                                appointments_to_archive, start_date, end_date
-                            )
-                            duplicate_count = original_count - len(appointments_to_archive)
-                            print(f"[DEBUG] Duplicate check complete: {duplicate_count} duplicates found, {len(appointments_to_archive)} unique appointments to archive")
-                            audit_ctx.add_detail("duplicate_count", duplicate_count)
-                            audit_ctx.add_detail("unique_appointments_count", len(appointments_to_archive))
-                        except Exception as e:
-                            print(f"[DEBUG] Duplicate checking failed, proceeding with all appointments: {e}")
-                            duplicate_count = 0
-                            audit_ctx.add_detail("duplicate_check_error", str(e))
-                    else:
-                        print("[DEBUG] Repository doesn't support duplicate checking, proceeding with all appointments")
-                        duplicate_count = 0
-                        audit_ctx.add_detail("duplicate_check_supported", False)
-
-                archived_count = 0
-                archive_errors = []
-
-                # Use bulk operation for MSGraph repositories if available
-                if hasattr(archive_repo, 'add_bulk'):
-                    try:
-                        bulk_errors = archive_repo.add_bulk(appointments_to_archive)
-                        archive_errors.extend(bulk_errors)
-                        archived_count = len(appointments_to_archive) - len(bulk_errors)
-                    except Exception as e:
-                        # Fallback to individual operations if bulk fails
-                        logger.warning(f"Bulk operation failed, falling back to individual operations: {e}")
-                        for appt in appointments_to_archive:
-                            try:
-                                archive_repo.add(appt)
-                                archived_count += 1
-                            except Exception as individual_e:
-                                archive_errors.append(
-                                    f"Failed to archive appointment {getattr(appt, 'subject', 'Unknown')}: {str(individual_e)}"
-                                )
-                else:
-                    # Repository doesn't support bulk operations, use individual operations
-                    for appt in appointments_to_archive:
-                        try:
-                            archive_repo.add(appt)
-                            archived_count += 1
-                        except Exception as e:
-                            archive_errors.append(
-                                f"Failed to archive appointment {getattr(appt, 'subject', 'Unknown')}: {str(e)}"
-                            )
-
-                print(f"[DEBUG] Archived {archived_count} events.")
-                audit_ctx.add_detail("archived_count", archived_count)
-                audit_ctx.add_detail("archive_errors", archive_errors)
-
-                # 3a. Mark archived appointments as immutable
-                print("[DEBUG] Marking archived appointments as immutable...")
-                if appointments_to_archive and archive_calendar_id.startswith(
-                    "local://"
-                ):
-                    # Only mark as immutable for local storage (SQLAlchemy)
-                    # MS Graph appointments are inherently immutable once archived
-                    make_appointments_immutable(appointments_to_archive, db_session)
-                    print(
-                        f"[DEBUG] Marked {len(appointments_to_archive)} appointments as immutable."
-                    )
-                    audit_ctx.add_detail("immutable_marked", True)
-                    audit_ctx.add_detail(
-                        "immutable_count", len(appointments_to_archive)
-                    )
-                else:
-                    print(
-                        "[DEBUG] Skipping immutability marking for MS Graph storage (inherently immutable)."
-                    )
-                    audit_ctx.add_detail("immutable_marked", False)
-                    audit_ctx.add_detail(
-                        "immutable_reason", "MS Graph storage inherently immutable"
-                    )
-
-                # 4. Log overlaps and category issues in local DB
-                print("[DEBUG] Logging overlaps and category issues...")
-                audit_ctx.add_detail("phase", "logging_issues")
-
-                action_log_repo = ActionLogRepository(db_session)
-                assoc_helper = EntityAssociationHelper()
-                overlap_count = 0
-
-                # Log only remaining conflicts that need manual resolution
-                for conflict_group in remaining_conflicts:
-                    for appt in conflict_group:
-                        log = ActionLog(
-                            user_id=user.id,
-                            event_type="overlap",
-                            state="needs_user_action",
-                            description=f"Overlapping event (manual resolution needed): {getattr(appt, 'subject', None)}",
-                            details={
-                                "ms_event_id": getattr(appt, "ms_event_id", None),
-                                "subject": getattr(appt, "subject", None),
-                                "start_time": str(getattr(appt, "start_time", None)),
-                                "end_time": str(getattr(appt, "end_time", None)),
-                                "show_as": getattr(appt, "show_as", None),
-                                "importance": getattr(appt, "importance", None),
-                                "resolution_status": "auto_resolution_failed",
-                                "correlation_id": correlation_id,  # Link to audit trail
-                            },
-                        )
-                        action_log_repo.add(log)
-
-                        # Get target_id for the appointment - ensure it's not None
-                        target_id = getattr(appt, "id", None) or getattr(appt, "ms_event_id", None)
-
-                        # Only create association if we have a valid target_id
-                        if target_id is not None:
-                            assoc = EntityAssociation(
-                                source_type="action_log",
-                                source_id=log.id,
-                                target_type="appointment",
-                                target_id=target_id,
-                                association_type="overlap",
-                            )
-                            assoc_helper.add(db_session, assoc)
-                        else:
-                            logger.warning(f"Skipping entity association for overlap - appointment has no valid ID: {getattr(appt, 'subject', 'Unknown')}")
-                        overlap_count += 1
-
-                # Log category validation issues
-                category_issue_count = 0
-                if category_stats["issues"]:
-                    for issue in category_stats["issues"][
-                        :10
-                    ]:  # Limit to first 10 issues
-                        log = ActionLog(
-                            user_id=user.id,
-                            event_type="category_validation",
-                            state="needs_user_action",
-                            description=f"Category validation issue: {issue}",
-                            details={
-                                "issue_type": "category_format",
-                                "issue_description": issue,
-                                "date_range": f"{start_date} to {end_date}",
-                                "total_issues": len(category_stats["issues"]),
-                                "correlation_id": correlation_id,  # Link to audit trail
-                            },
-                        )
-                        action_log_repo.add(log)
-                        category_issue_count += 1
-
-                print(
-                    f"[DEBUG] Logged {overlap_count} overlaps and {category_issue_count} category issues. Committing to DB..."
-                )
-                db_session.commit()
-                print("[DEBUG] DB commit complete.")
-
-                # Set final audit details and response data
-                audit_ctx.add_detail("overlap_count", overlap_count)
-                audit_ctx.add_detail("category_issue_count", category_issue_count)
-                audit_ctx.add_detail("phase", "completed")
-
-                result = {
-                    "archived_count": archived_count,
-                    "overlap_count": overlap_count,
-                    "category_stats": category_stats,
-                    "category_issue_count": category_issue_count,
-                    "resolution_stats": resolution_stats,
-                    "modification_count": modification_count,
-                    "privacy_applied_count": privacy_applied_count,
-                    "duplicate_count": duplicate_count,
-                    "replace_mode": replace_mode,
-                    "deleted_count": len(deleted_appointments) if replace_mode else 0,
-                    "reversible_operation_id": reversible_operation.id if reversible_operation else None,
-                    "errors": archive_errors,
-                    "correlation_id": correlation_id,  # Include correlation ID in response
-                }
-
-                # Complete the reversible operation if in replace mode
-                if replace_mode and reversible_operation:
-                    try:
-                        # Capture the final state for the reversible operation
-                        for appt in appointments_to_archive:
-                            if hasattr(appt, 'ms_event_id') and appt.ms_event_id:
-                                # Find the corresponding item and update its after_state
-                                # This would be done during the actual archiving process
-                                pass
-
-                        # Mark operation as complete
-                        from core.services.reversible_audit_service import ReversibleAuditService
-                        reversible_service = ReversibleAuditService(db_session)
-                        reversible_service.complete_operation(
-                            operation=reversible_operation,
-                            status="success" if not archive_errors else "partial",
-                            message=f"Archive replace completed: {archived_count} archived, {len(deleted_appointments)} deleted",
-                            response_data=result,
-                        )
-                    except Exception as e:
-                        logger.exception(f"Failed to complete reversible operation: {e}")
-                        # Don't fail the entire operation for audit issues
-
-                # Record metrics and span attributes
-                operation_duration = time.time() - operation_start_time
-                if OTEL_AVAILABLE:
-                    # Record metrics
-                    archive_operations_counter.add(
-                        1,
-                        {
-                            "status": "success" if not archive_errors else "partial",
-                            "user_id": str(user.id),
-                        },
-                    )
-                    archive_duration_histogram.record(
-                        operation_duration,
-                        {
-                            "status": "success" if not archive_errors else "partial",
-                            "user_id": str(user.id),
-                        },
-                    )
-                    archived_appointments_counter.add(
-                        archived_count, {"user_id": str(user.id)}
-                    )
-                    overlap_conflicts_counter.add(
-                        overlap_count, {"user_id": str(user.id)}
-                    )
-
-                    # Update span attributes
-                    if span:
-                        span.set_attributes(
-                            {
-                                "operation.duration_seconds": operation_duration,
-                                "operation.archived_count": archived_count,
-                                "operation.overlap_count": overlap_count,
-                                "operation.category_issue_count": category_issue_count,
-                                "operation.modification_count": modification_count,
-                                "operation.error_count": len(archive_errors),
-                                "operation.status": (
-                                    "success" if not archive_errors else "partial"
-                                ),
-                            }
-                        )
-                        span.set_status(Status(StatusCode.OK))
-
-                audit_ctx.set_response_data(result)
-                return result
-
-            except Exception as e:
-                print(f"[DEBUG] Exception occurred: {e}")
-                if logger:
-                    logger.exception(
-                        f"Orchestration failed for user {getattr(user, 'email', None)} from {start_date} to {end_date}: {str(e)}"
-                    )
-
-                # Record error metrics and span status
-                operation_duration = time.time() - operation_start_time
-                if OTEL_AVAILABLE:
-                    # Record error metrics
-                    archive_operations_counter.add(
-                        1, {"status": "error", "user_id": str(user.id)}
-                    )
-                    archive_duration_histogram.record(
-                        operation_duration, {"status": "error", "user_id": str(user.id)}
-                    )
-
-                    # Update span with error
-                    if span:
-                        span.set_attributes(
-                            {
-                                "operation.duration_seconds": operation_duration,
-                                "operation.status": "error",
-                                "error.type": type(e).__name__,
-                                "error.message": str(e),
-                            }
-                        )
-                        span.set_status(Status(StatusCode.ERROR, str(e)))
-
-                # The AuditContext will automatically log the failure
-                return {
-                    "archived_count": 0,
-                    "overlap_count": 0,
-                    "errors": [str(e)],
-                    "correlation_id": correlation_id,
-                }
+            name="Legacy Implementation Config",
+            source_calendar_uri=source_calendar_uri,
+            destination_calendar_uri=archive_calendar_id,
+            is_active=True,
+            timezone="UTC",
+            allow_overlaps=True,  # Default to allowing overlaps for backward compatibility
+            archive_purpose='general'
+        )
+
+        # Delegate to the new general logic implementation
+        return self._archive_with_general_logic(
+            user=user,
+            msgraph_client=msgraph_client,
+            archive_config=temp_config,
+            start_date=start_date,
+            end_date=end_date,
+            db_session=db_session,
+            logger=logger,
+            audit_service=audit_service,
+            replace_mode=replace_mode,
+            allow_overlaps=True,
+        )
