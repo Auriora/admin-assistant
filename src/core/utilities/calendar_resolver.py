@@ -43,19 +43,19 @@ class CalendarResolver:
     def resolve_calendar_uri(self, uri: str) -> str:
         """
         Resolve a calendar URI to the actual calendar ID.
-        
+
         Args:
             uri: Calendar URI to resolve
-            
+
         Returns:
             Actual calendar ID
-            
+
         Raises:
             CalendarResolutionError: If resolution fails
         """
         if not uri:
             return ""
-        
+
         try:
             # Try to parse as new format first
             try:
@@ -65,11 +65,15 @@ class CalendarResolver:
                 logger.debug(f"Failed to parse URI as new format, attempting legacy migration: {uri}")
                 migrated_uri = migrate_legacy_uri(uri)
                 parsed = parse_resource_uri(migrated_uri)
-            
+
+            # Validate account context if present
+            if parsed.account:
+                self._validate_account_context(parsed.account)
+
             # Validate namespace
             if parsed.namespace != 'calendars':
                 raise CalendarResolutionError(f"Unsupported namespace '{parsed.namespace}' for calendar URI: {uri}")
-            
+
             # Route to appropriate resolver
             if parsed.scheme == 'msgraph':
                 return self._resolve_msgraph_calendar(parsed)
@@ -77,11 +81,56 @@ class CalendarResolver:
                 return self._resolve_local_calendar(parsed)
             else:
                 raise CalendarResolutionError(f"Unsupported scheme '{parsed.scheme}' for calendar URI: {uri}")
-                
+
         except Exception as e:
             logger.error(f"Failed to resolve calendar URI '{uri}': {e}")
             raise CalendarResolutionError(f"Failed to resolve calendar URI '{uri}': {e}") from e
-    
+
+    def _validate_account_context(self, account: str) -> None:
+        """
+        Validate that the URI account context matches the user.
+
+        Args:
+            account: Account identifier from the URI
+
+        Raises:
+            CalendarResolutionError: If account doesn't match the user
+        """
+        if not account or not account.strip():
+            logger.debug("Empty account context provided, skipping validation")
+            return
+
+        account = account.strip()
+
+        # Check against user email (primary match, case-insensitive)
+        if self.user.email and account.lower() == self.user.email.lower():
+            logger.debug(f"Account context '{account}' validated against user email")
+            return
+
+        # Check against user username (secondary match, case-sensitive)
+        if self.user.username and account == self.user.username:
+            logger.debug(f"Account context '{account}' validated against username")
+            return
+
+        # Check against user ID (tertiary match)
+        if account == str(self.user.id):
+            logger.debug(f"Account context '{account}' validated against user ID")
+            return
+
+        # If no matches found, raise error
+        user_identifiers = []
+        if self.user.email:
+            user_identifiers.append(f"email: {self.user.email}")
+        if self.user.username:
+            user_identifiers.append(f"username: {self.user.username}")
+        user_identifiers.append(f"ID: {self.user.id}")
+
+        logger.warning(f"Account context validation failed: URI account '{account}' does not match user ({', '.join(user_identifiers)})")
+        raise CalendarResolutionError(
+            f"Account context mismatch: URI account '{account}' does not match the current user. "
+            f"Expected one of: {', '.join(user_identifiers)}"
+        )
+
     def _resolve_msgraph_calendar(self, parsed: ParsedURI) -> str:
         """
         Resolve MS Graph calendar URI.
