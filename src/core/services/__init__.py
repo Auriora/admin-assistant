@@ -10,4 +10,5 @@ from .job_configuration_service import JobConfigurationService
 from .privacy_automation_service import PrivacyAutomationService
 from .prompt_service import PromptService
 from .scheduled_archive_service import ScheduledArchiveService
+from .timesheet_archive_service import TimesheetArchiveService
 from .user_service import UserService
