@@ -5,22 +5,23 @@ This module provides utilities for parsing and constructing URIs that reference
 resources like calendars, contacts, emails, etc. across different providers
 (MS Graph, local database, Google, etc.).
 
-URI Format: <scheme>://<namespace>/<identifier>
+URI Formats:
+- Legacy: <scheme>://<namespace>/<identifier>
+- New: <scheme>://<account>/<namespace>/<identifier>
 
 User-Friendly Input Formats:
-- msgraph://calendars/Activity\\ Archive           # Backslash escaping
-- msgraph://calendars/"Activity Archive"          # Quoted strings
-- msgraph://calendars/'Activity Archive'          # Single quoted strings
-- msgraph://calendars/Activity Archive            # Unescaped (if no conflicts)
-- msgraph://calendars/primary                     # Simple identifiers
+- msgraph://calendars/Activity\\ Archive           # Backslash escaping (legacy)
+- msgraph://calendars/"Activity Archive"          # Quoted strings (legacy)
+- msgraph://user@example.com/calendars/primary    # With account context (new)
+- msgraph://calendars/primary                     # Simple identifiers (legacy)
 
 Internal Storage Format (URL-encoded):
-- msgraph://calendars/Activity%20Archive
-- msgraph://calendars/primary
+- msgraph://calendars/Activity%20Archive          # Legacy format
+- msgraph://user@example.com/calendars/primary    # New format with account
 
 Output Format (user-friendly):
-- msgraph://calendars/"Activity Archive"          # Quoted if contains spaces/special chars
-- msgraph://calendars/primary                     # Unquoted if simple
+- msgraph://calendars/"Activity Archive"          # Quoted if contains spaces/special chars (legacy)
+- msgraph://user@example.com/calendars/primary    # With account context (new)
 """
 
 import re
@@ -31,11 +32,17 @@ from typing import Optional
 
 @dataclass
 class ParsedURI:
-    """Represents a parsed resource URI."""
+    """Represents a parsed resource URI.
+
+    Supports both legacy and new URI formats:
+    - Legacy: <scheme>://<namespace>/<identifier>
+    - New: <scheme>://<account>/<namespace>/<identifier>
+    """
     scheme: str  # e.g., 'msgraph', 'local', 'google'
     namespace: str  # e.g., 'calendars', 'contacts', 'emails'
     identifier: str  # e.g., 'Activity Archive', 'AQMkADAwATM3ZmYAZS05ZmQzLTljNjAtMDACLTAwCg...', '123'
     raw_uri: str  # Original URI
+    account: Optional[str] = None  # e.g., 'user@example.com', None for legacy URIs
     
     @property
     def is_friendly_name(self) -> bool:
@@ -43,7 +50,8 @@ class ParsedURI:
         # Technical IDs are typically long, contain special chars, or are numeric
         if self.identifier.isdigit():
             return False
-        if len(self.identifier) > 50 and ('=' in self.identifier or '+' in self.identifier):
+        # Check for base64-like patterns (long strings with = or + characters)
+        if len(self.identifier) > 30 and ('=' in self.identifier or '+' in self.identifier):
             return False
         return True
     
@@ -139,53 +147,82 @@ def format_user_friendly_identifier(identifier: str, force_quotes: bool = False)
 def parse_resource_uri(uri: str) -> ParsedURI:
     """
     Parse a resource URI into its components.
-    
+
+    Supports both legacy and new URI formats:
+    - Legacy: <scheme>://<namespace>/<identifier>
+    - New: <scheme>://<account>/<namespace>/<identifier>
+
     Args:
-        uri: URI to parse (e.g., 'msgraph://calendars/Activity%20Archive')
-        
+        uri: URI to parse (e.g., 'msgraph://calendars/primary' or 'msgraph://user@example.com/calendars/primary')
+
     Returns:
         ParsedURI object with parsed components
-        
+
     Raises:
         URIParseError: If URI format is invalid
     """
-    if not uri:
-        raise URIParseError("URI cannot be empty")
-    
-    # Handle legacy URIs for backward compatibility
+    # Handle legacy URIs for backward compatibility (including empty string)
     if uri in ('', 'calendar', 'primary'):
         return ParsedURI(
             scheme='msgraph',
             namespace='calendars',
             identifier='primary',
-            raw_uri=uri
+            raw_uri=uri,
+            account=None
         )
-    
+
+    # Check for truly empty URI after legacy handling
+    if not uri or not uri.strip():
+        raise URIParseError("URI cannot be empty")
+
     # Parse standard URI format
     try:
         parsed = urllib.parse.urlparse(uri)
         if not parsed.scheme:
             raise URIParseError(f"URI missing scheme: {uri}")
 
-        # Handle the case where netloc contains the namespace (e.g., msgraph://calendars/identifier)
-        # In this case, netloc = 'calendars' and path = '/identifier'
+        account = None
+        namespace = None
+        raw_identifier = None
+
+        # Handle the case where netloc contains account or namespace
         if parsed.netloc and parsed.path:
-            namespace = parsed.netloc
-            raw_identifier = parsed.path.lstrip('/')
-            if not raw_identifier:
-                raise URIParseError(f"URI missing identifier: {uri}")
+            # Check if netloc looks like an account (contains @ or is an email-like string)
+            if '@' in parsed.netloc or '.' in parsed.netloc:
+                # New format: msgraph://user@example.com/calendars/identifier
+                account = parsed.netloc
+                path_parts = parsed.path.lstrip('/').split('/', 1)
+                if len(path_parts) < 2:
+                    raise URIParseError(f"URI with account must have format 'scheme://account/namespace/identifier': {uri}")
+                namespace = path_parts[0]
+                raw_identifier = path_parts[1]
+            else:
+                # Legacy format: msgraph://calendars/identifier
+                namespace = parsed.netloc
+                raw_identifier = parsed.path.lstrip('/')
+                if not raw_identifier:
+                    raise URIParseError(f"URI missing identifier: {uri}")
         else:
-            # Handle case where everything is in the path (e.g., scheme:///namespace/identifier)
+            # Handle case where everything is in the path (e.g., scheme:///namespace/identifier or scheme:///account/namespace/identifier)
             path = parsed.path.lstrip('/')
             if not path:
                 raise URIParseError(f"URI missing path: {uri}")
 
-            path_parts = path.split('/', 1)
-            if len(path_parts) < 2:
-                raise URIParseError(f"URI path must have format 'namespace/identifier': {uri}")
+            path_parts = path.split('/')
+            if len(path_parts) == 2:
+                # Legacy format: namespace/identifier
+                namespace = path_parts[0]
+                raw_identifier = path_parts[1]
+            elif len(path_parts) == 3:
+                # New format: account/namespace/identifier
+                account = path_parts[0]
+                namespace = path_parts[1]
+                raw_identifier = path_parts[2]
+            else:
+                raise URIParseError(f"URI path must have format 'namespace/identifier' or 'account/namespace/identifier': {uri}")
 
-            namespace = path_parts[0]
-            raw_identifier = path_parts[1]
+        if not namespace or not raw_identifier:
+            raise URIParseError(f"URI missing required components: {uri}")
 
         # First try URL decoding (for backward compatibility with URL-encoded URIs)
         try:
@@ -204,14 +241,15 @@ def parse_resource_uri(uri: str) -> ParsedURI:
             scheme=parsed.scheme,
             namespace=namespace,
             identifier=identifier,
-            raw_uri=uri
+            raw_uri=uri,
+            account=account
         )
-        
+
     except Exception as e:
         raise URIParseError(f"Failed to parse URI '{uri}': {e}") from e
 
 
-def construct_resource_uri(scheme: str, namespace: str, identifier: str, user_friendly: bool = True) -> str:
+def construct_resource_uri(scheme: str, namespace: str, identifier: str, user_friendly: bool = True, account: Optional[str] = None) -> str:
     """
     Construct a resource URI from components.
 
@@ -220,6 +258,7 @@ def construct_resource_uri(scheme: str, namespace: str, identifier: str, user_fr
         namespace: Resource namespace (e.g., 'calendars', 'contacts')
         identifier: Resource identifier
         user_friendly: If True, use user-friendly format; if False, use URL encoding
+        account: Optional account context (e.g., 'user@example.com')
 
     Returns:
         Constructed URI string
@@ -234,10 +273,15 @@ def construct_resource_uri(scheme: str, namespace: str, identifier: str, user_fr
         # Use URL encoding for backward compatibility
         formatted_identifier = urllib.parse.quote(identifier, safe='')
 
-    return f"{scheme}://{namespace}/{formatted_identifier}"
+    if account:
+        # New format with account context: scheme://account/namespace/identifier
+        return f"{scheme}://{account}/{namespace}/{formatted_identifier}"
+    else:
+        # Legacy format: scheme://namespace/identifier
+        return f"{scheme}://{namespace}/{formatted_identifier}"
 
 
-def construct_resource_uri_encoded(scheme: str, namespace: str, identifier: str) -> str:
+def construct_resource_uri_encoded(scheme: str, namespace: str, identifier: str, account: Optional[str] = None) -> str:
     """
     Construct a resource URI with URL encoding (for internal storage).
 
@@ -245,11 +289,12 @@ def construct_resource_uri_encoded(scheme: str, namespace: str, identifier: str)
         scheme: Provider scheme (e.g., 'msgraph', 'local')
         namespace: Resource namespace (e.g., 'calendars', 'contacts')
         identifier: Resource identifier (will be URL-encoded)
+        account: Optional account context (e.g., 'user@example.com')
 
     Returns:
         Constructed URI string with URL encoding
     """
-    return construct_resource_uri(scheme, namespace, identifier, user_friendly=False)
+    return construct_resource_uri(scheme, namespace, identifier, user_friendly=False, account=account)
 
 
 def normalize_calendar_name_for_lookup(name: str) -> str:
@@ -363,17 +408,21 @@ def validate_uri_components(scheme: str, namespace: str) -> bool:
     return scheme in SUPPORTED_SCHEMES and namespace in SUPPORTED_NAMESPACES
 
 
-def get_primary_calendar_uri(scheme: str = 'msgraph') -> str:
+def get_primary_calendar_uri(scheme: str = 'msgraph', account: Optional[str] = None) -> str:
     """
     Get the URI for the primary calendar of a given scheme.
 
     Args:
         scheme: Provider scheme
+        account: Optional account context (e.g., 'user@example.com')
 
     Returns:
         Primary calendar URI
     """
-    return f"{scheme}://calendars/primary"
+    if account:
+        return f"{scheme}://{account}/calendars/primary"
+    else:
+        return f"{scheme}://calendars/primary"
 
 
 def convert_uri_to_user_friendly(uri: str) -> str:
@@ -388,7 +437,7 @@ def convert_uri_to_user_friendly(uri: str) -> str:
     """
     try:
         parsed = parse_resource_uri(uri)
-        return construct_resource_uri(parsed.scheme, parsed.namespace, parsed.identifier, user_friendly=True)
+        return construct_resource_uri(parsed.scheme, parsed.namespace, parsed.identifier, user_friendly=True, account=parsed.account)
     except Exception:
         return uri
 
@@ -405,6 +454,6 @@ def convert_uri_to_encoded(uri: str) -> str:
     """
     try:
         parsed = parse_resource_uri(uri)
-        return construct_resource_uri(parsed.scheme, parsed.namespace, parsed.identifier, user_friendly=False)
+        return construct_resource_uri(parsed.scheme, parsed.namespace, parsed.identifier, user_friendly=False, account=parsed.account)
     except Exception:
         return uri
