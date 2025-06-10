@@ -4,11 +4,18 @@ import calendar
 import locale
 import re
 from datetime import date, datetime, timedelta
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple
 
 import typer
 from core.models.user import User
 from core.utilities.user_resolution import get_user_identifier_source, resolve_user
+from core.utilities.uri_utility import (
+    construct_resource_uri,
+    parse_resource_uri,
+    URIParseError,
+    URIValidationError,
+    validate_account,
+)
 
 
 def resolve_cli_user(cli_user_input: Optional[str] = None) -> User:
@@ -208,3 +215,139 @@ def parse_date_range(date_str: str) -> tuple[date, date]:
     # Single date
     single = parse_flexible_date(date_str)
     return single, single
+
+
+def get_account_context_for_user(user: User) -> str:
+    """
+    Get the best available account context for a user.
+
+    Priority order:
+    1. User email (preferred)
+    2. Username (fallback)
+    3. user_id as string (last resort)
+
+    Args:
+        user: User object to get context for
+
+    Returns:
+        Account context string
+    """
+    # Prefer email if available and valid
+    if user.email and user.email.strip() and '@' in user.email:
+        return user.email.strip()
+
+    # Fallback to username if available
+    if user.username and user.username.strip():
+        return user.username.strip()
+
+    # Last resort: use user_id
+    return str(user.id)
+
+
+def suggest_uri_with_account_context(uri: str, user: User) -> str:
+    """
+    Suggest a URI with account context based on user information.
+
+    Args:
+        uri: Original URI (may be legacy format)
+        user: User object for account context
+
+    Returns:
+        URI with account context added
+    """
+    if not uri or not uri.strip():
+        return uri
+
+    try:
+        # Parse the URI to check if it already has account context
+        parsed = parse_resource_uri(uri)
+        if parsed.account:
+            # Already has account context
+            return uri
+
+        # Add account context
+        account_context = get_account_context_for_user(user)
+        return construct_resource_uri(
+            parsed.scheme,
+            parsed.namespace,
+            parsed.identifier,
+            user_friendly=True,
+            account=account_context
+        )
+    except URIParseError:
+        # If parsing fails, return original URI
+        return uri
+
+
+def validate_uri_account_context(uri: str, user: User) -> Tuple[bool, Optional[str]]:
+    """
+    Validate that URI account context matches the user.
+
+    Args:
+        uri: URI to validate
+        user: User object to validate against
+
+    Returns:
+        Tuple of (is_valid, error_message)
+    """
+    if not uri or not uri.strip():
+        return True, None
+
+    try:
+        parsed = parse_resource_uri(uri)
+
+        # If no account context, it's valid (legacy format)
+        if not parsed.account:
+            return True, None
+
+        account = parsed.account.strip()
+
+        # Check against user email (primary match, case-insensitive)
+        if user.email and account.lower() == user.email.lower():
+            return True, None
+
+        # Check against username (case-insensitive)
+        if user.username and account.lower() == user.username.lower():
+            return True, None
+
+        # Check against user ID (as string)
+        if account == str(user.id):
+            return True, None
+
+        # Account context doesn't match user
+        user_context = get_account_context_for_user(user)
+        return False, f"URI account context '{account}' doesn't match user '{user_context}'. Expected URI format: {suggest_uri_with_account_context(uri, user)}"
+
+    except URIParseError as e:
+        return False, f"Invalid URI format: {e}"
+    except URIValidationError as e:
+        return False, f"Invalid URI: {e}"
+
+
+def get_uri_autocompletion_suggestions(user: User, scheme: str = "msgraph", namespace: str = "calendars") -> List[str]:
+    """
+    Get URI auto-completion suggestions for a user.
+
+    Args:
+        user: User object for account context
+        scheme: URI scheme (default: msgraph)
+        namespace: URI namespace (default: calendars)
+
+    Returns:
+        List of suggested URI formats
+    """
+    account_context = get_account_context_for_user(user)
+
+    suggestions = [
+        f"{scheme}://{account_context}/{namespace}/primary",
+        f"{scheme}://{account_context}/{namespace}/\"Archive Calendar\"",
+        f"{scheme}://{account_context}/{namespace}/\"Work Calendar\"",
+    ]
+
+    # Add legacy format suggestions for backward compatibility
+    suggestions.extend([
+        f"{scheme}://{namespace}/primary",
+        f"{scheme}://{namespace}/\"Archive Calendar\"",
+    ])
+
+    return suggestions

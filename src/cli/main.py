@@ -23,10 +23,10 @@ admin-assistant config calendar archive create --user <USER_ID>
 admin-assistant config calendar timesheet create --user <USER_ID>
 
 # Create a new archive config (all options provided)
-admin-assistant config calendar archive create --user <USER_ID> --name "Work Archive" --source-uri "msgraph://source" --dest-uri "msgraph://dest" --timezone "Europe/London" --active
+admin-assistant config calendar archive create --user <USER_ID> --name "Work Archive" --source-uri "msgraph://user@example.com/calendars/primary" --dest-uri "msgraph://user@example.com/calendars/\"Archive Calendar\"" --timezone "Europe/London" --active
 
 # Create a new timesheet config (all options provided)
-admin-assistant config calendar timesheet create --user <USER_ID> --name "Timesheet Archive" --source-uri "msgraph://source" --dest-uri "msgraph://dest" --timezone "Europe/London" --active
+admin-assistant config calendar timesheet create --user <USER_ID> --name "Timesheet Archive" --source-uri "msgraph://user@example.com/calendars/primary" --dest-uri "msgraph://user@example.com/calendars/\"Timesheet Archive\"" --timezone "Europe/London" --active
 
 # Activate/deactivate/delete a config
 admin-assistant config calendar archive activate --user <USER_ID> --config-id <CONFIG_ID>
@@ -103,12 +103,16 @@ def main(ctx: typer.Context):
       admin-assistant config calendar archive list --user <USER_ID>
       admin-assistant config calendar archive create --user <USER_ID>
       admin-assistant config calendar archive activate --user <USER_ID> --config-id <CONFIG_ID>
-      
+
       # Timesheet operations (business categories only)
       admin-assistant calendar timesheet "Timesheet Config" --user <USER_ID> --date "last 7 days"
       admin-assistant config calendar timesheet list --user <USER_ID>
       admin-assistant config calendar timesheet create --user <USER_ID>
       admin-assistant config calendar timesheet activate --user <USER_ID> --config-id <CONFIG_ID>
+
+      # URI formats (new format with account context recommended)
+      # New format: msgraph://user@example.com/calendars/primary
+      # Legacy format: msgraph://calendars/primary (still supported)
     """
     if ctx.invoked_subcommand is None:
         typer.echo(ctx.get_help())

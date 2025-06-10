@@ -7,7 +7,13 @@ from rich.console import Console
 from rich.table import Table
 
 from cli.common.options import user_option
-from cli.common.utils import resolve_cli_user
+from cli.common.utils import (
+    resolve_cli_user,
+    get_account_context_for_user,
+    suggest_uri_with_account_context,
+    validate_uri_account_context,
+    get_uri_autocompletion_suggestions,
+)
 
 backup_config_app = typer.Typer(help="Backup configuration management")
 
@@ -59,10 +65,10 @@ def create_backup_config(
     user_input: Optional[str] = user_option,
     name: str = typer.Option(None, "--name", help="Name for the backup configuration"),
     source_calendar_uri: str = typer.Option(
-        None, "--source-uri", help="Source calendar URI (e.g., msgraph://calendars/Work Calendar)"
+        None, "--source-uri", help="Source calendar URI (e.g., msgraph://user@example.com/calendars/\"Work Calendar\")"
     ),
     destination_uri: str = typer.Option(
-        None, "--destination-uri", help="Destination URI (e.g., file:///backups/work.csv, local://calendars/Backup)"
+        None, "--destination-uri", help="Destination URI (e.g., file:///backups/work.csv, local://user@example.com/calendars/Backup)"
     ),
     backup_format: str = typer.Option("csv", "--format", help="Backup format: csv, json, ics, local_calendar"),
     include_metadata: bool = typer.Option(True, "--metadata/--no-metadata", help="Include metadata in backup"),
@@ -73,16 +79,37 @@ def create_backup_config(
 
     console = Console()
 
-    # Prompt for missing fields
-    if not name:
-        name = typer.prompt("Backup configuration name")
-    if not source_calendar_uri:
-        source_calendar_uri = typer.prompt("Source calendar URI (e.g., msgraph://calendars/Work Calendar)")
-    if not destination_uri:
-        destination_uri = typer.prompt("Destination URI (e.g., file:///backups/work.csv)")
-
     try:
         user = resolve_cli_user(user_input)
+        account_context = get_account_context_for_user(user)
+
+        # Prompt for missing fields with enhanced examples
+        if not name:
+            name = typer.prompt("Backup configuration name")
+
+        if not source_calendar_uri:
+            console.print(f"\n[blue]Examples for source calendar URI:[/blue]")
+            console.print(f"  msgraph://{account_context}/calendars/primary")
+            console.print(f"  msgraph://{account_context}/calendars/\"Work Calendar\"")
+            console.print(f"  msgraph://calendars/primary (legacy format)")
+            source_calendar_uri = typer.prompt("Source calendar URI")
+
+        if not destination_uri:
+            console.print(f"\n[blue]Examples for destination URI:[/blue]")
+            console.print(f"  file:///backups/work.csv")
+            console.print(f"  local://{account_context}/calendars/\"Backup Calendar\"")
+            console.print(f"  file:///home/user/backups/calendar.json")
+            destination_uri = typer.prompt("Destination URI")
+
+        # Validate source URI and provide suggestions
+        source_valid, source_error = validate_uri_account_context(source_calendar_uri, user)
+        if not source_valid:
+            console.print(f"[yellow]Warning - Source URI: {source_error}[/yellow]")
+            suggested_source = suggest_uri_with_account_context(source_calendar_uri, user)
+            if suggested_source != source_calendar_uri:
+                console.print(f"[blue]Suggested format: {suggested_source}[/blue]")
+                if typer.confirm("Use suggested format?"):
+                    source_calendar_uri = suggested_source
 
         backup_service = BackupConfigurationService()
         backup_config = backup_service.create_from_parameters(
