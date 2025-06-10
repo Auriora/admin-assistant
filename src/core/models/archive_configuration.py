@@ -24,6 +24,8 @@ class ArchiveConfiguration(Base):
         destination_calendar_uri (str): URI of the archive calendar, including backend context (e.g., msgraph://, sqlite://, google://, etc.).
         is_active (bool): Whether this configuration is active (disables all jobs using this config).
         timezone (str): Timezone for archiving operations (IANA format).
+        allow_overlaps (bool): Whether to allow overlapping appointments in archive operations.
+        archive_purpose (str): Purpose of the archive configuration (general, billing, travel, etc.).
         created_at (datetime): Creation timestamp.
         updated_at (datetime): Last update timestamp.
         user (User): Relationship to User.
@@ -65,6 +67,18 @@ class ArchiveConfiguration(Base):
         nullable=False,
         doc="Timezone for archiving operations (IANA format)",
     )
+    allow_overlaps = Column(
+        Boolean,
+        default=True,
+        nullable=False,
+        doc="Whether to allow overlapping appointments in archive operations",
+    )
+    archive_purpose = Column(
+        String(50),
+        default='general',
+        nullable=False,
+        doc="Purpose of the archive configuration (general, billing, travel, etc.)",
+    )
     created_at = Column(UTCDateTime(), default=datetime.now(UTC), nullable=False)
     updated_at = Column(
         UTCDateTime(),
@@ -79,4 +93,4 @@ class ArchiveConfiguration(Base):
     )
 
     def __repr__(self) -> str:
-        return f"<ArchiveConfiguration name={self.name} user_id={self.user_id} source={self.source_calendar_uri} dest={self.destination_calendar_uri} active={self.is_active}>"
+        return f"<ArchiveConfiguration name={self.name} user_id={self.user_id} source={self.source_calendar_uri} dest={self.destination_calendar_uri} active={self.is_active} purpose={self.archive_purpose} overlaps={self.allow_overlaps}>"
