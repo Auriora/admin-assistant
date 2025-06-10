@@ -51,16 +51,31 @@ def prepare_appointments_for_archive(
     session=None,
     logger=None,
     action_log_repository: "Optional[Any]" = None,  # Kept for backward compatibility, but not used
+    allow_overlaps: bool = False,
 ) -> Dict[str, Any]:
     """
     Process a list of Appointment model instances to prepare them for archiving.
     Handles time zones, recurring events, overlaps, and duplicates.
-    Returns a dict with keys:
+
+    Args:
+        appointments: List of Appointment model instances to process
+        start_date: Start date for the archiving period
+        end_date: End date for the archiving period
+        user: User model instance (optional)
+        session: Database session (optional)
+        logger: Logger instance (optional)
+        action_log_repository: Kept for backward compatibility, but not used
+        allow_overlaps: If True, archive appointments even when overlaps are detected
+
+    Returns:
+        Dict with keys:
         - 'appointments': processed list of appointments ready for archiving
-        - 'status': 'ok' or 'overlap'
+        - 'status': 'ok', 'overlap', or 'ok_with_overlaps'
         - 'conflicts': list of conflicts if overlaps detected
         - 'errors': list of error messages
+
     Note: This function no longer logs overlaps or writes to the DB. It only returns the detected overlaps.
+    When allow_overlaps=True, overlapping appointments are included in archiving but conflicts are still reported.
     """
     if OTEL_AVAILABLE and tracer:
         with tracer.start_as_current_span(
@@ -69,15 +84,16 @@ def prepare_appointments_for_archive(
                 "input.appointment_count": len(appointments),
                 "input.start_date": start_date.isoformat(),
                 "input.end_date": end_date.isoformat(),
+                "input.allow_overlaps": allow_overlaps,
                 "user.id": str(getattr(user, "id", "")) if user else "",
             },
         ) as span:
             return _prepare_appointments_for_archive_impl(
-                appointments, start_date, end_date, user, session, logger, span
+                appointments, start_date, end_date, user, session, logger, span, allow_overlaps
             )
     else:
         return _prepare_appointments_for_archive_impl(
-            appointments, start_date, end_date, user, session, logger, None
+            appointments, start_date, end_date, user, session, logger, None, allow_overlaps
         )
 
 
@@ -89,6 +105,7 @@ def _prepare_appointments_for_archive_impl(
     session=None,
     logger=None,
     span=None,
+    allow_overlaps: bool = False,
 ) -> Dict[str, Any]:
     """Implementation of prepare_appointments_for_archive with OpenTelemetry support."""
     result = {"appointments": [], "status": "ok", "conflicts": [], "errors": []}
@@ -97,8 +114,23 @@ def _prepare_appointments_for_archive_impl(
         appts = merge_duplicates(appts)
         overlap_groups = detect_overlaps(appts)
         overlapping_appts = set()
+
+        # Handle overlap detection and status determination
         if overlap_groups:
-            result["status"] = "overlap"
+            if allow_overlaps:
+                result["status"] = "ok_with_overlaps"
+                if logger:
+                    logger.info(
+                        f"Found {len(overlap_groups)} overlap groups but proceeding with archiving due to allow_overlaps=True"
+                    )
+            else:
+                result["status"] = "overlap"
+                if logger:
+                    logger.warning(
+                        f"Found {len(overlap_groups)} overlap groups, excluding overlapping appointments from archiving"
+                    )
+
+            # Always populate conflicts for transparency
             result["conflicts"] = [
                 [
                     {
@@ -118,14 +150,26 @@ def _prepare_appointments_for_archive_impl(
                 ]
                 for group in overlap_groups
             ]
-            for group in overlap_groups:
-                for appt in group:
-                    overlapping_appts.add(appt)
+
+            # Only exclude overlapping appointments if allow_overlaps=False
+            if not allow_overlaps:
+                for group in overlap_groups:
+                    for appt in group:
+                        overlapping_appts.add(appt)
+        # Process appointments for archiving
+        skipped_overlaps = 0
+        skipped_invalid = 0
+        skipped_non_appointments = 0
+
         for appt in appts:
             if not isinstance(appt, Appointment):
+                skipped_non_appointments += 1
                 continue
+
             if appt in overlapping_appts:
-                continue  # Skip archiving overlapping events
+                skipped_overlaps += 1
+                continue  # Skip archiving overlapping events when allow_overlaps=False
+
             # Ensure times are UTC, but only if not a Column object
             start_time = getattr(appt, "start_time", None)
             end_time = getattr(appt, "end_time", None)
@@ -133,17 +177,29 @@ def _prepare_appointments_for_archive_impl(
                 setattr(appt, "start_time", to_utc(start_time))
             if isinstance(end_time, datetime):
                 setattr(appt, "end_time", to_utc(end_time))
+
             # Only allow if both are real datetimes
             if not (
                 isinstance(start_time, datetime) and isinstance(end_time, datetime)
             ):
+                skipped_invalid += 1
                 result["errors"].append(
                     f"Skipped appointment with missing start or end time: {getattr(appt, 'subject', 'Unknown')}"
                 )
                 continue
+
             # Always use setattr for is_archived
             setattr(appt, "is_archived", True)  # type: ignore
             result["appointments"].append(appt)
+
+        # Log archiving decisions
+        if logger:
+            total_processed = len(result["appointments"])
+            logger.info(
+                f"Archive preparation complete: {total_processed} appointments ready for archiving, "
+                f"{skipped_overlaps} skipped due to overlaps, {skipped_invalid} skipped due to invalid times, "
+                f"{skipped_non_appointments} skipped as non-appointment objects"
+            )
 
         # Record metrics and span attributes
         if OTEL_AVAILABLE:
@@ -171,6 +227,10 @@ def _prepare_appointments_for_archive_impl(
                         "output.overlap_count": len(overlap_groups),
                         "output.error_count": len(result["errors"]),
                         "output.status": result["status"],
+                        "input.allow_overlaps": allow_overlaps,
+                        "output.skipped_overlaps": skipped_overlaps,
+                        "output.skipped_invalid": skipped_invalid,
+                        "output.skipped_non_appointments": skipped_non_appointments,
                     }
                 )
                 span.set_status(Status(StatusCode.OK))

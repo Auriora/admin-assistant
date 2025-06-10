@@ -394,3 +394,177 @@ class TestCalendarArchiveService:
         # Verify error span attributes were set
         mock_span.set_attributes.assert_called()
         mock_span.set_status.assert_called()
+
+    def test_prepare_appointments_for_archive_with_allow_overlaps_true(self, overlapping_appointments, mock_user, mock_session, mock_logger):
+        """Test appointment preparation with allow_overlaps=True."""
+        start_date = date(2024, 1, 15)
+        end_date = date(2024, 1, 15)
+
+        with patch('core.services.calendar_archive_service.expand_recurring_events_range') as mock_expand, \
+             patch('core.services.calendar_archive_service.merge_duplicates') as mock_merge, \
+             patch('core.services.calendar_archive_service.detect_overlaps') as mock_detect:
+
+            mock_expand.return_value = overlapping_appointments
+            mock_merge.return_value = overlapping_appointments
+            mock_detect.return_value = [overlapping_appointments]  # Return overlap group
+
+            result = prepare_appointments_for_archive(
+                overlapping_appointments, start_date, end_date, mock_user, mock_session, mock_logger, allow_overlaps=True
+            )
+
+            assert result["status"] == "ok_with_overlaps"
+            assert len(result["appointments"]) == 2  # Both overlapping appointments archived
+            assert len(result["conflicts"]) == 1  # Conflicts still reported for transparency
+            assert len(result["conflicts"][0]) == 2  # Two overlapping appointments in conflict
+            assert result["errors"] == []
+
+            # Verify all appointments are marked as archived
+            for appt in result["appointments"]:
+                assert appt.is_archived is True
+
+    def test_prepare_appointments_for_archive_with_allow_overlaps_false(self, overlapping_appointments, mock_user, mock_session, mock_logger):
+        """Test appointment preparation with allow_overlaps=False (default behavior)."""
+        start_date = date(2024, 1, 15)
+        end_date = date(2024, 1, 15)
+
+        with patch('core.services.calendar_archive_service.expand_recurring_events_range') as mock_expand, \
+             patch('core.services.calendar_archive_service.merge_duplicates') as mock_merge, \
+             patch('core.services.calendar_archive_service.detect_overlaps') as mock_detect:
+
+            mock_expand.return_value = overlapping_appointments
+            mock_merge.return_value = overlapping_appointments
+            mock_detect.return_value = [overlapping_appointments]  # Return overlap group
+
+            result = prepare_appointments_for_archive(
+                overlapping_appointments, start_date, end_date, mock_user, mock_session, mock_logger, allow_overlaps=False
+            )
+
+            assert result["status"] == "overlap"
+            assert len(result["appointments"]) == 0  # No appointments archived due to overlaps
+            assert len(result["conflicts"]) == 1
+            assert len(result["conflicts"][0]) == 2  # Two overlapping appointments
+            assert result["errors"] == []
+
+    def test_prepare_appointments_for_archive_allow_overlaps_default_false(self, overlapping_appointments, mock_user, mock_session, mock_logger):
+        """Test that allow_overlaps defaults to False for backward compatibility."""
+        start_date = date(2024, 1, 15)
+        end_date = date(2024, 1, 15)
+
+        with patch('core.services.calendar_archive_service.expand_recurring_events_range') as mock_expand, \
+             patch('core.services.calendar_archive_service.merge_duplicates') as mock_merge, \
+             patch('core.services.calendar_archive_service.detect_overlaps') as mock_detect:
+
+            mock_expand.return_value = overlapping_appointments
+            mock_merge.return_value = overlapping_appointments
+            mock_detect.return_value = [overlapping_appointments]  # Return overlap group
+
+            # Call without allow_overlaps parameter (should default to False)
+            result = prepare_appointments_for_archive(
+                overlapping_appointments, start_date, end_date, mock_user, mock_session, mock_logger
+            )
+
+            assert result["status"] == "overlap"
+            assert len(result["appointments"]) == 0  # No appointments archived due to overlaps
+
+    def test_prepare_appointments_for_archive_mixed_overlaps_and_valid(self, mock_user, mock_session, mock_logger):
+        """Test appointment preparation with mix of overlapping and non-overlapping appointments when allow_overlaps=True."""
+        start_date = date(2024, 1, 15)
+        end_date = date(2024, 1, 15)
+
+        # Create overlapping appointments
+        overlapping_appt1 = Appointment(
+            id=1,
+            user_id=1,
+            subject="Overlapping Meeting 1",
+            start_time=datetime(2024, 1, 15, 10, 0, tzinfo=timezone.utc),
+            end_time=datetime(2024, 1, 15, 11, 0, tzinfo=timezone.utc),
+            is_archived=False
+        )
+        overlapping_appt2 = Appointment(
+            id=2,
+            user_id=1,
+            subject="Overlapping Meeting 2",
+            start_time=datetime(2024, 1, 15, 10, 30, tzinfo=timezone.utc),
+            end_time=datetime(2024, 1, 15, 11, 30, tzinfo=timezone.utc),
+            is_archived=False
+        )
+
+        # Create non-overlapping appointment
+        standalone_appt = Appointment(
+            id=3,
+            user_id=1,
+            subject="Standalone Meeting",
+            start_time=datetime(2024, 1, 15, 14, 0, tzinfo=timezone.utc),
+            end_time=datetime(2024, 1, 15, 15, 0, tzinfo=timezone.utc),
+            is_archived=False
+        )
+
+        all_appointments = [overlapping_appt1, overlapping_appt2, standalone_appt]
+
+        with patch('core.services.calendar_archive_service.expand_recurring_events_range') as mock_expand, \
+             patch('core.services.calendar_archive_service.merge_duplicates') as mock_merge, \
+             patch('core.services.calendar_archive_service.detect_overlaps') as mock_detect:
+
+            mock_expand.return_value = all_appointments
+            mock_merge.return_value = all_appointments
+            mock_detect.return_value = [[overlapping_appt1, overlapping_appt2]]  # Only the overlapping ones
+
+            result = prepare_appointments_for_archive(
+                all_appointments, start_date, end_date, mock_user, mock_session, mock_logger, allow_overlaps=True
+            )
+
+            assert result["status"] == "ok_with_overlaps"
+            assert len(result["appointments"]) == 3  # All appointments archived
+            assert len(result["conflicts"]) == 1  # One overlap group reported
+            assert len(result["conflicts"][0]) == 2  # Two overlapping appointments
+            assert result["errors"] == []
+
+            # Verify all appointments are marked as archived
+            for appt in result["appointments"]:
+                assert appt.is_archived is True
+
+    def test_prepare_appointments_for_archive_no_overlaps_with_allow_overlaps_true(self, sample_appointments, mock_user, mock_session, mock_logger):
+        """Test appointment preparation with no overlaps when allow_overlaps=True."""
+        start_date = date(2024, 1, 15)
+        end_date = date(2024, 1, 15)
+
+        with patch('core.services.calendar_archive_service.expand_recurring_events_range') as mock_expand, \
+             patch('core.services.calendar_archive_service.merge_duplicates') as mock_merge, \
+             patch('core.services.calendar_archive_service.detect_overlaps') as mock_detect:
+
+            mock_expand.return_value = sample_appointments
+            mock_merge.return_value = sample_appointments
+            mock_detect.return_value = []  # No overlaps
+
+            result = prepare_appointments_for_archive(
+                sample_appointments, start_date, end_date, mock_user, mock_session, mock_logger, allow_overlaps=True
+            )
+
+            assert result["status"] == "ok"  # Should be "ok", not "ok_with_overlaps" when no overlaps
+            assert len(result["appointments"]) == 2
+            assert result["conflicts"] == []
+            assert result["errors"] == []
+
+    def test_prepare_appointments_for_archive_logging_with_allow_overlaps(self, overlapping_appointments, mock_user, mock_session, mock_logger):
+        """Test that appropriate logging occurs when allow_overlaps=True."""
+        start_date = date(2024, 1, 15)
+        end_date = date(2024, 1, 15)
+
+        with patch('core.services.calendar_archive_service.expand_recurring_events_range') as mock_expand, \
+             patch('core.services.calendar_archive_service.merge_duplicates') as mock_merge, \
+             patch('core.services.calendar_archive_service.detect_overlaps') as mock_detect:
+
+            mock_expand.return_value = overlapping_appointments
+            mock_merge.return_value = overlapping_appointments
+            mock_detect.return_value = [overlapping_appointments]  # Return overlap group
+
+            prepare_appointments_for_archive(
+                overlapping_appointments, start_date, end_date, mock_user, mock_session, mock_logger, allow_overlaps=True
+            )
+
+            # Verify appropriate logging calls were made
+            mock_logger.info.assert_any_call(
+                "Found 1 overlap groups but proceeding with archiving due to allow_overlaps=True"
+            )
+            # Should also log the final archiving summary
+            assert any("Archive preparation complete" in str(call) for call in mock_logger.info.call_args_list)
