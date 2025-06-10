@@ -66,6 +66,11 @@ class URIParseError(Exception):
     pass
 
 
+class URIValidationError(Exception):
+    """Raised when a URI component fails validation."""
+    pass
+
+
 def parse_user_friendly_identifier(identifier: str) -> str:
     """
     Parse a user-friendly identifier that may contain quotes or backslash escaping.
@@ -144,6 +149,43 @@ def format_user_friendly_identifier(identifier: str, force_quotes: bool = False)
     return identifier
 
 
+def validate_account(account: str) -> bool:
+    """
+    Validate an account identifier.
+
+    Valid account formats:
+    - Email addresses: user@example.com, user.name@domain.co.uk
+    - Domain names: subdomain.domain.com, domain.com
+    - Simple usernames: username (for local accounts)
+
+    Args:
+        account: Account identifier to validate
+
+    Returns:
+        True if valid, False otherwise
+    """
+    if not account or not account.strip():
+        return False
+
+    account = account.strip()
+
+    # Check for email format (contains @ and has valid structure)
+    if '@' in account:
+        # Basic email validation
+        email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        return bool(re.match(email_pattern, account))
+
+    # Check for domain format (contains . and has valid structure)
+    if '.' in account:
+        # Basic domain validation
+        domain_pattern = r'^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        return bool(re.match(domain_pattern, account))
+
+    # Simple username format (alphanumeric with some special chars)
+    username_pattern = r'^[a-zA-Z0-9._-]+$'
+    return bool(re.match(username_pattern, account))
+
+
 def parse_resource_uri(uri: str) -> ParsedURI:
     """
     Parse a resource URI into its components.
@@ -191,6 +233,9 @@ def parse_resource_uri(uri: str) -> ParsedURI:
             if '@' in parsed.netloc or '.' in parsed.netloc:
                 # New format: msgraph://user@example.com/calendars/identifier
                 account = parsed.netloc
+                # Validate account format
+                if not validate_account(account):
+                    raise URIParseError(f"Invalid account format in URI: {account}")
                 path_parts = parsed.path.lstrip('/').split('/', 1)
                 if len(path_parts) < 2:
                     raise URIParseError(f"URI with account must have format 'scheme://account/namespace/identifier': {uri}")
@@ -216,6 +261,9 @@ def parse_resource_uri(uri: str) -> ParsedURI:
             elif len(path_parts) == 3:
                 # New format: account/namespace/identifier
                 account = path_parts[0]
+                # Validate account format
+                if not validate_account(account):
+                    raise URIParseError(f"Invalid account format in URI: {account}")
                 namespace = path_parts[1]
                 raw_identifier = path_parts[2]
             else:
@@ -262,9 +310,17 @@ def construct_resource_uri(scheme: str, namespace: str, identifier: str, user_fr
 
     Returns:
         Constructed URI string
+
+    Raises:
+        ValueError: If required components are missing
+        URIValidationError: If account format is invalid
     """
     if not all([scheme, namespace, identifier]):
         raise ValueError("All components (scheme, namespace, identifier) are required")
+
+    # Validate account if provided
+    if account and not validate_account(account):
+        raise URIValidationError(f"Invalid account format: {account}")
 
     if user_friendly:
         # Use user-friendly formatting (quotes for spaces, etc.)

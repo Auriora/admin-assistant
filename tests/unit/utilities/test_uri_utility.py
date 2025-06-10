@@ -9,6 +9,7 @@ import pytest
 from core.utilities.uri_utility import (
     ParsedURI,
     URIParseError,
+    URIValidationError,
     parse_resource_uri,
     construct_resource_uri,
     construct_resource_uri_encoded,
@@ -18,6 +19,7 @@ from core.utilities.uri_utility import (
     parse_user_friendly_identifier,
     format_user_friendly_identifier,
     validate_uri_components,
+    validate_account,
     migrate_legacy_uri
 )
 
@@ -294,3 +296,95 @@ class TestBackwardCompatibility:
         
         primary_uri = get_primary_calendar_uri()
         assert primary_uri == 'msgraph://calendars/primary'
+
+
+class TestValidateAccount:
+    """Test suite for validate_account function"""
+
+    def test_validate_email_accounts(self):
+        """Test validation of email account formats"""
+        # Valid email formats
+        assert validate_account('user@example.com') == True
+        assert validate_account('user.name@domain.co.uk') == True
+        assert validate_account('test+tag@subdomain.domain.com') == True
+        assert validate_account('user123@example.org') == True
+
+    def test_validate_domain_accounts(self):
+        """Test validation of domain account formats"""
+        # Valid domain formats
+        assert validate_account('subdomain.domain.com') == True
+        assert validate_account('domain.com') == True
+        assert validate_account('example.org') == True
+
+    def test_validate_username_accounts(self):
+        """Test validation of simple username formats"""
+        # Valid username formats
+        assert validate_account('username') == True
+        assert validate_account('user123') == True
+        assert validate_account('user_name') == True
+        assert validate_account('user-name') == True
+        assert validate_account('user.name') == True
+
+    def test_validate_invalid_accounts(self):
+        """Test validation of invalid account formats"""
+        # Invalid formats
+        assert validate_account('') == False
+        assert validate_account('   ') == False
+        assert validate_account('@domain.com') == False  # Missing username
+        assert validate_account('user@') == False  # Missing domain
+        assert validate_account('user@domain') == False  # Missing TLD
+        assert validate_account('user name') == False  # Space in username
+        assert validate_account('user@domain space.com') == False  # Space in domain
+        assert validate_account('user!@domain.com') == False  # Invalid character
+        assert validate_account(None) == False  # None input
+
+
+class TestAccountValidationInParsing:
+    """Test suite for account validation during URI parsing"""
+
+    def test_parse_uri_with_invalid_account_email(self):
+        """Test parsing URI with invalid email account format"""
+        with pytest.raises(URIParseError, match="Invalid account format"):
+            parse_resource_uri('msgraph://@domain.com/calendars/primary')
+
+    def test_parse_uri_with_invalid_account_domain(self):
+        """Test parsing URI with invalid domain account format"""
+        with pytest.raises(URIParseError, match="Invalid account format"):
+            parse_resource_uri('msgraph://user@domain/calendars/primary')  # Missing TLD in email
+
+    def test_construct_uri_with_invalid_account(self):
+        """Test constructing URI with invalid account format"""
+        with pytest.raises(URIValidationError, match="Invalid account format"):
+            construct_resource_uri('msgraph', 'calendars', 'primary', account='@invalid')
+
+
+class TestEnhancedAccountSupport:
+    """Test suite for enhanced account context support"""
+
+    def test_parse_various_account_formats(self):
+        """Test parsing URIs with various valid account formats"""
+        # Email format
+        result = parse_resource_uri('msgraph://user@example.com/calendars/primary')
+        assert result.account == 'user@example.com'
+
+        # Domain format
+        result = parse_resource_uri('msgraph://subdomain.domain.com/calendars/primary')
+        assert result.account == 'subdomain.domain.com'
+
+        # Username format (when using path-based format)
+        result = parse_resource_uri('msgraph:///username/calendars/primary')
+        assert result.account == 'username'
+
+    def test_construct_with_various_account_formats(self):
+        """Test constructing URIs with various valid account formats"""
+        # Email format
+        result = construct_resource_uri('msgraph', 'calendars', 'primary', account='user@example.com')
+        assert result == 'msgraph://user@example.com/calendars/primary'
+
+        # Domain format
+        result = construct_resource_uri('msgraph', 'calendars', 'primary', account='subdomain.domain.com')
+        assert result == 'msgraph://subdomain.domain.com/calendars/primary'
+
+        # Username format
+        result = construct_resource_uri('msgraph', 'calendars', 'primary', account='username')
+        assert result == 'msgraph://username/calendars/primary'
