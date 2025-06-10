@@ -401,34 +401,69 @@ def create_legacy_compatible_lookup_key(name: str) -> str:
     return key
 
 
-def migrate_legacy_uri(legacy_uri: str) -> str:
+def migrate_legacy_uri(legacy_uri: str, account: Optional[str] = None) -> str:
     """
-    Migrate a legacy URI to the new format.
-    
+    Migrate a legacy URI to the new format, optionally adding account context.
+
     Args:
         legacy_uri: Legacy URI (e.g., 'msgraph://activity-archive')
-        
+        account: Optional account context to add (e.g., 'user@example.com')
+
     Returns:
-        New format URI (e.g., 'msgraph://calendars/activity-archive')
+        New format URI (e.g., 'msgraph://calendars/activity-archive' or 'msgraph://user@example.com/calendars/activity-archive')
     """
     if not legacy_uri:
         return ""
-    
+
     # Handle special cases
     if legacy_uri in ('', 'calendar', 'primary'):
+        if account:
+            return f'msgraph://{account}/calendars/primary'
         return 'msgraph://calendars/primary'
-    
+
+    # If URI already has account context, return as-is
+    if account and f'://{account}/' in legacy_uri:
+        return legacy_uri
+
     # Parse legacy format
     if legacy_uri.startswith('msgraph://'):
-        identifier = legacy_uri[len('msgraph://'):]
-        if identifier == 'calendar':
+        rest = legacy_uri[len('msgraph://'):]
+        if rest == 'calendar':
+            if account:
+                return f'msgraph://{account}/calendars/primary'
             return 'msgraph://calendars/primary'
-        return f'msgraph://calendars/{identifier}'
-    
+
+        # Check if it already has namespace/identifier format
+        if '/' in rest:
+            parts = rest.split('/', 1)
+            if len(parts) == 2 and parts[0] in SUPPORTED_NAMESPACES:
+                # Already has namespace, just add account if provided
+                if account:
+                    return f'msgraph://{account}/{rest}'
+                return legacy_uri  # Already in correct format
+
+        # Legacy format without namespace, add calendars namespace
+        if account:
+            return f'msgraph://{account}/calendars/{rest}'
+        return f'msgraph://calendars/{rest}'
+
     if legacy_uri.startswith('local://'):
-        identifier = legacy_uri[len('local://'):]
-        return f'local://calendars/{identifier}'
-    
+        rest = legacy_uri[len('local://'):]
+
+        # Check if it already has namespace/identifier format
+        if '/' in rest:
+            parts = rest.split('/', 1)
+            if len(parts) == 2 and parts[0] in SUPPORTED_NAMESPACES:
+                # Already has namespace, just add account if provided
+                if account:
+                    return f'local://{account}/{rest}'
+                return legacy_uri  # Already in correct format
+
+        # Legacy format without namespace, add calendars namespace
+        if account:
+            return f'local://{account}/calendars/{rest}'
+        return f'local://calendars/{rest}'
+
     # If it doesn't match known patterns, assume it's already in new format
     return legacy_uri
 
@@ -450,18 +485,34 @@ SUPPORTED_NAMESPACES = {
 }
 
 
-def validate_uri_components(scheme: str, namespace: str) -> bool:
+def validate_uri_components(scheme: str, namespace: str, identifier: str = None) -> bool:
     """
-    Validate that scheme and namespace are supported.
-    
+    Validate that scheme, namespace, and optionally identifier are valid.
+
     Args:
         scheme: URI scheme
         namespace: URI namespace
-        
+        identifier: URI identifier (optional)
+
     Returns:
-        True if valid, False otherwise
+        True if valid
+
+    Raises:
+        URIValidationError: If any component is invalid
     """
-    return scheme in SUPPORTED_SCHEMES and namespace in SUPPORTED_NAMESPACES
+    if not scheme:
+        raise URIValidationError("Scheme cannot be empty")
+    if not namespace:
+        raise URIValidationError("Namespace cannot be empty")
+    if identifier is not None and not identifier:
+        raise URIValidationError("Identifier cannot be empty")
+
+    if scheme not in SUPPORTED_SCHEMES:
+        raise URIValidationError(f"Unsupported scheme: {scheme}")
+    if namespace not in SUPPORTED_NAMESPACES:
+        raise URIValidationError(f"Unsupported namespace: {namespace}")
+
+    return True
 
 
 def get_primary_calendar_uri(scheme: str = 'msgraph', account: Optional[str] = None) -> str:

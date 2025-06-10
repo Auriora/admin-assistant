@@ -343,3 +343,37 @@ class CategoryProcessingService:
         stats["customers"] = list(stats["customers"])
 
         return stats
+
+    def process_appointments(self, appointments: List[Appointment]) -> List[Appointment]:
+        """
+        Process appointments by applying category validation and privacy settings.
+
+        This method processes each appointment to:
+        - Validate category formats
+        - Extract customer and billing information
+        - Apply privacy settings based on categories
+
+        Args:
+            appointments: List of appointment model instances to process
+
+        Returns:
+            List of processed appointments (same instances, potentially modified)
+        """
+        processed_appointments = []
+
+        for appointment in appointments:
+            # Extract customer and billing information
+            customer_info = self.extract_customer_billing_info(appointment)
+
+            # Apply privacy settings if needed
+            if self.should_mark_private(appointment):
+                # Mark personal appointments as private by setting sensitivity
+                if hasattr(appointment, 'sensitivity'):
+                    appointment.sensitivity = 'private'
+
+            # Note: Category validation issues are available in customer_info['issues']
+            # but not stored on the appointment model as it doesn't have a metadata field
+
+            processed_appointments.append(appointment)
+
+        return processed_appointments

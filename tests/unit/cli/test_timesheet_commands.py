@@ -7,8 +7,8 @@ timesheet archive and configuration commands.
 import pytest
 from unittest.mock import Mock, patch, MagicMock
 from datetime import date, timedelta
-from click.testing import CliRunner
-from src.cli.main import cli
+from typer.testing import CliRunner
+from cli.main import app
 
 
 class TestTimesheetCommands:
@@ -52,7 +52,7 @@ class TestTimesheetCommands:
         }
 
         # Execute command
-        result = self.runner.invoke(cli, [
+        result = self.runner.invoke(app, [
             'calendar', 'timesheet',
             '--user-email', 'test@example.com',
             '--source-calendar', 'msgraph://test@example.com/calendars/primary',
@@ -107,7 +107,7 @@ class TestTimesheetCommands:
         }
 
         # Execute command with travel option
-        result = self.runner.invoke(cli, [
+        result = self.runner.invoke(app, [
             'calendar', 'timesheet',
             '--user-email', 'test@example.com',
             '--source-calendar', 'msgraph://test@example.com/calendars/primary',
@@ -126,7 +126,7 @@ class TestTimesheetCommands:
         """Test timesheet command with missing required arguments"""
         
         # Test missing user email
-        result = self.runner.invoke(cli, [
+        result = self.runner.invoke(app, [
             'calendar', 'timesheet',
             '--source-calendar', 'msgraph://calendars/primary',
             '--archive-calendar', 'timesheet-archive',
@@ -160,7 +160,7 @@ class TestTimesheetCommands:
         mock_config_service_instance.create.return_value = mock_config
 
         # Execute command
-        result = self.runner.invoke(cli, [
+        result = self.runner.invoke(app, [
             'config', 'calendar', 'timesheet', 'create',
             '--user-email', 'test@example.com',
             '--name', 'Test Timesheet Config',
@@ -203,7 +203,7 @@ class TestTimesheetCommands:
         mock_config_service_instance.create.return_value = mock_config
 
         # Execute command with additional options
-        result = self.runner.invoke(cli, [
+        result = self.runner.invoke(app, [
             'config', 'calendar', 'timesheet', 'create',
             '--user-email', 'test@example.com',
             '--name', 'Advanced Timesheet Config',
@@ -228,14 +228,14 @@ class TestTimesheetCommands:
         """Test that timesheet commands show proper help"""
         
         # Test main timesheet command help
-        result = self.runner.invoke(cli, ['calendar', 'timesheet', '--help'])
+        result = self.runner.invoke(app, ['calendar', 'timesheet', '--help'])
         assert result.exit_code == 0
         assert "timesheet" in result.output.lower()
         assert "business" in result.output.lower()
         assert "billable" in result.output.lower()
 
         # Test timesheet config create help
-        result = self.runner.invoke(cli, ['config', 'calendar', 'timesheet', 'create', '--help'])
+        result = self.runner.invoke(app, ['config', 'calendar', 'timesheet', 'create', '--help'])
         assert result.exit_code == 0
         assert "timesheet" in result.output.lower()
         assert "archive-purpose" in result.output.lower() or "purpose" in result.output.lower()
@@ -253,7 +253,7 @@ class TestTimesheetCommands:
         mock_user_service.return_value.get_by_email.side_effect = Exception("User not found")
 
         # Execute command
-        result = self.runner.invoke(cli, [
+        result = self.runner.invoke(app, [
             'calendar', 'timesheet',
             '--user-email', 'nonexistent@example.com',
             '--source-calendar', 'msgraph://calendars/primary',
@@ -294,7 +294,7 @@ class TestTimesheetCommands:
         }
 
         # Execute command with account context URI
-        result = self.runner.invoke(cli, [
+        result = self.runner.invoke(app, [
             'calendar', 'timesheet',
             '--user-email', 'test@example.com',
             '--source-calendar', 'msgraph://test@example.com/calendars/primary',
@@ -316,7 +316,7 @@ class TestTimesheetCommands:
         """Test date validation in timesheet commands"""
         
         # Test invalid date format
-        result = self.runner.invoke(cli, [
+        result = self.runner.invoke(app, [
             'calendar', 'timesheet',
             '--user-email', 'test@example.com',
             '--source-calendar', 'msgraph://calendars/primary',
@@ -324,12 +324,12 @@ class TestTimesheetCommands:
             '--start-date', 'invalid-date',
             '--end-date', '2025-06-01'
         ])
-        
+
         assert result.exit_code != 0
         assert "date" in result.output.lower() or "invalid" in result.output.lower()
 
         # Test end date before start date
-        result = self.runner.invoke(cli, [
+        result = self.runner.invoke(app, [
             'calendar', 'timesheet',
             '--user-email', 'test@example.com',
             '--source-calendar', 'msgraph://calendars/primary',

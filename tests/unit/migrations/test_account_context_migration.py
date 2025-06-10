@@ -44,7 +44,19 @@ class TestAccountContextMigration:
 
     def test_add_account_context_to_uri_function(self):
         """Test the add_account_context_to_uri function"""
-        from src.core.migrations.versions.20250610_add_account_context_to_uris import add_account_context_to_uri
+        import importlib.util
+        import sys
+
+        # Import the migration module using importlib
+        spec = importlib.util.spec_from_file_location(
+            "migration_module",
+            "src/core/migrations/versions/20250610_add_account_context_to_uris.py"
+        )
+        migration_module = importlib.util.module_from_spec(spec)
+        sys.modules["migration_module"] = migration_module
+        spec.loader.exec_module(migration_module)
+
+        add_account_context_to_uri = migration_module.add_account_context_to_uri
         
         # Test with email
         result = add_account_context_to_uri("msgraph://calendars/primary", "user@example.com")
@@ -76,7 +88,19 @@ class TestAccountContextMigration:
 
     def test_remove_account_context_from_uri_function(self):
         """Test the remove_account_context_from_uri function"""
-        from src.core.migrations.versions.20250610_add_account_context_to_uris import remove_account_context_from_uri
+        import importlib.util
+        import sys
+
+        # Import the migration module using importlib
+        spec = importlib.util.spec_from_file_location(
+            "migration_module",
+            "src/core/migrations/versions/20250610_add_account_context_to_uris.py"
+        )
+        migration_module = importlib.util.module_from_spec(spec)
+        sys.modules["migration_module"] = migration_module
+        spec.loader.exec_module(migration_module)
+
+        remove_account_context_from_uri = migration_module.remove_account_context_from_uri
         
         # Test with account context
         result = remove_account_context_from_uri("msgraph://user@example.com/calendars/primary")
@@ -100,7 +124,8 @@ class TestAccountContextMigration:
 
     def test_get_user_account_context_function(self):
         """Test the get_user_account_context function"""
-        from src.core.migrations.versions.20250610_add_account_context_to_uris import get_user_account_context
+        migration_module = get_migration_module()
+        get_user_account_context = migration_module.get_user_account_context
         
         # Test with email (priority 1)
         result = get_user_account_context("user@example.com", "username", 123)
@@ -129,7 +154,8 @@ class TestAccountContextMigration:
     @patch('src.core.migrations.versions.20250610_add_account_context_to_uris.sa')
     def test_upgrade_migration_adds_columns(self, mock_sa, mock_connection):
         """Test that upgrade migration adds new columns"""
-        from src.core.migrations.versions.20250610_add_account_context_to_uris import upgrade
+        migration_module = get_migration_module()
+        upgrade = migration_module.upgrade
         
         # Mock the operations
         mock_op = Mock()
@@ -154,7 +180,8 @@ class TestAccountContextMigration:
     @patch('src.core.migrations.versions.20250610_add_account_context_to_uris.sa')
     def test_upgrade_migration_updates_uris(self, mock_sa, mock_connection, sample_configurations, sample_users):
         """Test that upgrade migration updates URIs with account context"""
-        from src.core.migrations.versions.20250610_add_account_context_to_uris import upgrade
+        migration_module = get_migration_module()
+        upgrade = migration_module.upgrade
         
         # Mock the operations
         mock_op = Mock()
@@ -184,7 +211,8 @@ class TestAccountContextMigration:
 
     def test_upgrade_migration_handles_missing_users(self, mock_connection):
         """Test that upgrade migration handles missing users gracefully"""
-        from src.core.migrations.versions.20250610_add_account_context_to_uris import upgrade
+        migration_module = get_migration_module()
+        upgrade = migration_module.upgrade
         
         # Configuration with non-existent user
         configurations = [(1, "msgraph://calendars/primary", "msgraph://calendars/archive", 999)]
@@ -211,7 +239,8 @@ class TestAccountContextMigration:
     @patch('src.core.migrations.versions.20250610_add_account_context_to_uris.sa')
     def test_downgrade_migration_removes_columns(self, mock_sa, mock_connection):
         """Test that downgrade migration removes new columns"""
-        from src.core.migrations.versions.20250610_add_account_context_to_uris import downgrade
+        migration_module = get_migration_module()
+        downgrade = migration_module.downgrade
         
         mock_op = Mock()
         
@@ -232,7 +261,8 @@ class TestAccountContextMigration:
     @patch('src.core.migrations.versions.20250610_add_account_context_to_uris.sa')
     def test_downgrade_migration_reverts_uris(self, mock_sa, mock_connection):
         """Test that downgrade migration reverts URIs to legacy format"""
-        from src.core.migrations.versions.20250610_add_account_context_to_uris import downgrade
+        migration_module = get_migration_module()
+        downgrade = migration_module.downgrade
         
         # Configurations with account context
         migrated_configurations = [
@@ -264,7 +294,8 @@ class TestAccountContextMigration:
 
     def test_migration_error_handling(self, mock_connection):
         """Test migration error handling"""
-        from src.core.migrations.versions.20250610_add_account_context_to_uris import upgrade
+        migration_module = get_migration_module()
+        upgrade = migration_module.upgrade
         
         mock_op = Mock()
         
@@ -278,7 +309,8 @@ class TestAccountContextMigration:
 
     def test_migration_statistics_and_logging(self, mock_connection, sample_configurations, sample_users):
         """Test that migration provides proper statistics and logging"""
-        from src.core.migrations.versions.20250610_add_account_context_to_uris import upgrade
+        migration_module = get_migration_module()
+        upgrade = migration_module.upgrade
         
         mock_op = Mock()
         
@@ -307,10 +339,9 @@ class TestAccountContextMigration:
 
     def test_uri_transformation_edge_cases(self):
         """Test URI transformation with edge cases"""
-        from src.core.migrations.versions.20250610_add_account_context_to_uris import (
-            add_account_context_to_uri, 
-            remove_account_context_from_uri
-        )
+        migration_module = get_migration_module()
+        add_account_context_to_uri = migration_module.add_account_context_to_uri
+        remove_account_context_from_uri = migration_module.remove_account_context_from_uri
         
         # Test with malformed URIs
         edge_cases = [
@@ -341,7 +372,8 @@ class TestAccountContextMigration:
 
     def test_migration_idempotency(self, mock_connection, sample_configurations, sample_users):
         """Test that migration is idempotent (can be run multiple times safely)"""
-        from src.core.migrations.versions.20250610_add_account_context_to_uris import upgrade
+        migration_module = get_migration_module()
+        upgrade = migration_module.upgrade
         
         mock_op = Mock()
         

@@ -61,21 +61,25 @@ class AuditContext:
                 "traceback": traceback.format_exc() if exc_tb else None,
             }
 
-        self.audit_log = self.audit_service.log_operation(
-            user_id=self.user_id,
-            action_type=self.action_type,
-            operation=self.operation,
-            status=status,
-            message=message,
-            resource_type=self.resource_type,
-            resource_id=self.resource_id,
-            details=self.details,
-            request_data=self.request_data,
-            response_data=self.response_data,
-            duration_ms=duration_ms,
-            correlation_id=self.correlation_id,
-            parent_audit_id=self.parent_audit_id,
-        )
+        if self.audit_service is not None:
+            self.audit_log = self.audit_service.log_operation(
+                user_id=self.user_id,
+                action_type=self.action_type,
+                operation=self.operation,
+                status=status,
+                message=message,
+                resource_type=self.resource_type,
+                resource_id=self.resource_id,
+                details=self.details,
+                request_data=self.request_data,
+                response_data=self.response_data,
+                duration_ms=duration_ms,
+                correlation_id=self.correlation_id,
+                parent_audit_id=self.parent_audit_id,
+            )
+        else:
+            # If no audit service is provided, create a mock audit log for compatibility
+            self.audit_log = None
 
         # Don't suppress exceptions
         return False

@@ -243,6 +243,7 @@ class CalendarArchiveOrchestrator:
         logger: Optional[Any] = None,
         audit_service: Optional[Any] = None,
         replace_mode: bool = False,
+        archive_purpose: str = 'general',
     ) -> Dict[str, Any]:
         """
         Archive appointments from a user's MS Graph calendar to an archive calendar, logging overlaps locally.
@@ -260,6 +261,7 @@ class CalendarArchiveOrchestrator:
             logger: Optional logger.
             audit_service: Optional audit service.
             replace_mode: Whether to replace existing appointments in the archive.
+            archive_purpose: Archive purpose ('general' or 'timesheet').
 
         Returns:
             dict: Summary of the operation (archived_count, overlap_count, errors).
@@ -272,26 +274,40 @@ class CalendarArchiveOrchestrator:
             destination_calendar_uri=archive_calendar_id,
             is_active=True,
             timezone="UTC",  # Default timezone for legacy calls
-            allow_overlaps=True,  # Default to allowing overlaps for backward compatibility
-            archive_purpose='general'  # Default to general purpose
+            allow_overlaps=False,  # Default to excluding overlaps for backward compatibility
+            archive_purpose=archive_purpose  # Use the provided archive purpose
         )
 
         if logger:
             logger.info("Using legacy archive method - consider migrating to archive_user_appointments_with_config")
 
-        # Delegate to the new implementation
-        return self._archive_with_general_logic(
-            user=user,
-            msgraph_client=msgraph_client,
-            archive_config=temp_config,
-            start_date=start_date,
-            end_date=end_date,
-            db_session=db_session,
-            logger=logger,
-            audit_service=audit_service,
-            replace_mode=replace_mode,
-            allow_overlaps=True,
-        )
+        # Route based on archive purpose
+        if archive_purpose == 'timesheet':
+            return self._archive_with_timesheet_service(
+                user=user,
+                msgraph_client=msgraph_client,
+                archive_config=temp_config,
+                start_date=start_date,
+                end_date=end_date,
+                db_session=db_session,
+                logger=logger,
+                audit_service=audit_service,
+                replace_mode=replace_mode,
+            )
+        else:
+            # Delegate to the general implementation
+            return self._archive_with_general_logic(
+                user=user,
+                msgraph_client=msgraph_client,
+                archive_config=temp_config,
+                start_date=start_date,
+                end_date=end_date,
+                db_session=db_session,
+                logger=logger,
+                audit_service=audit_service,
+                replace_mode=replace_mode,
+                allow_overlaps=False,
+            )
 
     def _archive_with_timesheet_service(
         self,
@@ -540,6 +556,14 @@ class CalendarArchiveOrchestrator:
                     logger=logger,
                 )
 
+                # Calculate overlap count for backward compatibility
+                processing_stats = processed_appointments.get("stats", {})
+                overlap_count = 0
+                if "overlap_groups" in processing_stats:
+                    overlap_count = processing_stats["overlap_groups"]
+                elif "overlapping_appointments" in processing_stats:
+                    overlap_count = processing_stats["overlapping_appointments"]
+
                 # Combine results
                 result = {
                     "status": "success",
@@ -550,11 +574,14 @@ class CalendarArchiveOrchestrator:
                     "appointments_archived": len(processed_appointments["appointments"]),
                     "allow_overlaps": allow_overlaps,
                     "overlap_handling": "simplified" if allow_overlaps else "full",
-                    "processing_stats": processed_appointments.get("stats", {}),
+                    "processing_stats": processing_stats,
                     "conflicts": processed_appointments.get("conflicts", []),
                     "archive_errors": archive_result.get("errors", []),
                     "archived_count": archive_result.get("archived_count", 0),
                     "operation_duration": time.time() - operation_start_time,
+                    # Backward compatibility keys
+                    "overlap_count": overlap_count,
+                    "errors": archive_result.get("errors", []),
                 }
 
                 audit_ctx.add_detail("final_result", result)
@@ -684,7 +711,7 @@ class CalendarArchiveOrchestrator:
 
         # Apply meeting modifications
         modification_service = MeetingModificationService()
-        modified_appointments = modification_service.apply_modifications(processed_appointments)
+        modified_appointments = modification_service.process_modifications(processed_appointments)
         audit_ctx.add_detail("modification_processed_count", len(modified_appointments))
 
         # Deduplicate

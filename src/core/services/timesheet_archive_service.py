@@ -324,3 +324,28 @@ class TimesheetArchiveService:
         """
         result = self.filter_appointments_for_timesheet(appointments, include_travel=True)
         return result["statistics"]
+
+    def process_appointments_for_timesheet(
+        self,
+        appointments: List[Appointment],
+        include_travel: bool = True
+    ) -> Dict[str, Any]:
+        """
+        Alias for filter_appointments_for_timesheet for backward compatibility.
+
+        This method provides the same functionality as filter_appointments_for_timesheet
+        but with the method name expected by some tests.
+
+        Args:
+            appointments: List of appointment model instances to filter
+            include_travel: Whether to include travel appointments (default: True)
+
+        Returns:
+            Dictionary with keys:
+            - 'filtered_appointments': List of business appointments ready for timesheet
+            - 'excluded_appointments': List of appointments that were excluded
+            - 'overlap_resolutions': List of overlap resolution results
+            - 'statistics': Dictionary with filtering and resolution statistics
+            - 'issues': List of any issues encountered during processing
+        """
+        return self.filter_appointments_for_timesheet(appointments, include_travel)

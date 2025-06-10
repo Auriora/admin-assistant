@@ -86,6 +86,21 @@ class CalendarResolver:
             logger.error(f"Failed to resolve calendar URI '{uri}': {e}")
             raise CalendarResolutionError(f"Failed to resolve calendar URI '{uri}': {e}") from e
 
+    def resolve_calendar(self, uri: str) -> str:
+        """
+        Alias for resolve_calendar_uri for backward compatibility.
+
+        Args:
+            uri: Calendar URI to resolve
+
+        Returns:
+            Actual calendar ID
+
+        Raises:
+            CalendarResolutionError: If resolution fails
+        """
+        return self.resolve_calendar_uri(uri)
+
     def _validate_account_context(self, account: str) -> None:
         """
         Validate that the URI account context matches the user.

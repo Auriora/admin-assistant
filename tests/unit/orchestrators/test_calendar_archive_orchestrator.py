@@ -1,4 +1,5 @@
 import pytest
+from unittest.mock import Mock, MagicMock, patch
 from datetime import datetime, date, timedelta, timezone
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -63,8 +64,8 @@ def msgraph_client():
     return object()
 
 # --- Test Data ---
-def make_appointment(subject, start, end, ms_event_id=None):
-    return Appointment(
+def make_appointment(subject, start, end, ms_event_id=None, categories=None):
+    appointment = Appointment(
         ms_event_id=ms_event_id,
         user_id=1,
         start_time=start,
@@ -72,6 +73,9 @@ def make_appointment(subject, start, end, ms_event_id=None):
         subject=subject,
         calendar_id="source"
     )
+    if categories is not None:
+        appointment.categories = categories
+    return appointment
 
 @pytest.fixture
 def appointments():
@@ -117,6 +121,16 @@ def test_archive_user_appointments(user, msgraph_client, db_session, appointment
             archive_repo_instance['repo'] = repo
             return repo
     monkeypatch.setattr("core.orchestrators.calendar_archive_orchestrator.MSGraphAppointmentRepository", repo_factory)
+
+    # Mock calendar resolver to avoid URI resolution warnings
+    def mock_resolve_calendar_uri(uri, user, access_token):
+        return uri  # Just return the URI as-is for testing
+    monkeypatch.setattr("core.utilities.calendar_resolver.resolve_calendar_uri", mock_resolve_calendar_uri)
+
+    # Mock access token to avoid auth issues
+    def mock_get_cached_access_token():
+        return "mock_token"
+    monkeypatch.setattr("core.utilities.auth_utility.get_cached_access_token", mock_get_cached_access_token)
 
     orchestrator = CalendarArchiveOrchestrator()
     result = orchestrator.archive_user_appointments(
@@ -165,6 +179,16 @@ def test_archive_appointments_success(user, msgraph_client, db_session, monkeypa
             archive_repo_instance['repo'] = repo
             return repo
     monkeypatch.setattr("core.orchestrators.calendar_archive_orchestrator.MSGraphAppointmentRepository", repo_factory)
+
+    # Mock calendar resolver to avoid URI resolution warnings
+    def mock_resolve_calendar_uri(uri, user, access_token):
+        return uri  # Just return the URI as-is for testing
+    monkeypatch.setattr("core.utilities.calendar_resolver.resolve_calendar_uri", mock_resolve_calendar_uri)
+
+    # Mock access token to avoid auth issues
+    def mock_get_cached_access_token():
+        return "mock_token"
+    monkeypatch.setattr("core.utilities.auth_utility.get_cached_access_token", mock_get_cached_access_token)
     orchestrator = CalendarArchiveOrchestrator()
     result = orchestrator.archive_user_appointments(
         user=user,
@@ -280,7 +304,6 @@ def test_archive_appointments_handles_partial_failure(user, msgraph_client, db_s
     monkeypatch.setattr("core.orchestrators.calendar_archive_orchestrator.MSGraphAppointmentRepository", repo_factory)
 
     # Mock the AuditContext to avoid database operations
-    from unittest.mock import Mock, patch
     mock_audit_context = Mock()
     mock_audit_context.__enter__ = Mock(return_value=mock_audit_context)
     mock_audit_context.__exit__ = Mock(return_value=None)

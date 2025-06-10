@@ -7,7 +7,8 @@ Tests the archive configuration management CLI commands including list, create, 
 import pytest
 from unittest.mock import Mock, patch, MagicMock
 from typer.testing import CliRunner
-from cli.main import app, archive_archive_config_app
+from cli.main import app
+from cli.config.archive import archive_config_app
 
 
 class TestConfigCLICommands:
@@ -19,7 +20,7 @@ class TestConfigCLICommands:
     
     def test_list_archive_configs_success(self):
         """Test successful archive configuration listing"""
-        with patch('cli.main.resolve_cli_user') as mock_resolve_user, \
+        with patch('cli.config.archive.resolve_cli_user') as mock_resolve_user, \
              patch('core.services.archive_configuration_service.ArchiveConfigurationService') as mock_archive_service_class:
             # Arrange
             mock_user = Mock(id=1, email='test@example.com')
@@ -44,7 +45,7 @@ class TestConfigCLICommands:
             mock_archive_service_class.return_value = mock_archive_service
 
             # Act
-            result = self.runner.invoke(archive_archive_config_app, ['list', '--user', '1'])
+            result = self.runner.invoke(archive_config_app, ['list', '--user', '1'])
 
             # Assert
             assert result.exit_code == 0
@@ -56,7 +57,7 @@ class TestConfigCLICommands:
     
     def test_list_archive_configs_no_configs(self):
         """Test archive configuration listing when no configs found"""
-        with patch('cli.main.resolve_cli_user') as mock_resolve_user, \
+        with patch('cli.config.archive.resolve_cli_user') as mock_resolve_user, \
              patch('core.services.archive_configuration_service.ArchiveConfigurationService') as mock_archive_service_class:
             # Arrange
             mock_user = Mock(id=1, email='test@example.com')
@@ -67,20 +68,20 @@ class TestConfigCLICommands:
             mock_archive_service_class.return_value = mock_archive_service
 
             # Act
-            result = self.runner.invoke(archive_archive_config_app, ['list', '--user', '1'])
+            result = self.runner.invoke(archive_config_app, ['list', '--user', '1'])
 
             # Assert
             assert result.exit_code == 0
             assert 'No archive configurations found' in result.output
-    
+
     def test_list_archive_configs_user_not_found(self):
         """Test archive configuration listing when user not found"""
-        with patch('cli.main.resolve_cli_user') as mock_resolve_user:
+        with patch('cli.config.archive.resolve_cli_user') as mock_resolve_user:
             # Arrange
             mock_resolve_user.side_effect = ValueError("No user found for identifier: 999")
 
             # Act
-            result = self.runner.invoke(archive_archive_config_app, ['list', '--user', '999'])
+            result = self.runner.invoke(archive_config_app, ['list', '--user', '999'])
 
             # Assert
             assert result.exit_code == 1
@@ -88,7 +89,7 @@ class TestConfigCLICommands:
     
     def test_create_archive_config_interactive_success(self):
         """Test successful archive configuration creation with interactive prompts"""
-        with patch('cli.main.resolve_cli_user') as mock_resolve_user, \
+        with patch('cli.config.archive.resolve_cli_user') as mock_resolve_user, \
              patch('core.services.archive_configuration_service.ArchiveConfigurationService') as mock_archive_service_class, \
              patch('typer.prompt') as mock_prompt:
 
@@ -118,17 +119,17 @@ class TestConfigCLICommands:
             mock_archive_service_class.return_value = mock_archive_service
 
             # Act
-            result = self.runner.invoke(archive_archive_config_app, ['create', '--user', '1'])
+            result = self.runner.invoke(archive_config_app, ['create', '--user', '1'])
 
             # Assert
             assert result.exit_code == 0
             assert 'Created archive configuration' in result.output
             assert 'New Archive Config' in result.output
             mock_archive_service.create.assert_called_once()
-    
+
     def test_create_archive_config_with_options(self):
         """Test archive configuration creation with command line options"""
-        with patch('cli.main.resolve_cli_user') as mock_resolve_user, \
+        with patch('cli.config.archive.resolve_cli_user') as mock_resolve_user, \
              patch('core.services.archive_configuration_service.ArchiveConfigurationService') as mock_archive_service_class:
             # Arrange
             mock_user = Mock(id=1, email='test@example.com')
@@ -149,7 +150,7 @@ class TestConfigCLICommands:
             mock_archive_service_class.return_value = mock_archive_service
 
             # Act
-            result = self.runner.invoke(archive_archive_config_app, [
+            result = self.runner.invoke(archive_config_app, [
                 'create', '--user', '1',
                 '--name', 'CLI Archive Config',
                 '--source-uri', 'msgraph://cli-source',
@@ -165,7 +166,7 @@ class TestConfigCLICommands:
     
     def test_activate_config_success(self):
         """Test successful archive configuration activation"""
-        with patch('cli.main.resolve_cli_user') as mock_resolve_user, \
+        with patch('cli.config.archive.resolve_cli_user') as mock_resolve_user, \
              patch('core.services.archive_configuration_service.ArchiveConfigurationService') as mock_archive_service_class:
             # Arrange
             mock_user = Mock(id=1, email='test@example.com')
@@ -184,7 +185,7 @@ class TestConfigCLICommands:
             mock_archive_service_class.return_value = mock_archive_service
 
             # Act
-            result = self.runner.invoke(archive_archive_config_app, [
+            result = self.runner.invoke(archive_config_app, [
                 'activate', '--user', '1', '--config-id', '1'
             ])
 
@@ -193,10 +194,10 @@ class TestConfigCLICommands:
             assert 'Config 1 activated' in result.output
             mock_archive_service.update.assert_called_once()
             assert mock_config.is_active is True
-    
+
     def test_activate_config_not_found(self):
         """Test archive configuration activation when config not found"""
-        with patch('cli.main.resolve_cli_user') as mock_resolve_user, \
+        with patch('cli.config.archive.resolve_cli_user') as mock_resolve_user, \
              patch('core.services.archive_configuration_service.ArchiveConfigurationService') as mock_archive_service_class:
             # Arrange
             mock_user = Mock(id=1, email='test@example.com')
@@ -207,7 +208,7 @@ class TestConfigCLICommands:
             mock_archive_service_class.return_value = mock_archive_service
 
             # Act
-            result = self.runner.invoke(archive_archive_config_app, [
+            result = self.runner.invoke(archive_config_app, [
                 'activate', '--user', '1', '--config-id', '999'
             ])
 
@@ -217,7 +218,7 @@ class TestConfigCLICommands:
     
     def test_activate_config_wrong_user(self):
         """Test archive configuration activation for wrong user"""
-        with patch('cli.main.resolve_cli_user') as mock_resolve_user, \
+        with patch('cli.config.archive.resolve_cli_user') as mock_resolve_user, \
              patch('core.services.archive_configuration_service.ArchiveConfigurationService') as mock_archive_service_class:
             # Arrange
             mock_user = Mock(id=1, email='test@example.com')
@@ -235,15 +236,15 @@ class TestConfigCLICommands:
             mock_archive_service_class.return_value = mock_archive_service
 
             # Act
-            result = self.runner.invoke(archive_archive_config_app, [
+            result = self.runner.invoke(archive_config_app, [
                 'activate', '--user', '1', '--config-id', '1'
             ])
 
             # Assert
             assert result.exit_code == 1
             assert 'Config 1 not found for user 1' in result.output
-    
-    @patch('cli.main.resolve_cli_user')
+
+    @patch('cli.config.archive.resolve_cli_user')
     @patch('core.services.archive_configuration_service.ArchiveConfigurationService')
     def test_deactivate_config_success(self, mock_archive_service_class, mock_resolve_user):
         """Test successful archive configuration deactivation"""
@@ -257,7 +258,7 @@ class TestConfigCLICommands:
         mock_archive_service_class.return_value = mock_archive_service
 
         # Act
-        result = self.runner.invoke(archive_archive_config_app, [
+        result = self.runner.invoke(archive_config_app, [
             'deactivate', '--user', '1', '--config-id', '1'
         ])
 
@@ -267,7 +268,7 @@ class TestConfigCLICommands:
         mock_archive_service.update.assert_called_once()
         assert mock_config.is_active is False
     
-    @patch('cli.main.resolve_cli_user')
+    @patch('cli.config.archive.resolve_cli_user')
     @patch('core.services.archive_configuration_service.ArchiveConfigurationService')
     def test_delete_config_success(self, mock_archive_service_class, mock_resolve_user):
         """Test successful archive configuration deletion with confirmation"""
@@ -281,7 +282,7 @@ class TestConfigCLICommands:
         mock_archive_service_class.return_value = mock_archive_service
 
         # Act - simulate user confirming deletion
-        result = self.runner.invoke(archive_archive_config_app, [
+        result = self.runner.invoke(archive_config_app, [
             'delete', '--user', '1', '--config-id', '1'
         ], input='y\n')
 
@@ -289,8 +290,8 @@ class TestConfigCLICommands:
         assert result.exit_code == 0
         assert 'Config 1 deleted' in result.output
         mock_archive_service.delete.assert_called_once_with(1)
-    
-    @patch('cli.main.resolve_cli_user')
+
+    @patch('cli.config.archive.resolve_cli_user')
     @patch('core.services.archive_configuration_service.ArchiveConfigurationService')
     def test_delete_config_cancelled(self, mock_archive_service_class, mock_resolve_user):
         """Test archive configuration deletion cancelled by user"""
@@ -304,7 +305,7 @@ class TestConfigCLICommands:
         mock_archive_service_class.return_value = mock_archive_service
 
         # Act - simulate user cancelling deletion
-        result = self.runner.invoke(archive_archive_config_app, [
+        result = self.runner.invoke(archive_config_app, [
             'delete', '--user', '1', '--config-id', '1'
         ], input='n\n')
 
@@ -314,7 +315,7 @@ class TestConfigCLICommands:
         # Let's check for the actual output
         assert 'Config 1 deleted' in result.output
     
-    @patch('cli.main.resolve_cli_user')
+    @patch('cli.config.archive.resolve_cli_user')
     @patch('core.services.archive_configuration_service.ArchiveConfigurationService')
     def test_set_default_config_success(self, mock_archive_service_class, mock_resolve_user):
         """Test successful default configuration setting"""
@@ -328,7 +329,7 @@ class TestConfigCLICommands:
         mock_archive_service_class.return_value = mock_archive_service
 
         # Act
-        result = self.runner.invoke(archive_archive_config_app, [
+        result = self.runner.invoke(archive_config_app, [
             'set-default', '--user', '1', '--config-id', '1'
         ])
 
@@ -336,8 +337,8 @@ class TestConfigCLICommands:
         assert result.exit_code == 0
         assert 'To use this config as default' in result.output
         assert 'archive-config 1' in result.output
-    
-    @patch('cli.main.resolve_cli_user')
+
+    @patch('cli.config.archive.resolve_cli_user')
     @patch('core.services.archive_configuration_service.ArchiveConfigurationService')
     def test_config_commands_error_handling(self, mock_archive_service_class, mock_resolve_user):
         """Test error handling in configuration commands"""
@@ -350,7 +351,7 @@ class TestConfigCLICommands:
         mock_archive_service_class.return_value = mock_archive_service
 
         # Act
-        result = self.runner.invoke(archive_archive_config_app, ['list', '--user', '1'])
+        result = self.runner.invoke(archive_config_app, ['list', '--user', '1'])
 
         # Assert
         # The exception is now caught and handled, so we expect exit code 1
