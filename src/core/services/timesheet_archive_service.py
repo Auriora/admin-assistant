@@ -47,6 +47,7 @@ class TimesheetArchiveService:
         self.logger = logger
         self.category_service = CategoryProcessingService()
         self.overlap_service = EnhancedOverlapResolutionService()
+        self._closed = False
 
     def filter_appointments_for_timesheet(
         self, 
@@ -148,7 +149,7 @@ class TimesheetArchiveService:
 
             # Check categories using CategoryProcessingService
             customer_info = self.category_service.extract_customer_billing_info(appointment)
-            
+
             # Exclude personal appointments (no valid categories)
             if customer_info["is_personal"]:
                 excluded_appointments.append(appointment)
@@ -180,7 +181,7 @@ class TimesheetArchiveService:
 
         # Detect overlaps
         overlap_groups = detect_overlaps(appointments)
-        
+
         if not overlap_groups:
             # No overlaps found
             return appointments, []
@@ -192,7 +193,7 @@ class TimesheetArchiveService:
         for group in overlap_groups:
             resolution_result = self.overlap_service.apply_automatic_resolution_rules(group)
             overlap_resolutions.append(resolution_result)
-            
+
             # Add resolved appointments
             resolved_appointments.extend(resolution_result["resolved"])
 
@@ -301,7 +302,7 @@ class TimesheetArchiveService:
             else:
                 customer_info = self.category_service.extract_customer_billing_info(appointment)
                 category = customer_info.get("billing_type", "unknown")
-            
+
             stats["category_breakdown"][category] = stats["category_breakdown"].get(category, 0) + 1
 
         return stats
@@ -361,3 +362,24 @@ class TimesheetArchiveService:
             - 'issues': List of any issues encountered during processing
         """
         return self.filter_appointments_for_timesheet(appointments, include_travel)
+
+    def close(self):
+        """
+        Close the service and clean up resources.
+
+        This method ensures that any resources used by the service are properly
+        cleaned up when the service is no longer needed.
+        """
+        if self._closed:
+            return
+
+        # Clean up any resources here
+        self._closed = True
+
+    def __del__(self):
+        """Ensure resources are cleaned up when the service is garbage collected."""
+        try:
+            self.close()
+        except:
+            # Ignore errors during garbage collection
+            pass

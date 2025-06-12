@@ -84,30 +84,37 @@ def resolve_user(
     Raises:
         ValueError: If user identifier is found but no matching user exists
     """
+    created_service = False
     if user_service is None:
         user_service = UserService()
+        created_service = True
 
-    user_identifier = resolve_user_identifier(cli_user)
-    if not user_identifier:
-        return None
-
-    # Try to resolve as user ID first (if it's numeric)
     try:
-        user_id = int(user_identifier)
-        user = user_service.get_by_id(user_id)
+        user_identifier = resolve_user_identifier(cli_user)
+        if not user_identifier:
+            return None
+
+        # Try to resolve as user ID first (if it's numeric)
+        try:
+            user_id = int(user_identifier)
+            user = user_service.get_by_id(user_id)
+            if user:
+                return user
+        except (ValueError, TypeError):
+            # Not a numeric ID, continue to username lookup
+            pass
+
+        # Try to resolve as username
+        user = user_service.get_by_username(user_identifier)
         if user:
             return user
-    except (ValueError, TypeError):
-        # Not a numeric ID, continue to username lookup
-        pass
 
-    # Try to resolve as username
-    user = user_service.get_by_username(user_identifier)
-    if user:
-        return user
-
-    # If we get here, the identifier was found but no matching user exists
-    raise ValueError(f"No user found for identifier: {user_identifier}")
+        # If we get here, the identifier was found but no matching user exists
+        raise ValueError(f"No user found for identifier: {user_identifier}")
+    finally:
+        # Close the service if we created it
+        if created_service:
+            user_service.close()
 
 
 def get_user_identifier_source(cli_user: Optional[Union[str, int]] = None) -> str:

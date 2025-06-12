@@ -19,11 +19,16 @@ class TestPromptService:
         self.mock_repository = Mock(spec=PromptRepository)
         self.service = PromptService(self.mock_repository)
 
+    def teardown_method(self):
+        """Clean up test fixtures after each test method."""
+        if hasattr(self, 'service'):
+            self.service.close()
+
     def test_init_with_repository(self):
         """Test initialization with provided repository."""
         # Arrange & Act
         service = PromptService(self.mock_repository)
-        
+
         # Assert
         assert service.repository == self.mock_repository
 
@@ -33,10 +38,10 @@ class TestPromptService:
         # Arrange
         mock_repo_instance = Mock(spec=PromptRepository)
         mock_repo_class.return_value = mock_repo_instance
-        
+
         # Act
         service = PromptService()
-        
+
         # Assert
         mock_repo_class.assert_called_once_with()
         assert service.repository == mock_repo_instance
@@ -47,10 +52,10 @@ class TestPromptService:
         prompt_id = 1
         expected_prompt = Mock(spec=Prompt)
         self.mock_repository.get_by_id.return_value = expected_prompt
-        
+
         # Act
         result = self.service.get_by_id(prompt_id)
-        
+
         # Assert
         assert result == expected_prompt
         self.mock_repository.get_by_id.assert_called_once_with(prompt_id)
@@ -60,10 +65,10 @@ class TestPromptService:
         # Arrange
         prompt_id = 999
         self.mock_repository.get_by_id.return_value = None
-        
+
         # Act
         result = self.service.get_by_id(prompt_id)
-        
+
         # Assert
         assert result is None
         self.mock_repository.get_by_id.assert_called_once_with(prompt_id)
@@ -72,10 +77,10 @@ class TestPromptService:
         """Test creating a new prompt."""
         # Arrange
         prompt = Mock(spec=Prompt)
-        
+
         # Act
         self.service.create(prompt)
-        
+
         # Assert
         self.mock_repository.add.assert_called_once_with(prompt)
 
@@ -85,10 +90,10 @@ class TestPromptService:
         user_id = 123
         expected_prompts = [Mock(spec=Prompt), Mock(spec=Prompt)]
         self.mock_repository.list_by_user.return_value = expected_prompts
-        
+
         # Act
         result = self.service.list_by_user(user_id)
-        
+
         # Assert
         assert result == expected_prompts
         self.mock_repository.list_by_user.assert_called_once_with(user_id)
@@ -99,10 +104,10 @@ class TestPromptService:
         prompt_type = "system"
         expected_prompts = [Mock(spec=Prompt), Mock(spec=Prompt)]
         self.mock_repository.list_by_type.return_value = expected_prompts
-        
+
         # Act
         result = self.service.list_by_type(prompt_type)
-        
+
         # Assert
         assert result == expected_prompts
         self.mock_repository.list_by_type.assert_called_once_with(prompt_type)
@@ -111,10 +116,10 @@ class TestPromptService:
         """Test deleting a prompt."""
         # Arrange
         prompt_id = 1
-        
+
         # Act
         self.service.delete(prompt_id)
-        
+
         # Assert
         self.mock_repository.delete.assert_called_once_with(prompt_id)
 
@@ -123,19 +128,19 @@ class TestPromptService:
         # Arrange
         user_id = 123
         action_type = "overlap_resolution"
-        
+
         # Create mock prompts
         user_action_prompt = Mock(spec=Prompt)
         user_action_prompt.action_type = action_type
-        
+
         other_prompt = Mock(spec=Prompt)
         other_prompt.action_type = "other_action"
-        
+
         self.mock_repository.list_by_user.return_value = [user_action_prompt, other_prompt]
-        
+
         # Act
         result = self.service.get_most_relevant_prompt(user_id, action_type)
-        
+
         # Assert
         assert result == user_action_prompt
         self.mock_repository.list_by_user.assert_called_once_with(user_id)

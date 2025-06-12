@@ -11,6 +11,7 @@ class UserRepository:
 
     def __init__(self, session=None):
         self.session = session or SessionLocal()
+        self._owns_session = session is None  # Track if we created the session
 
     def get_by_id(self, user_id: int) -> Optional[User]:
         """Retrieve a User by its ID."""
@@ -47,3 +48,16 @@ class UserRepository:
         if user:
             self.session.delete(user)
             self.session.commit()
+
+    def close(self) -> None:
+        """Close the session if we own it."""
+        if self._owns_session and self.session:
+            self.session.close()
+
+    def __del__(self):
+        """Ensure session is closed when repository is garbage collected."""
+        try:
+            self.close()
+        except:
+            # Ignore errors during garbage collection
+            pass

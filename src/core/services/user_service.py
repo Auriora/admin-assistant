@@ -11,6 +11,7 @@ class UserService:
 
     def __init__(self, repository: Optional[UserRepository] = None):
         self.repository = repository or UserRepository()
+        self._owns_repository = repository is None  # Track if we created the repository
 
     def get_by_id(self, user_id: int) -> Optional[User]:
         """Retrieve a User by its ID."""
@@ -63,3 +64,16 @@ class UserService:
                 raise ValueError(f"Username '{username}' is already taken.")
 
         # Add further validation as needed
+
+    def close(self) -> None:
+        """Close the repository if we own it."""
+        if self._owns_repository and self.repository:
+            self.repository.close()
+
+    def __del__(self):
+        """Ensure repository is closed when service is garbage collected."""
+        try:
+            self.close()
+        except:
+            # Ignore errors during garbage collection
+            pass

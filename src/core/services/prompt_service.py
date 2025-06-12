@@ -11,6 +11,8 @@ class PromptService:
 
     def __init__(self, repository: Optional[PromptRepository] = None):
         self.repository = repository or PromptRepository()
+        self._owns_repository = repository is None  # Track if we created the repository
+        self._closed = False
 
     def get_by_id(self, prompt_id: int) -> Optional[Prompt]:
         return self.repository.get_by_id(prompt_id)
@@ -96,3 +98,27 @@ class PromptService:
                 and getattr(p, "id", None) != getattr(prompt, "id", None)
             ):
                 raise ValueError("Duplicate prompt for this user/action/type.")
+
+    def close(self):
+        """
+        Close the service and clean up resources.
+
+        This method ensures that any resources used by the service are properly
+        cleaned up when the service is no longer needed.
+        """
+        if self._closed:
+            return
+
+        # Close the repository if we own it
+        if self._owns_repository and self.repository:
+            self.repository.close()
+
+        self._closed = True
+
+    def __del__(self):
+        """Ensure resources are cleaned up when the service is garbage collected."""
+        try:
+            self.close()
+        except:
+            # Ignore errors during garbage collection
+            pass

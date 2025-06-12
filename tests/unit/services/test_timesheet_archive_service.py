@@ -14,10 +14,15 @@ from core.models.appointment import Appointment
 
 class TestTimesheetArchiveService:
     """Test suite for TimesheetArchiveService"""
-    
+
     def setup_method(self):
         """Set up test fixtures"""
         self.service = TimesheetArchiveService()
+
+    def teardown_method(self):
+        """Clean up test fixtures"""
+        if hasattr(self, 'service'):
+            self.service.close()
 
     def create_mock_appointment(
         self, 
@@ -51,7 +56,7 @@ class TestTimesheetArchiveService:
     def test_filter_appointments_for_timesheet_empty_list(self):
         """Test filtering with empty appointment list"""
         result = self.service.filter_appointments_for_timesheet([])
-        
+
         assert result["filtered_appointments"] == []
         assert result["excluded_appointments"] == []
         assert result["overlap_resolutions"] == []
@@ -112,9 +117,9 @@ class TestTimesheetArchiveService:
             subject="Free Time Block",
             show_as="free"
         )
-        
+
         business_appts, excluded_appts = self.service._filter_business_appointments([appointment])
-        
+
         assert len(business_appts) == 0
         assert len(excluded_appts) == 1
         assert excluded_appts[0] == appointment
@@ -128,7 +133,7 @@ class TestTimesheetArchiveService:
             "Commute Time",
             "Airport Departure"
         ]
-        
+
         for subject in travel_subjects:
             appointment = self.create_mock_appointment(subject=subject)
             assert self.service._detect_travel_appointment(appointment), f"Failed to detect travel in: {subject}"
@@ -141,7 +146,7 @@ class TestTimesheetArchiveService:
             "Client Call",
             "Development Work"
         ]
-        
+
         for subject in non_travel_subjects:
             appointment = self.create_mock_appointment(subject=subject)
             assert not self.service._detect_travel_appointment(appointment), f"Incorrectly detected travel in: {subject}"
@@ -151,7 +156,7 @@ class TestTimesheetArchiveService:
         free_appointment = self.create_mock_appointment(show_as="free")
         busy_appointment = self.create_mock_appointment(show_as="busy")
         tentative_appointment = self.create_mock_appointment(show_as="tentative")
-        
+
         assert self.service._is_free_status_appointment(free_appointment)
         assert not self.service._is_free_status_appointment(busy_appointment)
         assert not self.service._is_free_status_appointment(tentative_appointment)
@@ -161,14 +166,14 @@ class TestTimesheetArchiveService:
     def test_resolve_overlaps_automatically_no_overlaps(self, mock_overlap_service, mock_detect_overlaps):
         """Test overlap resolution when no overlaps exist"""
         mock_detect_overlaps.return_value = []
-        
+
         appointments = [
             self.create_mock_appointment(subject="Meeting 1"),
             self.create_mock_appointment(subject="Meeting 2")
         ]
-        
+
         resolved_appts, resolutions = self.service._resolve_overlaps_automatically(appointments)
-        
+
         assert len(resolved_appts) == 2
         assert len(resolutions) == 0
 
@@ -203,18 +208,18 @@ class TestTimesheetArchiveService:
             self.create_mock_appointment(subject="Personal Appointment"),
             self.create_mock_appointment(subject="Free Time", show_as="free")
         ]
-        
+
         business_appointments = [original_appointments[0]]
         excluded_appointments = original_appointments[1:]
         overlap_resolutions = []
-        
+
         stats = self.service._generate_statistics(
             original_appointments,
             business_appointments,
             excluded_appointments,
             overlap_resolutions
         )
-        
+
         assert stats["total_appointments"] == 3
         assert stats["business_appointments"] == 1
         assert stats["excluded_appointments"] == 2
@@ -223,7 +228,7 @@ class TestTimesheetArchiveService:
     def test_get_empty_statistics(self):
         """Test empty statistics structure"""
         stats = self.service._get_empty_statistics()
-        
+
         assert stats["total_appointments"] == 0
         assert stats["business_appointments"] == 0
         assert stats["excluded_appointments"] == 0
@@ -258,6 +263,11 @@ class TestTimesheetArchiveServiceAdvanced:
     def setup_method(self):
         """Set up test fixtures"""
         self.service = TimesheetArchiveService()
+
+    def teardown_method(self):
+        """Clean up test fixtures"""
+        if hasattr(self, 'service'):
+            self.service.close()
 
     def create_mock_appointment(
         self,
