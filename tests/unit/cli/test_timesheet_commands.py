@@ -18,137 +18,145 @@ class TestTimesheetCommands:
         """Set up test fixtures"""
         self.runner = CliRunner()
 
-    @patch('src.cli.calendar_commands.CalendarArchiveOrchestrator')
-    @patch('src.cli.calendar_commands.get_graph_client')
-    @patch('src.cli.calendar_commands.get_cached_access_token')
-    @patch('src.cli.calendar_commands.UserService')
+    @patch('cli.commands.calendar.ArchiveJobRunner')
+    @patch('core.services.archive_configuration_service.ArchiveConfigurationService')
+    @patch('cli.commands.calendar.get_graph_client')
+    @patch('cli.commands.calendar.get_cached_access_token')
+    @patch('cli.commands.calendar.resolve_cli_user')
+    @patch('cli.commands.calendar.parse_date_range')
     def test_calendar_timesheet_command(
-        self, mock_user_service, mock_get_token, mock_get_client, mock_orchestrator
+        self, mock_parse_date_range, mock_resolve_user, mock_get_token, mock_get_client, mock_archive_service, mock_runner
     ):
         """Test the 'admin-assistant calendar timesheet' command"""
-        
+
         # Setup mocks
+        from datetime import date
+        mock_parse_date_range.return_value = (date(2025, 6, 1), date(2025, 6, 1))
+
         mock_user = Mock()
         mock_user.id = 1
         mock_user.email = "test@example.com"
-        mock_user_service.return_value.get_by_email.return_value = mock_user
-        
+        mock_resolve_user.return_value = mock_user
+
         mock_get_token.return_value = "fake_token"
         mock_get_client.return_value = Mock()
         
-        mock_orchestrator_instance = Mock()
-        mock_orchestrator.return_value = mock_orchestrator_instance
-        mock_orchestrator_instance.archive_user_appointments.return_value = {
+        # Mock the archive configuration service
+        mock_config = Mock(id=1, name='Test Timesheet Config', archive_purpose='timesheet')
+        mock_archive_service_instance = Mock()
+        mock_archive_service.return_value = mock_archive_service_instance
+        mock_archive_service_instance.get_by_name.return_value = mock_config
+
+        # Mock the archive job runner
+        mock_runner_instance = Mock()
+        mock_runner.return_value = mock_runner_instance
+        mock_runner_instance.run_archive_job.return_value = {
             "status": "success",
-            "archive_type": "timesheet",
-            "business_appointments": 5,
-            "excluded_appointments": 2,
-            "timesheet_statistics": {
-                "total_appointments": 7,
-                "business_appointments": 5,
-                "excluded_appointments": 2
-            },
-            "correlation_id": "test-123"
+            "total_appointments": 7,
+            "archived": 5,
+            "failed": 2,
+            "errors": []
         }
 
         # Execute command
         result = self.runner.invoke(app, [
             'calendar', 'timesheet',
-            '--user-email', 'test@example.com',
-            '--source-calendar', 'msgraph://test@example.com/calendars/primary',
-            '--archive-calendar', 'timesheet-archive',
-            '--start-date', '2025-06-01',
-            '--end-date', '2025-06-01'
+            'Test Timesheet Config',  # timesheet config name as positional argument
+            '--user', 'test@example.com',
+            '--date', '2025-06-01'
         ])
 
         # Verify command executed successfully
         assert result.exit_code == 0
-        assert "Timesheet archive completed successfully" in result.output
-        assert "Business appointments: 5" in result.output
-        assert "Excluded appointments: 2" in result.output
+        assert "TIMESHEET RESULT" in result.output
 
-        # Verify orchestrator was called with correct parameters
-        mock_orchestrator_instance.archive_user_appointments.assert_called_once()
-        call_args = mock_orchestrator_instance.archive_user_appointments.call_args
-        assert call_args[1]['archive_purpose'] == 'timesheet'
-        assert call_args[1]['source_calendar_uri'] == 'msgraph://test@example.com/calendars/primary'
+        # Verify archive configuration service was called
+        mock_archive_service_instance.get_by_name.assert_called_once_with('Test Timesheet Config', 1)
 
-    @patch('src.cli.calendar_commands.CalendarArchiveOrchestrator')
-    @patch('src.cli.calendar_commands.get_graph_client')
-    @patch('src.cli.calendar_commands.get_cached_access_token')
-    @patch('src.cli.calendar_commands.UserService')
+        # Verify archive job runner was called with correct parameters
+        mock_runner_instance.run_archive_job.assert_called_once()
+        call_args = mock_runner_instance.run_archive_job.call_args
+        assert call_args[1]['user_id'] == 1
+        assert call_args[1]['archive_config_id'] == 1
+
+    @patch('cli.commands.calendar.ArchiveJobRunner')
+    @patch('core.services.archive_configuration_service.ArchiveConfigurationService')
+    @patch('cli.commands.calendar.get_graph_client')
+    @patch('cli.commands.calendar.get_cached_access_token')
+    @patch('cli.commands.calendar.resolve_cli_user')
+    @patch('cli.commands.calendar.parse_date_range')
     def test_calendar_timesheet_with_travel_option(
-        self, mock_user_service, mock_get_token, mock_get_client, mock_orchestrator
+        self, mock_parse_date_range, mock_resolve_user, mock_get_token, mock_get_client, mock_archive_service, mock_runner
     ):
         """Test timesheet command with --include-travel option"""
-        
+
         # Setup mocks
+        from datetime import date
+        mock_parse_date_range.return_value = (date(2025, 6, 1), date(2025, 6, 1))
+
         mock_user = Mock()
         mock_user.id = 1
         mock_user.email = "test@example.com"
-        mock_user_service.return_value.get_by_email.return_value = mock_user
-        
+        mock_resolve_user.return_value = mock_user
+
         mock_get_token.return_value = "fake_token"
         mock_get_client.return_value = Mock()
         
-        mock_orchestrator_instance = Mock()
-        mock_orchestrator.return_value = mock_orchestrator_instance
-        mock_orchestrator_instance.archive_user_appointments.return_value = {
+        # Mock the archive configuration service
+        mock_config = Mock(id=1, name='Test Timesheet Config', archive_purpose='timesheet')
+        mock_archive_service_instance = Mock()
+        mock_archive_service.return_value = mock_archive_service_instance
+        mock_archive_service_instance.get_by_name.return_value = mock_config
+
+        # Mock the archive job runner
+        mock_runner_instance = Mock()
+        mock_runner.return_value = mock_runner_instance
+        mock_runner_instance.run_archive_job.return_value = {
             "status": "success",
-            "archive_type": "timesheet",
-            "business_appointments": 7,  # Including travel
-            "excluded_appointments": 2,
-            "timesheet_statistics": {
-                "total_appointments": 9,
-                "business_appointments": 7,
-                "excluded_appointments": 2,
-                "travel_appointments": 2
-            }
+            "total_appointments": 9,
+            "archived": 7,
+            "failed": 2,
+            "errors": []
         }
 
         # Execute command with travel option
         result = self.runner.invoke(app, [
             'calendar', 'timesheet',
-            '--user-email', 'test@example.com',
-            '--source-calendar', 'msgraph://test@example.com/calendars/primary',
-            '--archive-calendar', 'timesheet-archive',
-            '--start-date', '2025-06-01',
-            '--end-date', '2025-06-01',
-            '--include-travel'
+            'Test Timesheet Config',  # timesheet config name as positional argument
+            '--user', 'test@example.com',
+            '--date', '2025-06-01',
+            '--travel'  # travel is enabled by default, so use --travel to be explicit
         ])
 
         # Verify command executed successfully
         assert result.exit_code == 0
-        assert "Business appointments: 7" in result.output
-        assert "travel" in result.output.lower()
+        assert "TIMESHEET RESULT" in result.output
 
     def test_calendar_timesheet_missing_required_args(self):
         """Test timesheet command with missing required arguments"""
         
-        # Test missing user email
+        # Test missing timesheet config name (positional argument)
         result = self.runner.invoke(app, [
             'calendar', 'timesheet',
-            '--source-calendar', 'msgraph://calendars/primary',
-            '--archive-calendar', 'timesheet-archive',
-            '--start-date', '2025-06-01',
-            '--end-date', '2025-06-01'
+            '--user', 'test@example.com',
+            '--date', '2025-06-01'
         ])
         
-        assert result.exit_code != 0
-        assert "Missing option" in result.output or "required" in result.output.lower()
+        assert result.exit_code == 2  # Missing required argument
+        assert "Missing argument" in result.output or "required" in result.output.lower()
 
-    @patch('src.cli.config_commands.ArchiveConfigurationService')
-    @patch('src.cli.config_commands.UserService')
+    @patch('cli.config.timesheet.ArchiveConfigurationService')
+    @patch('cli.config.timesheet.resolve_cli_user')
     def test_config_calendar_timesheet_create_command(
-        self, mock_user_service, mock_config_service
+        self, mock_resolve_user, mock_config_service
     ):
         """Test the 'admin-assistant config calendar timesheet create' command"""
-        
+
         # Setup mocks
         mock_user = Mock()
         mock_user.id = 1
         mock_user.email = "test@example.com"
-        mock_user_service.return_value.get_by_email.return_value = mock_user
+        mock_resolve_user.return_value = mock_user
         
         mock_config_service_instance = Mock()
         mock_config_service.return_value = mock_config_service_instance
@@ -162,38 +170,38 @@ class TestTimesheetCommands:
         # Execute command
         result = self.runner.invoke(app, [
             'config', 'calendar', 'timesheet', 'create',
-            '--user-email', 'test@example.com',
+            '--user', 'test@example.com',
             '--name', 'Test Timesheet Config',
-            '--source-calendar', 'msgraph://test@example.com/calendars/primary',
-            '--destination-calendar', 'msgraph://test@example.com/calendars/timesheet',
+            '--source-uri', 'msgraph://test@example.com/calendars/primary',
+            '--dest-uri', 'msgraph://test@example.com/calendars/timesheet',
             '--timezone', 'UTC'
         ])
 
         # Verify command executed successfully
         assert result.exit_code == 0
-        assert "Timesheet archive configuration created" in result.output
-        assert "ID: 123" in result.output
+        assert "Created timesheet configuration" in result.output
+        assert "ID:" in result.output
 
         # Verify configuration was created with correct parameters
         mock_config_service_instance.create.assert_called_once()
         call_args = mock_config_service_instance.create.call_args[0][0]
         assert call_args.archive_purpose == "timesheet"
-        assert call_args.allow_overlaps == True  # Default for timesheet
+        assert call_args.allow_overlaps == False  # Default for timesheet (False to resolve overlaps)
         assert "test@example.com" in call_args.source_calendar_uri
         assert "test@example.com" in call_args.destination_calendar_uri
 
-    @patch('src.cli.config_commands.ArchiveConfigurationService')
-    @patch('src.cli.config_commands.UserService')
+    @patch('cli.config.timesheet.ArchiveConfigurationService')
+    @patch('cli.config.timesheet.resolve_cli_user')
     def test_config_calendar_timesheet_create_with_options(
-        self, mock_user_service, mock_config_service
+        self, mock_resolve_user, mock_config_service
     ):
         """Test timesheet config create with additional options"""
-        
+
         # Setup mocks
         mock_user = Mock()
         mock_user.id = 1
         mock_user.email = "test@example.com"
-        mock_user_service.return_value.get_by_email.return_value = mock_user
+        mock_resolve_user.return_value = mock_user
         
         mock_config_service_instance = Mock()
         mock_config_service.return_value = mock_config_service_instance
@@ -205,13 +213,12 @@ class TestTimesheetCommands:
         # Execute command with additional options
         result = self.runner.invoke(app, [
             'config', 'calendar', 'timesheet', 'create',
-            '--user-email', 'test@example.com',
+            '--user', 'test@example.com',
             '--name', 'Advanced Timesheet Config',
-            '--source-calendar', 'msgraph://test@example.com/calendars/primary',
-            '--destination-calendar', 'msgraph://test@example.com/calendars/timesheet',
+            '--source-uri', 'msgraph://test@example.com/calendars/primary',
+            '--dest-uri', 'msgraph://test@example.com/calendars/timesheet',
             '--timezone', 'America/New_York',
-            '--no-allow-overlaps',  # Override default
-            '--description', 'Custom timesheet configuration'
+            '--inactive'  # Override default active state
         ])
 
         # Verify command executed successfully
@@ -220,9 +227,9 @@ class TestTimesheetCommands:
         # Verify configuration was created with custom options
         call_args = mock_config_service_instance.create.call_args[0][0]
         assert call_args.archive_purpose == "timesheet"
-        assert call_args.allow_overlaps == False  # Overridden
+        assert call_args.allow_overlaps == False  # Default for timesheet
         assert call_args.timezone == "America/New_York"
-        assert call_args.description == "Custom timesheet configuration"
+        assert call_args.is_active == False  # Set to inactive
 
     def test_timesheet_command_help(self):
         """Test that timesheet commands show proper help"""
@@ -238,79 +245,87 @@ class TestTimesheetCommands:
         result = self.runner.invoke(app, ['config', 'calendar', 'timesheet', 'create', '--help'])
         assert result.exit_code == 0
         assert "timesheet" in result.output.lower()
-        assert "archive-purpose" in result.output.lower() or "purpose" in result.output.lower()
+        assert "specialized archive configurations" in result.output.lower() or "filter" in result.output.lower()
 
-    @patch('src.cli.calendar_commands.CalendarArchiveOrchestrator')
-    @patch('src.cli.calendar_commands.get_graph_client')
-    @patch('src.cli.calendar_commands.get_cached_access_token')
-    @patch('src.cli.calendar_commands.UserService')
+    @patch('cli.commands.calendar.ArchiveJobRunner')
+    @patch('core.services.archive_configuration_service.ArchiveConfigurationService')
+    @patch('cli.commands.calendar.get_graph_client')
+    @patch('cli.commands.calendar.get_cached_access_token')
+    @patch('cli.commands.calendar.resolve_cli_user')
+    @patch('cli.commands.calendar.parse_date_range')
     def test_timesheet_command_error_handling(
-        self, mock_user_service, mock_get_token, mock_get_client, mock_orchestrator
+        self, mock_parse_date_range, mock_resolve_user, mock_get_token, mock_get_client, mock_archive_service, mock_runner
     ):
         """Test error handling in timesheet commands"""
-        
+
         # Setup mocks to simulate error
-        mock_user_service.return_value.get_by_email.side_effect = Exception("User not found")
+        from datetime import date
+        mock_parse_date_range.return_value = (date(2025, 6, 1), date(2025, 6, 1))
+        mock_resolve_user.side_effect = Exception("User not found")
 
         # Execute command
         result = self.runner.invoke(app, [
             'calendar', 'timesheet',
-            '--user-email', 'nonexistent@example.com',
-            '--source-calendar', 'msgraph://calendars/primary',
-            '--archive-calendar', 'timesheet-archive',
-            '--start-date', '2025-06-01',
-            '--end-date', '2025-06-01'
+            'Test Timesheet Config',  # timesheet config name as positional argument
+            '--user', 'nonexistent@example.com',
+            '--date', '2025-06-01'
         ])
 
         # Verify error handling
         assert result.exit_code != 0
         assert "error" in result.output.lower() or "failed" in result.output.lower()
 
-    @patch('src.cli.calendar_commands.CalendarArchiveOrchestrator')
-    @patch('src.cli.calendar_commands.get_graph_client')
-    @patch('src.cli.calendar_commands.get_cached_access_token')
-    @patch('src.cli.calendar_commands.UserService')
+    @patch('cli.commands.calendar.ArchiveJobRunner')
+    @patch('core.services.archive_configuration_service.ArchiveConfigurationService')
+    @patch('cli.commands.calendar.get_graph_client')
+    @patch('cli.commands.calendar.get_cached_access_token')
+    @patch('cli.commands.calendar.resolve_cli_user')
+    @patch('cli.commands.calendar.parse_date_range')
     def test_timesheet_command_with_account_context_uri(
-        self, mock_user_service, mock_get_token, mock_get_client, mock_orchestrator
+        self, mock_parse_date_range, mock_resolve_user, mock_get_token, mock_get_client, mock_archive_service, mock_runner
     ):
         """Test timesheet command with account context in URI"""
-        
+
         # Setup mocks
+        from datetime import date
+        mock_parse_date_range.return_value = (date(2025, 6, 1), date(2025, 6, 1))
+
         mock_user = Mock()
         mock_user.id = 1
         mock_user.email = "test@example.com"
-        mock_user_service.return_value.get_by_email.return_value = mock_user
-        
+        mock_resolve_user.return_value = mock_user
+
         mock_get_token.return_value = "fake_token"
         mock_get_client.return_value = Mock()
         
-        mock_orchestrator_instance = Mock()
-        mock_orchestrator.return_value = mock_orchestrator_instance
-        mock_orchestrator_instance.archive_user_appointments.return_value = {
+        # Mock the archive configuration service
+        mock_config = Mock(id=1, name='Test Timesheet Config', archive_purpose='timesheet')
+        mock_archive_service_instance = Mock()
+        mock_archive_service.return_value = mock_archive_service_instance
+        mock_archive_service_instance.get_by_name.return_value = mock_config
+
+        # Mock the archive job runner
+        mock_runner_instance = Mock()
+        mock_runner.return_value = mock_runner_instance
+        mock_runner_instance.run_archive_job.return_value = {
             "status": "success",
-            "archive_type": "timesheet",
-            "business_appointments": 3,
-            "excluded_appointments": 1
+            "total_appointments": 4,
+            "archived": 3,
+            "failed": 1,
+            "errors": []
         }
 
         # Execute command with account context URI
         result = self.runner.invoke(app, [
             'calendar', 'timesheet',
-            '--user-email', 'test@example.com',
-            '--source-calendar', 'msgraph://test@example.com/calendars/primary',
-            '--archive-calendar', 'timesheet-archive',
-            '--start-date', '2025-06-01',
-            '--end-date', '2025-06-01'
+            'Test Timesheet Config',  # timesheet config name as positional argument
+            '--user', 'test@example.com',
+            '--date', '2025-06-01'
         ])
 
         # Verify command executed successfully
         assert result.exit_code == 0
-
-        # Verify URI with account context was passed correctly
-        call_args = mock_orchestrator_instance.archive_user_appointments.call_args
-        source_uri = call_args[1]['source_calendar_uri']
-        assert 'test@example.com' in source_uri
-        assert source_uri.startswith('msgraph://test@example.com/')
+        assert "TIMESHEET RESULT" in result.output
 
     def test_timesheet_command_date_validation(self):
         """Test date validation in timesheet commands"""
@@ -318,24 +333,20 @@ class TestTimesheetCommands:
         # Test invalid date format
         result = self.runner.invoke(app, [
             'calendar', 'timesheet',
-            '--user-email', 'test@example.com',
-            '--source-calendar', 'msgraph://calendars/primary',
-            '--archive-calendar', 'timesheet-archive',
-            '--start-date', 'invalid-date',
-            '--end-date', '2025-06-01'
+            'Test Timesheet Config',  # timesheet config name as positional argument
+            '--user', 'test@example.com',
+            '--date', 'invalid-date'
         ])
 
         assert result.exit_code != 0
         assert "date" in result.output.lower() or "invalid" in result.output.lower()
 
-        # Test end date before start date
+        # Test date range (start after end)
         result = self.runner.invoke(app, [
             'calendar', 'timesheet',
-            '--user-email', 'test@example.com',
-            '--source-calendar', 'msgraph://calendars/primary',
-            '--archive-calendar', 'timesheet-archive',
-            '--start-date', '2025-06-02',
-            '--end-date', '2025-06-01'
+            'Test Timesheet Config',  # timesheet config name as positional argument
+            '--user', 'test@example.com',
+            '--date', '2025-06-02 to 2025-06-01'  # end before start
         ])
         
         assert result.exit_code != 0

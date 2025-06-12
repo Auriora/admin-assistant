@@ -578,15 +578,26 @@ class TestURIValidationAndErrorHandling:
 
     def test_format_user_friendly_identifier_edge_cases(self):
         """Test formatting user-friendly identifiers with edge cases"""
-        # Test with various identifiers
+        # Test with various identifiers - normal behavior (no prefix)
         test_cases = [
+            ('primary', 'primary'),
+            ('My Calendar', '"My Calendar"'),
+            ('Calendar with "quotes"', '"Calendar with \\"quotes\\""'),
+        ]
+
+        for identifier, expected in test_cases:
+            result = format_user_friendly_identifier(identifier)
+            assert result == expected
+
+        # Test with calendar prefix enabled
+        prefix_test_cases = [
             ('primary', 'Calendar: primary'),
             ('My Calendar', 'Calendar: "My Calendar"'),
             ('Calendar with "quotes"', 'Calendar: "Calendar with \\"quotes\\""'),
         ]
 
-        for identifier, expected in test_cases:
-            result = format_user_friendly_identifier(identifier)
+        for identifier, expected in prefix_test_cases:
+            result = format_user_friendly_identifier(identifier, use_calendar_prefix=True)
             assert result == expected
 
     def test_construct_with_various_account_formats(self):

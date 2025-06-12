@@ -31,9 +31,9 @@ class TestOverlapAnalysisCLI:
         appointment.ms_event_id = f"test-{subject.replace(' ', '-').lower()}"
         return appointment
     
-    @patch('cli.main.resolve_cli_user')
-    @patch('cli.main.get_session')
-    @patch('cli.main.parse_flexible_date')
+    @patch('cli.commands.calendar.resolve_cli_user')
+    @patch('cli.commands.calendar.get_session')
+    @patch('cli.common.utils.parse_flexible_date')
     def test_analyze_overlaps_no_appointments(self, mock_parse_flexible_date, mock_get_session, mock_resolve_user):
         """Test analyze-overlaps command when no appointments are found"""
         # Mock user resolution
@@ -68,9 +68,9 @@ class TestOverlapAnalysisCLI:
         assert result.exit_code == 0
         assert "No appointments found" in result.output
     
-    @patch('cli.main.resolve_cli_user')
-    @patch('cli.main.get_session')
-    @patch('cli.main.parse_flexible_date')
+    @patch('cli.commands.calendar.resolve_cli_user')
+    @patch('cli.commands.calendar.get_session')
+    @patch('cli.common.utils.parse_flexible_date')
     @patch('core.utilities.calendar_recurrence_utility.expand_recurring_events_range')
     @patch('core.utilities.calendar_overlap_utility.detect_overlaps')
     def test_analyze_overlaps_no_overlaps_found(self, mock_detect_overlaps, mock_expand_recurring,
@@ -119,9 +119,9 @@ class TestOverlapAnalysisCLI:
         assert "No overlapping appointments found" in result.output
         assert "✓" in result.output
     
-    @patch('cli.main.resolve_cli_user')
-    @patch('cli.main.get_session')
-    @patch('cli.main.parse_flexible_date')
+    @patch('cli.commands.calendar.resolve_cli_user')
+    @patch('cli.commands.calendar.get_session')
+    @patch('cli.common.utils.parse_flexible_date')
     @patch('core.utilities.calendar_recurrence_utility.expand_recurring_events_range')
     @patch('core.utilities.calendar_overlap_utility.detect_overlaps')
     def test_analyze_overlaps_with_overlaps_no_auto_resolve(self, mock_detect_overlaps, mock_expand_recurring,
@@ -172,9 +172,9 @@ class TestOverlapAnalysisCLI:
         assert "Meeting 1" in result.output
         assert "Meeting 2" in result.output
     
-    @patch('cli.main.resolve_cli_user')
-    @patch('cli.main.get_session')
-    @patch('cli.main.parse_flexible_date')
+    @patch('cli.commands.calendar.resolve_cli_user')
+    @patch('cli.commands.calendar.get_session')
+    @patch('cli.common.utils.parse_flexible_date')
     @patch('core.utilities.calendar_recurrence_utility.expand_recurring_events_range')
     @patch('core.utilities.calendar_overlap_utility.detect_overlaps')
     @patch('core.services.enhanced_overlap_resolution_service.EnhancedOverlapResolutionService')
@@ -238,9 +238,9 @@ class TestOverlapAnalysisCLI:
         assert "Auto-Resolved" in result.output
         assert "Remaining Conflicts" in result.output
     
-    @patch('cli.main.resolve_cli_user')
-    @patch('cli.main.get_session')
-    @patch('cli.main.parse_flexible_date')
+    @patch('cli.commands.calendar.resolve_cli_user')
+    @patch('cli.commands.calendar.get_session')
+    @patch('cli.common.utils.parse_flexible_date')
     def test_analyze_overlaps_missing_user(self, mock_parse_flexible_date, mock_get_session, mock_resolve_user):
         """Test analyze-overlaps command with missing user parameter"""
         # Mock user resolution to succeed with default user
@@ -272,7 +272,7 @@ class TestOverlapAnalysisCLI:
         assert result.exit_code == 0
         assert "No appointments found" in result.output
     
-    @patch('cli.main.resolve_cli_user')
+    @patch('cli.commands.calendar.resolve_cli_user')
     def test_analyze_overlaps_user_not_found(self, mock_resolve_user):
         """Test analyze-overlaps command when user is not found"""
         # Mock user resolution to fail

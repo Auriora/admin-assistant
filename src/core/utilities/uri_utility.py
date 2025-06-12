@@ -80,6 +80,8 @@ def parse_user_friendly_identifier(identifier: str) -> str:
     - 'Activity Archive'     -> Activity Archive
     - Activity\\ Archive      -> Activity Archive
     - Activity Archive       -> Activity Archive (if no parsing conflicts)
+    - Calendar: "My Calendar" -> My Calendar
+    - Calendar: My Calendar  -> My Calendar
     - primary                -> primary
 
     Args:
@@ -92,6 +94,11 @@ def parse_user_friendly_identifier(identifier: str) -> str:
         return identifier
 
     identifier = identifier.strip()
+
+    # Handle "Calendar: " prefix format
+    if identifier.startswith('Calendar: '):
+        calendar_part = identifier[len('Calendar: '):]
+        return parse_user_friendly_identifier(calendar_part)  # Recursively parse the calendar part
 
     # Handle quoted strings (double quotes)
     if identifier.startswith('"') and identifier.endswith('"') and len(identifier) >= 2:
@@ -115,13 +122,14 @@ def parse_user_friendly_identifier(identifier: str) -> str:
     return identifier
 
 
-def format_user_friendly_identifier(identifier: str, force_quotes: bool = False) -> str:
+def format_user_friendly_identifier(identifier: str, force_quotes: bool = False, use_calendar_prefix: bool = False) -> str:
     """
     Format an identifier for user-friendly display.
 
     Args:
         identifier: Identifier to format
         force_quotes: Force quoting even for simple identifiers
+        use_calendar_prefix: Use "Calendar: " prefix format
 
     Returns:
         User-friendly formatted identifier
@@ -141,12 +149,17 @@ def format_user_friendly_identifier(identifier: str, force_quotes: bool = False)
         identifier.endswith('-')
     )
 
+    formatted_identifier = identifier
     if needs_quotes:
         # Escape any existing quotes and wrap in double quotes
         escaped = identifier.replace('"', '\\"')
-        return f'"{escaped}"'
+        formatted_identifier = f'"{escaped}"'
 
-    return identifier
+    # Add Calendar prefix if requested
+    if use_calendar_prefix:
+        return f'Calendar: {formatted_identifier}'
+
+    return formatted_identifier
 
 
 def validate_account(account: str) -> bool:
@@ -156,6 +169,7 @@ def validate_account(account: str) -> bool:
     Valid account formats:
     - Email addresses: user@example.com, user.name@domain.co.uk
     - Domain names: subdomain.domain.com, domain.com
+    - Numeric user IDs: 12345, 999
     - Simple usernames: username (for local accounts)
 
     Args:
@@ -180,6 +194,10 @@ def validate_account(account: str) -> bool:
         # Basic domain validation
         domain_pattern = r'^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
         return bool(re.match(domain_pattern, account))
+
+    # Check for numeric user ID format
+    if account.isdigit():
+        return True
 
     # Simple username format (alphanumeric with some special chars)
     username_pattern = r'^[a-zA-Z0-9._-]+$'
@@ -223,14 +241,36 @@ def parse_resource_uri(uri: str) -> ParsedURI:
         if not parsed.scheme:
             raise URIParseError(f"URI missing scheme: {uri}")
 
+        # Check for malformed URIs
+        if uri.count('://') > 1:
+            raise URIParseError(f"URI contains multiple '://' patterns: {uri}")
+
+        if '://' not in uri:
+            raise URIParseError(f"URI missing '://': {uri}")
+
+        if uri.endswith('://'):
+            raise URIParseError(f"URI missing path: {uri}")
+
+        # Check for double slashes in path (malformed)
+        if '//' in uri.split('://', 1)[1]:
+            raise URIParseError(f"URI contains double slashes in path: {uri}")
+
         account = None
         namespace = None
         raw_identifier = None
 
         # Handle the case where netloc contains account or namespace
         if parsed.netloc and parsed.path:
-            # Check if netloc looks like an account (contains @ or is an email-like string)
-            if '@' in parsed.netloc or '.' in parsed.netloc:
+            # Check if netloc looks like an account vs a namespace
+            # Account indicators: contains @, contains ., is numeric, or is not a known namespace
+            netloc_is_account = (
+                '@' in parsed.netloc or  # Email format
+                '.' in parsed.netloc or  # Domain format
+                parsed.netloc.isdigit() or  # Numeric user ID
+                parsed.netloc not in SUPPORTED_NAMESPACES  # Not a known namespace
+            )
+
+            if netloc_is_account:
                 # New format: msgraph://user@example.com/calendars/identifier
                 account = parsed.netloc
                 # Validate account format
@@ -254,6 +294,9 @@ def parse_resource_uri(uri: str) -> ParsedURI:
                 raise URIParseError(f"URI missing path: {uri}")
 
             path_parts = path.split('/')
+            # Filter out empty parts (from double slashes)
+            path_parts = [part for part in path_parts if part]
+
             if len(path_parts) == 2:
                 # Legacy format: namespace/identifier
                 namespace = path_parts[0]
@@ -271,6 +314,12 @@ def parse_resource_uri(uri: str) -> ParsedURI:
 
         if not namespace or not raw_identifier:
             raise URIParseError(f"URI missing required components: {uri}")
+
+        # Additional validation for empty components
+        if namespace.strip() == '':
+            raise URIParseError(f"URI namespace cannot be empty: {uri}")
+        if raw_identifier.strip() == '':
+            raise URIParseError(f"URI identifier cannot be empty: {uri}")
 
         # First try URL decoding (for backward compatibility with URL-encoded URIs)
         try:

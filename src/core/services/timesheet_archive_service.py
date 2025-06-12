@@ -249,10 +249,14 @@ class TimesheetArchiveService:
         overlap_resolutions: List[Dict[str, Any]]
     ) -> Dict[str, Any]:
         """Generate comprehensive statistics about the filtering process."""
+        total_count = len(original_appointments)
+        business_count = len(business_appointments)
+        excluded_count = len(excluded_appointments)
+
         stats = {
-            "total_appointments": len(original_appointments),
-            "business_appointments": len(business_appointments),
-            "excluded_appointments": len(excluded_appointments),
+            "total_appointments": total_count,
+            "business_appointments": business_count,
+            "excluded_appointments": excluded_count,
             "overlap_groups_processed": len(overlap_resolutions),
             "appointments_resolved_by_overlap": 0,
             "appointments_filtered_by_overlap": 0,
@@ -264,6 +268,14 @@ class TimesheetArchiveService:
             },
             "category_breakdown": {}
         }
+
+        # Add rate calculations
+        if total_count > 0:
+            stats["exclusion_rate"] = excluded_count / total_count
+            stats["business_rate"] = business_count / total_count
+        else:
+            stats["exclusion_rate"] = 0.0
+            stats["business_rate"] = 0.0
 
         # Count overlap resolution statistics
         for resolution in overlap_resolutions:

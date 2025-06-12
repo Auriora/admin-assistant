@@ -19,7 +19,7 @@ class TestJobCLICommands:
     
     def test_schedule_archive_job_daily_success(self):
         """Test successful daily archive job scheduling"""
-        with patch('cli.main.resolve_cli_user') as mock_resolve_user, \
+        with patch('cli.commands.jobs.resolve_cli_user') as mock_resolve_user, \
              patch('flask_apscheduler.APScheduler') as mock_scheduler_class, \
              patch('core.services.background_job_service.BackgroundJobService') as mock_bg_job_service_class, \
              patch('core.services.scheduled_archive_service.ScheduledArchiveService') as mock_scheduled_service_class:
@@ -68,7 +68,7 @@ class TestJobCLICommands:
     
     def test_schedule_archive_job_weekly_success(self):
         """Test successful weekly archive job scheduling"""
-        with patch('cli.main.resolve_cli_user') as mock_resolve_user, \
+        with patch('cli.commands.jobs.resolve_cli_user') as mock_resolve_user, \
              patch('flask_apscheduler.APScheduler') as mock_scheduler_class, \
              patch('core.services.background_job_service.BackgroundJobService') as mock_bg_job_service_class, \
              patch('core.services.scheduled_archive_service.ScheduledArchiveService') as mock_scheduled_service_class:
@@ -120,7 +120,7 @@ class TestJobCLICommands:
         """Test job scheduling when user not found"""
         # The job commands don't actually check for user existence - they delegate to services
         # Let's test the actual behavior - empty result when no active configs
-        with patch('cli.main.resolve_cli_user') as mock_resolve_user, \
+        with patch('cli.commands.jobs.resolve_cli_user') as mock_resolve_user, \
              patch('flask_apscheduler.APScheduler') as mock_scheduler_class, \
              patch('core.services.background_job_service.BackgroundJobService') as mock_bg_job_service_class, \
              patch('core.services.scheduled_archive_service.ScheduledArchiveService') as mock_scheduled_service_class:
@@ -151,7 +151,7 @@ class TestJobCLICommands:
             assert result.exit_code == 0
             assert 'No active archive configurations found' in result.output
     
-    @patch('cli.main.resolve_cli_user')
+    @patch('cli.commands.jobs.resolve_cli_user')
     @patch('flask_apscheduler.APScheduler')
     @patch('core.services.background_job_service.BackgroundJobService')
     @patch('core.services.scheduled_archive_service.ScheduledArchiveService')
@@ -185,7 +185,7 @@ class TestJobCLICommands:
         assert result.exit_code == 0
         assert 'No active archive configurations found' in result.output
     
-    @patch('cli.main.resolve_cli_user')
+    @patch('cli.commands.jobs.resolve_cli_user')
     def test_schedule_archive_job_invalid_schedule_type(self, mock_resolve_user):
         """Test job scheduling with invalid schedule type"""
         # Arrange
@@ -202,11 +202,11 @@ class TestJobCLICommands:
         assert result.exit_code == 1
         assert 'Invalid schedule type' in result.output
     
-    @patch('cli.main.resolve_cli_user')
+    @patch('cli.commands.jobs.resolve_cli_user')
     @patch('core.services.archive_configuration_service.ArchiveConfigurationService')
     @patch('flask_apscheduler.APScheduler')
     @patch('core.services.background_job_service.BackgroundJobService')
-    @patch('cli.main.parse_date_range')
+    @patch('cli.common.utils.parse_date_range')
     def test_trigger_manual_archive_success(self, mock_parse_date_range,
                                            mock_bg_job_service_class, mock_scheduler_class,
                                            mock_archive_service_class, mock_resolve_user):
@@ -307,7 +307,7 @@ class TestJobCLICommands:
         # Check for error message instead
         assert 'status' in result.output.lower() or result.exception is not None
     
-    @patch('cli.main.resolve_cli_user')
+    @patch('cli.commands.jobs.resolve_cli_user')
     @patch('core.services.scheduled_archive_service.ScheduledArchiveService')
     @patch('flask_apscheduler.APScheduler')
     @patch('core.services.background_job_service.BackgroundJobService')
@@ -339,7 +339,7 @@ class TestJobCLICommands:
         assert 'job_456' in result.output
         mock_scheduled_service.remove_user_schedule.assert_called_once_with(1)
     
-    @patch('cli.main.resolve_cli_user')
+    @patch('cli.commands.jobs.resolve_cli_user')
     @patch('core.services.scheduled_archive_service.ScheduledArchiveService')
     @patch('flask_apscheduler.APScheduler')
     @patch('core.services.background_job_service.BackgroundJobService')
@@ -381,10 +381,8 @@ class TestJobCLICommands:
         result = self.runner.invoke(jobs_app, ['health'])
         
         # Assert
-        # The test is failing with SystemExit(1), similar to status commands
-        assert result.exit_code == 1
-        # Check for error message instead
-        assert 'health' in result.output.lower() or result.exception is not None
+        assert result.exit_code == 0
+        assert 'Health Check' in result.output
     
     @patch('flask_apscheduler.APScheduler')
     @patch('core.services.background_job_service.BackgroundJobService')
@@ -408,7 +406,5 @@ class TestJobCLICommands:
         result = self.runner.invoke(jobs_app, ['health'])
         
         # Assert
-        # The test is failing with SystemExit(1), similar to other health/status commands
-        assert result.exit_code == 1
-        # Check for error message instead
-        assert 'health' in result.output.lower() or result.exception is not None
+        assert result.exit_code == 0
+        assert 'Health Check' in result.output

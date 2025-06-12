@@ -178,7 +178,7 @@ class TestArchivingFlowIntegration:
     @patch('core.utilities.get_graph_client')
     @patch('core.services.user_service.UserService.get_by_id')
     @patch('core.services.archive_configuration_service.ArchiveConfigurationService.get_by_id')
-    @patch('core.orchestrators.calendar_archive_orchestrator.CalendarArchiveOrchestrator.archive_user_appointments')
+    @patch('core.orchestrators.calendar_archive_orchestrator.CalendarArchiveOrchestrator.archive_user_appointments_with_config')
     def test_archive_job_runner_integration(
         self, mock_archive, mock_config_service, mock_user_service,
         mock_get_client, mock_get_token, job_runner, test_user, test_archive_config
@@ -190,9 +190,12 @@ class TestArchivingFlowIntegration:
         mock_get_token.return_value = "fake_access_token"
         mock_get_client.return_value = MagicMock()  # Mock MS Graph client
         mock_archive.return_value = {
+            "status": "success",
+            "archive_type": "general",
             "archived_count": 5,
             "overlap_count": 0,
-            "errors": []
+            "errors": [],
+            "correlation_id": "test-123"
         }
         
         # Execute job

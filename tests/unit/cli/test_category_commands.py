@@ -17,7 +17,7 @@ class TestCategoryCLICommands:
         """Set up test fixtures"""
         self.runner = CliRunner()
     
-    @patch('cli.common.utils.resolve_cli_user')
+    @patch('cli.commands.category.resolve_cli_user')
     @patch('core.repositories.get_category_repository')
     @patch('core.services.category_service.CategoryService')
     def test_category_list_command_success_local(self, mock_category_service_class,
@@ -58,9 +58,9 @@ class TestCategoryCLICommands:
     
     def test_category_list_command_success_msgraph(self):
         """Test successful category listing with msgraph store"""
-        with patch('cli.common.utils.resolve_cli_user') as mock_resolve_user, \
-             patch('core.utilities.auth_utility.get_cached_access_token') as mock_get_token, \
-             patch('core.utilities.get_graph_client') as mock_get_graph_client, \
+        with patch('cli.commands.category.resolve_cli_user') as mock_resolve_user, \
+             patch('cli.commands.category.get_cached_access_token') as mock_get_token, \
+             patch('cli.commands.category.get_graph_client') as mock_get_graph_client, \
              patch('core.repositories.get_category_repository') as mock_get_repo, \
              patch('core.services.category_service.CategoryService') as mock_category_service_class:
 
@@ -94,8 +94,8 @@ class TestCategoryCLICommands:
             mock_get_token.assert_called_once()
             mock_get_graph_client.assert_called_once_with(mock_user, 'valid_token')
 
-    @patch('cli.common.utils.resolve_cli_user')
-    @patch('core.utilities.auth_utility.get_cached_access_token')
+    @patch('cli.commands.category.resolve_cli_user')
+    @patch('cli.commands.category.get_cached_access_token')
     def test_category_list_command_no_token_msgraph(self, mock_get_token, mock_resolve_user):
         """Test category listing with msgraph store when no token available"""
         # Arrange
@@ -111,7 +111,7 @@ class TestCategoryCLICommands:
         assert result.exit_code == 1
         assert 'No valid MS Graph token found' in result.output
 
-    @patch('cli.common.utils.resolve_cli_user')
+    @patch('cli.commands.category.resolve_cli_user')
     def test_category_list_command_user_not_found(self, mock_resolve_user):
         """Test category listing when user not found"""
         # Arrange
@@ -124,7 +124,7 @@ class TestCategoryCLICommands:
         assert result.exit_code == 1
         assert 'No user found for identifier: 999' in result.output
     
-    @patch('cli.common.utils.resolve_cli_user')
+    @patch('cli.commands.category.resolve_cli_user')
     @patch('core.repositories.get_category_repository')
     @patch('core.services.category_service.CategoryService')
     def test_category_list_command_no_categories(self, mock_category_service_class,
@@ -148,7 +148,7 @@ class TestCategoryCLICommands:
         assert result.exit_code == 0
         assert 'No categories found' in result.output
 
-    @patch('cli.common.utils.resolve_cli_user')
+    @patch('cli.commands.category.resolve_cli_user')
     def test_category_list_command_invalid_store(self, mock_resolve_user):
         """Test category listing with invalid store option"""
         # Arrange
@@ -162,7 +162,7 @@ class TestCategoryCLICommands:
         assert result.exit_code == 1
         assert "Invalid store 'invalid'" in result.output
     
-    @patch('cli.common.utils.resolve_cli_user')
+    @patch('cli.commands.category.resolve_cli_user')
     @patch('core.repositories.get_category_repository')
     @patch('core.services.category_service.CategoryService')
     @patch('typer.prompt')
@@ -192,7 +192,7 @@ class TestCategoryCLICommands:
         assert 'New Client - Hourly' in result.output
         mock_category_service.create.assert_called_once()
     
-    @patch('cli.common.utils.resolve_cli_user')
+    @patch('cli.commands.category.resolve_cli_user')
     @patch('core.repositories.get_category_repository')
     @patch('core.services.category_service.CategoryService')
     def test_category_add_command_with_options(self, mock_category_service_class,
@@ -222,7 +222,7 @@ class TestCategoryCLICommands:
         assert 'created successfully in local store' in result.output
         mock_category_service.create.assert_called_once()
     
-    @patch('cli.common.utils.resolve_cli_user')
+    @patch('cli.commands.category.resolve_cli_user')
     @patch('core.repositories.get_category_repository')
     @patch('core.services.category_service.CategoryService')
     def test_category_delete_command_success(self, mock_category_service_class,
@@ -256,7 +256,7 @@ class TestCategoryCLICommands:
         assert 'deleted successfully from local store' in result.output
         mock_category_service.delete.assert_called_once_with('1')
 
-    @patch('cli.common.utils.resolve_cli_user')
+    @patch('cli.commands.category.resolve_cli_user')
     @patch('core.repositories.get_category_repository')
     @patch('core.services.category_service.CategoryService')
     def test_category_delete_command_cancelled(self, mock_category_service_class,
@@ -290,7 +290,7 @@ class TestCategoryCLICommands:
         assert 'deletion cancelled' in result.output
         mock_category_service.delete.assert_not_called()
 
-    @patch('cli.common.utils.resolve_cli_user')
+    @patch('cli.commands.category.resolve_cli_user')
     @patch('core.repositories.get_category_repository')
     @patch('core.services.category_service.CategoryService')
     def test_category_delete_command_not_found(self, mock_category_service_class,
@@ -317,9 +317,9 @@ class TestCategoryCLICommands:
         assert 'Category 999 not found for user 1' in result.output
 
     @patch('core.services.category_processing_service.CategoryProcessingService')
-    @patch('core.db.get_session')
-    @patch('cli.common.utils.parse_flexible_date')
-    @patch('cli.common.utils.resolve_cli_user')
+    @patch('cli.commands.category.get_session')
+    @patch('cli.commands.category.parse_flexible_date')
+    @patch('cli.commands.category.resolve_cli_user')
     def test_category_validate_command_success(self, mock_resolve_user, mock_parse_flexible_date,
                                               mock_get_session, mock_category_processing_class):
         """Test successful category validation"""
@@ -331,9 +331,11 @@ class TestCategoryCLICommands:
         from datetime import date
         mock_parse_flexible_date.side_effect = [date(2024, 1, 1), date(2024, 1, 31)]
 
-        # Mock session and query
+        # Mock session and query chain properly
         mock_session = Mock()
         mock_get_session.return_value = mock_session
+
+        # Create a proper query chain mock that handles the specific query pattern
         mock_query = Mock()
         mock_session.query.return_value = mock_query
         mock_query.filter.return_value = mock_query
@@ -360,7 +362,7 @@ class TestCategoryCLICommands:
         assert result.exit_code == 0
         assert 'No appointments found for the specified date range' in result.output
 
-    @patch('cli.common.utils.resolve_cli_user')
+    @patch('cli.commands.category.resolve_cli_user')
     def test_category_validate_command_user_not_found(self, mock_resolve_user):
         """Test category validation when user not found"""
         # Arrange
@@ -375,7 +377,7 @@ class TestCategoryCLICommands:
         assert result.exit_code == 1
         assert 'No user found for identifier: 999' in result.output
 
-    @patch('cli.common.utils.resolve_cli_user')
+    @patch('cli.commands.category.resolve_cli_user')
     @patch('core.repositories.get_category_repository')
     @patch('core.services.category_service.CategoryService')
     def test_category_edit_command_success(self, mock_category_service_class,
@@ -407,7 +409,7 @@ class TestCategoryCLICommands:
         assert 'Category 1 updated successfully in local store' in result.output
         mock_category_service.update.assert_called_once()
 
-    @patch('cli.common.utils.resolve_cli_user')
+    @patch('cli.commands.category.resolve_cli_user')
     @patch('core.repositories.get_category_repository')
     @patch('core.services.category_service.CategoryService')
     def test_category_commands_error_handling(self, mock_category_service_class,

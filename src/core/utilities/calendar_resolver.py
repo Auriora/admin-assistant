@@ -149,35 +149,35 @@ class CalendarResolver:
     def _resolve_msgraph_calendar(self, parsed: ParsedURI) -> str:
         """
         Resolve MS Graph calendar URI.
-        
+
         Args:
             parsed: Parsed URI object
-            
+
         Returns:
             MS Graph calendar ID
         """
         if not self.access_token:
             raise CalendarResolutionError("MS Graph access token required for msgraph:// URIs")
-        
-        # Handle primary calendar
-        if parsed.identifier in ('primary', 'calendar', ''):
-            return ""  # Empty string represents primary calendar in MS Graph
-        
+
         # If identifier looks like a real MS Graph ID, return as-is
         if not parsed.is_friendly_name:
+            # Handle special case for primary calendar even when treated as technical ID
+            if parsed.identifier in ('primary', 'calendar', ''):
+                logger.debug(f"Technical ID '{parsed.identifier}' is primary calendar, returning empty string")
+                return ""  # Empty string represents primary calendar in MS Graph
             logger.debug(f"Identifier appears to be a technical ID, using as-is: {parsed.identifier}")
             return parsed.identifier
-        
+
         # Resolve friendly name to actual calendar ID
         calendars = self._get_msgraph_calendars()
-        
+
         # Try exact name match first
         for cal in calendars:
             if cal.get('name', '') == parsed.identifier:
                 calendar_id = cal.get('id', '')
                 logger.debug(f"Resolved '{parsed.identifier}' to calendar ID via exact match: {calendar_id}")
                 return calendar_id
-        
+
         # Try normalized name matching
         target_normalized = normalize_calendar_name_for_lookup(parsed.identifier)
         for cal in calendars:
@@ -186,7 +186,7 @@ class CalendarResolver:
                 calendar_id = cal.get('id', '')
                 logger.debug(f"Resolved '{parsed.identifier}' to calendar ID via normalized match: {calendar_id}")
                 return calendar_id
-        
+
         # Try legacy-compatible matching for backward compatibility
         target_legacy = create_legacy_compatible_lookup_key(parsed.identifier)
         for cal in calendars:
@@ -195,7 +195,12 @@ class CalendarResolver:
                 calendar_id = cal.get('id', '')
                 logger.debug(f"Resolved '{parsed.identifier}' to calendar ID via legacy match: {calendar_id}")
                 return calendar_id
-        
+
+        # Handle special cases only if no actual calendar was found with that name
+        if parsed.identifier in ('primary', 'calendar', ''):
+            logger.debug(f"No calendar found with name '{parsed.identifier}', treating as primary calendar")
+            return ""  # Empty string represents primary calendar in MS Graph
+
         # If not found, return the identifier as-is (might be a valid ID we don't recognize)
         logger.warning(f"Calendar '{parsed.identifier}' not found in user's calendars, using as-is")
         return parsed.identifier

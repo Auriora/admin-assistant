@@ -206,7 +206,8 @@ def parse_date_range(date_str: str) -> tuple[date, date]:
     if date_str in ("last month",):
         return get_last_month_range(yesterday)
     # Range: <date> to <date> or <date> - <date>
-    range_match = re.match(r"(.+?)(?:\s*(?:to|-)\s*)(.+)", date_str)
+    # Use word boundaries and spaces to avoid matching hyphens within dates
+    range_match = re.match(r"(.+?)(?:\s+(?:to|-)\s+)(.+)", date_str)
     if range_match:
         start_str, end_str = range_match.group(1).strip(), range_match.group(2).strip()
         start = parse_flexible_date(start_str)

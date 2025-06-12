@@ -100,26 +100,49 @@ def add_account_context_to_uri(uri: str, account_context: str) -> str:
     # Handle empty or legacy URIs
     if uri in ('', 'calendar', 'primary'):
         return f'msgraph://{account_context}/calendars/primary'
-    
+
     # Parse URI to check if it already has account context
     if '://' not in uri:
         # Malformed URI, try to fix it
         return f'msgraph://{account_context}/calendars/{uri}'
-    
+
     scheme, rest = uri.split('://', 1)
-    
+
     # Check if URI already has account context
     # New format: scheme://account/namespace/identifier
     # Legacy format: scheme://namespace/identifier
-    
+
     parts = rest.split('/')
     if len(parts) >= 2:
-        # Check if first part looks like an account (contains @ or is numeric)
+        # Check if first part looks like an account
         first_part = parts[0]
-        if '@' in first_part or first_part.isdigit():
-            # Already has account context
+
+        # More robust account detection:
+        # 1. Contains @ (email address)
+        # 2. Is purely numeric (user ID)
+        # 3. Is a known namespace like 'calendars' (NOT an account)
+        # 4. Contains : but not :// (likely server:port, not account)
+
+        if '@' in first_part:
+            # Definitely an email account
             return uri
-    
+        elif first_part.isdigit():
+            # Numeric user ID account
+            return uri
+        elif first_part == 'calendars':
+            # Known namespace, not an account - needs account context
+            pass
+        elif ':' in first_part and '://' not in first_part:
+            # Likely server:port format, not an account - needs account context
+            pass
+        else:
+            # Could be a username account or other identifier
+            # If it's not a known namespace, assume it's an account
+            known_namespaces = ['calendars']
+            if first_part not in known_namespaces:
+                # Assume it's an account context
+                return uri
+
     # Add account context to legacy URI
     return f'{scheme}://{account_context}/{rest}'
 
@@ -127,34 +150,59 @@ def add_account_context_to_uri(uri: str, account_context: str) -> str:
 def remove_account_context_from_uri(uri: str) -> str:
     """
     Remove account context from a URI to revert to legacy format.
-    
+
     Transforms:
     - msgraph://user@example.com/calendars/primary -> msgraph://calendars/primary
     - local://user@example.com/calendars/personal -> local://calendars/personal
-    
+
     Args:
         uri: URI with account context
-        
+
     Returns:
         Legacy URI without account context
     """
     if not uri:
         return uri
-        
+
     if '://' not in uri:
         return uri
-    
+
     scheme, rest = uri.split('://', 1)
     parts = rest.split('/')
-    
+
     if len(parts) >= 2:
-        # Check if first part looks like an account (contains @ or is numeric)
+        # Check if first part looks like an account
         first_part = parts[0]
-        if '@' in first_part or first_part.isdigit():
-            # Remove account context
+
+        # More robust account detection (same logic as add function):
+        # 1. Contains @ (email address)
+        # 2. Is purely numeric (user ID)
+        # 3. Is a known namespace like 'calendars' (NOT an account)
+        # 4. Contains : but not :// (likely server:port, not account)
+
+        if '@' in first_part:
+            # Definitely an email account - remove it
             remaining_parts = parts[1:]
             return f'{scheme}://{"/".join(remaining_parts)}'
-    
+        elif first_part.isdigit():
+            # Numeric user ID account - remove it
+            remaining_parts = parts[1:]
+            return f'{scheme}://{"/".join(remaining_parts)}'
+        elif first_part == 'calendars':
+            # Known namespace, not an account - no change needed
+            return uri
+        elif ':' in first_part and '://' not in first_part:
+            # Likely server:port format, not an account - no change needed
+            return uri
+        else:
+            # Could be a username account
+            # If it's not a known namespace, assume it's an account and remove it
+            known_namespaces = ['calendars']
+            if first_part not in known_namespaces:
+                # Assume it's an account context - remove it
+                remaining_parts = parts[1:]
+                return f'{scheme}://{"/".join(remaining_parts)}'
+
     # No account context found, return as-is
     return uri
 

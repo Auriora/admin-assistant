@@ -15,6 +15,7 @@ from cli.common.utils import (
     validate_uri_account_context,
     get_uri_autocompletion_suggestions,
 )
+from core.services.archive_configuration_service import ArchiveConfigurationService
 
 timesheet_config_app = typer.Typer(help="Timesheet configuration management")
 
@@ -22,8 +23,6 @@ timesheet_config_app = typer.Typer(help="Timesheet configuration management")
 @timesheet_config_app.command("list")
 def list_timesheet_configs(user_input: Optional[str] = user_option):
     """List all timesheet configurations for a user."""
-    from core.services.archive_configuration_service import ArchiveConfigurationService
-
     try:
         # Get user
         user = resolve_cli_user(user_input)
@@ -107,7 +106,6 @@ def create_timesheet_config(
     for business categories (billable, non-billable, travel) and exclude personal appointments.
     """
     from core.models.archive_configuration import ArchiveConfiguration
-    from core.services.archive_configuration_service import ArchiveConfigurationService
 
     console = Console()
 
@@ -215,8 +213,6 @@ def activate_timesheet_config(
     ),
 ):
     """Activate a timesheet configuration (set is_active=True)."""
-    from core.services.archive_configuration_service import ArchiveConfigurationService
-
     try:
         # Get user
         user = resolve_cli_user(user_input)
@@ -250,8 +246,6 @@ def deactivate_timesheet_config(
     ),
 ):
     """Deactivate a timesheet configuration (set is_active=False)."""
-    from core.services.archive_configuration_service import ArchiveConfigurationService
-
     try:
         # Get user
         user = resolve_cli_user(user_input)
@@ -285,8 +279,6 @@ def delete_timesheet_config(
     ),
 ):
     """Delete a timesheet configuration by ID."""
-    from core.services.archive_configuration_service import ArchiveConfigurationService
-
     try:
         # Get user
         user = resolve_cli_user(user_input)

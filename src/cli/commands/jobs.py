@@ -7,9 +7,177 @@ from rich.console import Console
 from rich.table import Table
 
 from cli.common.options import user_option
-from cli.common.utils import resolve_cli_user
+from cli.common.utils import resolve_cli_user, parse_date_range
 
 jobs_app = typer.Typer(help="Background job management")
+
+
+@jobs_app.command("schedule")
+def schedule_archive_job(
+    user_input: Optional[str] = user_option,
+    schedule_type: str = typer.Option("daily", "--type", help="Schedule type (daily or weekly)"),
+    hour: int = typer.Option(23, "--hour", help="Hour to run (0-23)"),
+    minute: int = typer.Option(59, "--minute", help="Minute to run (0-59)"),
+    day_of_week: Optional[int] = typer.Option(None, "--day", help="Day of week for weekly jobs (0=Monday, 6=Sunday)")
+):
+    """Schedule recurring archive jobs for a user."""
+    from flask_apscheduler import APScheduler
+    from core.services.background_job_service import BackgroundJobService
+    from core.services.scheduled_archive_service import ScheduledArchiveService
+
+    console = Console()
+
+    try:
+        # Validate schedule type
+        if schedule_type not in ["daily", "weekly"]:
+            console.print(f"[red]Invalid schedule type: {schedule_type}. Must be 'daily' or 'weekly'.[/red]")
+            raise typer.Exit(code=1)
+
+        user = resolve_cli_user(user_input)
+
+        # Initialize services
+        scheduler = APScheduler()
+        bg_service = BackgroundJobService(scheduler)
+        scheduled_service = ScheduledArchiveService()
+
+        # Schedule the jobs
+        result = scheduled_service.update_user_schedule(
+            user_id=user.id,
+            schedule_type=schedule_type,
+            hour=hour,
+            minute=minute,
+            day_of_week=day_of_week
+        )
+
+        if not result["updated_jobs"]:
+            console.print("[yellow]No active archive configurations found for user. No jobs scheduled.[/yellow]")
+            return
+
+        console.print(f"[green]Successfully scheduled jobs for user {user.username or user.email}:[/green]")
+        for job in result["updated_jobs"]:
+            console.print(f"  • Job ID: {job['job_id']}")
+            console.print(f"    Config: {job['config_name']} (ID: {job['config_id']})")
+            console.print(f"    Schedule: {job['schedule_type']}")
+
+        if result["failed_jobs"]:
+            console.print("[yellow]Some jobs failed to schedule:[/yellow]")
+            for failed in result["failed_jobs"]:
+                console.print(f"  • {failed}")
+
+    except Exception as e:
+        console.print(f"[red]Failed to schedule jobs: {e}[/red]")
+        raise typer.Exit(code=1)
+
+
+@jobs_app.command("trigger")
+def trigger_manual_archive(
+    user_input: Optional[str] = user_option,
+    start_date: Optional[str] = typer.Option(None, "--start", help="Start date for archive"),
+    end_date: Optional[str] = typer.Option(None, "--end", help="End date for archive"),
+    config_id: Optional[int] = typer.Option(None, "--config", help="Archive configuration ID")
+):
+    """Trigger a manual archive job."""
+    from flask_apscheduler import APScheduler
+    from core.services.background_job_service import BackgroundJobService
+    from core.services.archive_configuration_service import ArchiveConfigurationService
+
+    console = Console()
+
+    try:
+        user = resolve_cli_user(user_input)
+
+        # Parse date range if provided
+        if start_date and end_date:
+            from cli.common.utils import parse_flexible_date
+            start = parse_flexible_date(start_date)
+            end = parse_flexible_date(end_date)
+        elif start_date:
+            start, end = parse_date_range(start_date)
+        else:
+            start, end = parse_date_range("yesterday")
+
+        # Get archive configuration
+        archive_service = ArchiveConfigurationService()
+        if config_id:
+            config = archive_service.get_by_id(config_id)
+            if not config or config.user_id != user.id:
+                console.print(f"[red]Archive configuration {config_id} not found for user.[/red]")
+                raise typer.Exit(code=1)
+        else:
+            config = archive_service.get_active_config_for_user(user.id)
+            if not config:
+                console.print("[red]No active archive configuration found for user.[/red]")
+                raise typer.Exit(code=1)
+
+        # Initialize services and trigger job
+        scheduler = APScheduler()
+        bg_service = BackgroundJobService(scheduler)
+
+        job_id = bg_service.trigger_manual_archive(
+            user_id=user.id,
+            config_id=config.id,
+            start_date=start,
+            end_date=end
+        )
+
+        console.print(f"[green]Manual archive job triggered successfully![/green]")
+        console.print(f"Job ID: {job_id}")
+        console.print(f"User: {user.username or user.email}")
+        console.print(f"Config: {config.name}")
+        console.print(f"Date range: {start} to {end}")
+
+    except Exception as e:
+        console.print(f"[red]Failed to trigger manual archive: {e}[/red]")
+        raise typer.Exit(code=1)
+
+
+@jobs_app.command("remove")
+def remove_scheduled_jobs(
+    user_input: Optional[str] = user_option,
+    confirm: bool = typer.Option(False, "--confirm", help="Skip confirmation prompt")
+):
+    """Remove all scheduled jobs for a user."""
+    from flask_apscheduler import APScheduler
+    from core.services.background_job_service import BackgroundJobService
+    from core.services.scheduled_archive_service import ScheduledArchiveService
+
+    console = Console()
+
+    try:
+        user = resolve_cli_user(user_input)
+
+        # Confirmation prompt unless --confirm is used
+        if not confirm:
+            confirm_removal = typer.confirm(
+                f"Are you sure you want to remove all scheduled jobs for user {user.username or user.email}?"
+            )
+            if not confirm_removal:
+                console.print("[yellow]Operation cancelled.[/yellow]")
+                return
+
+        # Initialize services
+        scheduler = APScheduler()
+        bg_service = BackgroundJobService(scheduler)
+        scheduled_service = ScheduledArchiveService()
+
+        # Remove jobs
+        result = scheduled_service.remove_user_schedule(user.id)
+
+        if result["removed_jobs"]:
+            console.print(f"[green]Successfully removed jobs for user {user.username or user.email}:[/green]")
+            for job_id in result["removed_jobs"]:
+                console.print(f"  • {job_id}")
+        else:
+            console.print("[yellow]No scheduled jobs found to remove.[/yellow]")
+
+        if result["failed_removals"]:
+            console.print("[yellow]Some jobs failed to remove:[/yellow]")
+            for failed in result["failed_removals"]:
+                console.print(f"  • {failed}")
+
+    except Exception as e:
+        console.print(f"[red]Failed to remove scheduled jobs: {e}[/red]")
+        raise typer.Exit(code=1)
 
 
 @jobs_app.command("status")

@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import Any, Callable, Dict, Optional, Union
 
 from core.services.audit_log_service import AuditLogService
+from core.utilities.audit_sanitizer import sanitize_for_audit
 
 
 class AuditContext:
@@ -86,15 +87,36 @@ class AuditContext:
 
     def add_detail(self, key: str, value: Any):
         """Add a detail to the audit log."""
-        self.details[key] = value
+        try:
+            self.details[key] = sanitize_for_audit(value)
+        except Exception as e:
+            # If sanitization fails, log the error and store a safe representation
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"Failed to sanitize audit detail '{key}': {e}")
+            self.details[key] = f"<sanitization_failed:{type(value).__name__}>"
 
     def set_request_data(self, data: Dict[str, Any]):
         """Set the request data for the audit log."""
-        self.request_data = data
+        try:
+            self.request_data = sanitize_for_audit(data)
+        except Exception as e:
+            # If sanitization fails, log the error and store a safe representation
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"Failed to sanitize audit request data: {e}")
+            self.request_data = {"error": f"<sanitization_failed:{type(data).__name__}>"}
 
     def set_response_data(self, data: Dict[str, Any]):
         """Set the response data for the audit log."""
-        self.response_data = data
+        try:
+            self.response_data = sanitize_for_audit(data)
+        except Exception as e:
+            # If sanitization fails, log the error and store a safe representation
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"Failed to sanitize audit response data: {e}")
+            self.response_data = {"error": f"<sanitization_failed:{type(data).__name__}>"}
 
     def update_resource(self, resource_type: str, resource_id: str):
         """Update the resource information."""

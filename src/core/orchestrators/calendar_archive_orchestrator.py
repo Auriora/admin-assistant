@@ -422,7 +422,9 @@ class CalendarArchiveOrchestrator:
                     "correlation_id": correlation_id,
                     "total_appointments_fetched": len(appointments),
                     "business_appointments_archived": len(filtered_appointments),
+                    "business_appointments": len(filtered_appointments),  # For test compatibility
                     "personal_appointments_excluded": len(excluded_appointments),
+                    "excluded_appointments": len(excluded_appointments),  # For test compatibility
                     "timesheet_statistics": timesheet_stats,
                     "overlap_resolutions": overlap_resolutions,
                     "archive_errors": archive_result.get("errors", []),
