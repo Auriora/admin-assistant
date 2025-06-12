@@ -47,6 +47,7 @@ class BackgroundJobService:
         self._backup_job_config_service = None
         self._archive_runner = None
         self._backup_service = None
+        self._closed = False
 
     def set_scheduler(self, scheduler: APScheduler):
         """Set the scheduler instance (used when initializing from Flask app)."""
@@ -857,3 +858,65 @@ class BackgroundJobService:
             )
 
         return jobs
+
+    def close(self):
+        """
+        Close the service and clean up resources.
+
+        This method ensures that all services and resources created by this service
+        are properly closed and cleaned up.
+        """
+        if self._closed:
+            return
+
+        # Close services created in __init__
+        if hasattr(self, 'user_service') and self.user_service:
+            try:
+                self.user_service.close()
+            except Exception as e:
+                logger.debug(f"Error closing user_service: {e}")
+
+        if hasattr(self, 'archive_config_service') and self.archive_config_service:
+            try:
+                self.archive_config_service.close()
+            except Exception as e:
+                logger.debug(f"Error closing archive_config_service: {e}")
+
+        if hasattr(self, 'job_config_service') and self.job_config_service:
+            try:
+                self.job_config_service.close()
+            except Exception as e:
+                logger.debug(f"Error closing job_config_service: {e}")
+
+        # Close lazy-loaded services if they were initialized
+        if self._archive_runner is not None:
+            try:
+                self._archive_runner.close()
+            except Exception as e:
+                logger.debug(f"Error closing archive_runner: {e}")
+            self._archive_runner = None
+
+        if self._backup_service is not None:
+            try:
+                self._backup_service.close()
+            except Exception as e:
+                logger.debug(f"Error closing backup_service: {e}")
+            self._backup_service = None
+
+        if self._backup_job_config_service is not None:
+            try:
+                self._backup_job_config_service.close()
+            except Exception as e:
+                logger.debug(f"Error closing backup_job_config_service: {e}")
+            self._backup_job_config_service = None
+
+        self._closed = True
+        logger.debug("BackgroundJobService closed successfully")
+
+    def __del__(self):
+        """Ensure resources are cleaned up when the service is garbage collected."""
+        try:
+            self.close()
+        except:
+            # Ignore errors during garbage collection
+            pass

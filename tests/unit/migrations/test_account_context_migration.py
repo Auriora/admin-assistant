@@ -16,8 +16,14 @@ def get_migration_module():
     """Load migration module for testing."""
     import importlib.util
     import sys
+    import os
 
-    migration_path = "src/core/migrations/versions/20250610_add_account_context_to_uris.py"
+    # Get the absolute path to the repository root
+    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.."))
+
+    # Construct the absolute path to the migration file
+    migration_path = os.path.join(repo_root, "src/core/migrations/versions/20250610_add_account_context_to_uris.py")
+
     spec = importlib.util.spec_from_file_location("migration_module", migration_path)
     migration_module = importlib.util.module_from_spec(spec)
     sys.modules["migration_module"] = migration_module
@@ -70,80 +76,58 @@ class TestAccountContextMigration:
 
     def test_add_account_context_to_uri_function(self):
         """Test the add_account_context_to_uri function"""
-        import importlib.util
-        import sys
-
-        # Import the migration module using importlib
-        spec = importlib.util.spec_from_file_location(
-            "migration_module",
-            "src/core/migrations/versions/20250610_add_account_context_to_uris.py"
-        )
-        migration_module = importlib.util.module_from_spec(spec)
-        sys.modules["migration_module"] = migration_module
-        spec.loader.exec_module(migration_module)
-
+        migration_module = get_migration_module()
         add_account_context_to_uri = migration_module.add_account_context_to_uri
-        
+
         # Test with email
         result = add_account_context_to_uri("msgraph://calendars/primary", "user@example.com")
         assert result == "msgraph://user@example.com/calendars/primary"
-        
+
         # Test with username (no email)
         result = add_account_context_to_uri("msgraph://calendars/primary", "username")
         assert result == "msgraph://username/calendars/primary"
-        
+
         # Test with quoted identifier
         result = add_account_context_to_uri("msgraph://calendars/\"Custom Calendar\"", "user@example.com")
         assert result == "msgraph://user@example.com/calendars/\"Custom Calendar\""
-        
+
         # Test with already migrated URI (should not double-migrate)
         result = add_account_context_to_uri("msgraph://user@example.com/calendars/primary", "user@example.com")
         assert result == "msgraph://user@example.com/calendars/primary"
-        
+
         # Test with different scheme
         result = add_account_context_to_uri("local://calendars/primary", "user@example.com")
         assert result == "local://user@example.com/calendars/primary"
-        
+
         # Test with None account
         result = add_account_context_to_uri("msgraph://calendars/primary", None)
         assert result == "msgraph://calendars/primary"  # No change
-        
+
         # Test with empty account
         result = add_account_context_to_uri("msgraph://calendars/primary", "")
         assert result == "msgraph://calendars/primary"  # No change
 
     def test_remove_account_context_from_uri_function(self):
         """Test the remove_account_context_from_uri function"""
-        import importlib.util
-        import sys
-
-        # Import the migration module using importlib
-        spec = importlib.util.spec_from_file_location(
-            "migration_module",
-            "src/core/migrations/versions/20250610_add_account_context_to_uris.py"
-        )
-        migration_module = importlib.util.module_from_spec(spec)
-        sys.modules["migration_module"] = migration_module
-        spec.loader.exec_module(migration_module)
-
+        migration_module = get_migration_module()
         remove_account_context_from_uri = migration_module.remove_account_context_from_uri
-        
+
         # Test with account context
         result = remove_account_context_from_uri("msgraph://user@example.com/calendars/primary")
         assert result == "msgraph://calendars/primary"
-        
+
         # Test with username account
         result = remove_account_context_from_uri("msgraph://username/calendars/primary")
         assert result == "msgraph://calendars/primary"
-        
+
         # Test with quoted identifier
         result = remove_account_context_from_uri("msgraph://user@example.com/calendars/\"Custom Calendar\"")
         assert result == "msgraph://calendars/\"Custom Calendar\""
-        
+
         # Test with legacy URI (no account context)
         result = remove_account_context_from_uri("msgraph://calendars/primary")
         assert result == "msgraph://calendars/primary"  # No change
-        
+
         # Test with different scheme
         result = remove_account_context_from_uri("local://user@example.com/calendars/primary")
         assert result == "local://calendars/primary"
@@ -229,7 +213,7 @@ class TestAccountContextMigration:
 
         with patch('migration_module.op', mock_op):
             # Setup mock connection responses
-            def mock_execute_side_effect(query):
+            def mock_execute_side_effect(query, params=None):
                 result_mock = Mock()
                 if "FROM archive_configurations ac" in str(query) and "LEFT JOIN users u" in str(query):
                     # This is the main migration query - return configurations with user data
@@ -252,15 +236,15 @@ class TestAccountContextMigration:
                 else:
                     result_mock.fetchall.return_value = []
                 return result_mock
-            
+
             mock_connection.execute.side_effect = mock_execute_side_effect
-            
+
             upgrade()
-            
+
             # Verify that URI updates were executed
             update_calls = [call for call in mock_connection.execute.call_args_list 
                           if "UPDATE archive_configurations" in str(call[0][0])]
-            
+
             # Should have update calls for configurations that needed migration
             assert len(update_calls) > 0
 
@@ -268,16 +252,16 @@ class TestAccountContextMigration:
         """Test that upgrade migration handles missing users gracefully"""
         migration_module = get_migration_module()
         upgrade = migration_module.upgrade
-        
+
         # Configuration with non-existent user
         configurations = [(1, "msgraph://calendars/primary", "msgraph://calendars/archive", 999)]
         users = [(1, "user1@example.com", "user1")]  # User 999 doesn't exist
-        
+
         # Mock the operations with proper context manager support
         mock_op, mock_batch_op = create_mock_op(mock_connection)
 
         with patch('migration_module.op', mock_op):
-            def mock_execute_side_effect(query):
+            def mock_execute_side_effect(query, params=None):
                 result_mock = Mock()
                 if "SELECT id, source_calendar_uri, destination_calendar_uri, user_id" in str(query):
                     result_mock.fetchall.return_value = configurations
@@ -286,9 +270,9 @@ class TestAccountContextMigration:
                 else:
                     result_mock.fetchall.return_value = []
                 return result_mock
-            
+
             mock_connection.execute.side_effect = mock_execute_side_effect
-            
+
             # Should not raise exception
             upgrade()
 
@@ -321,18 +305,18 @@ class TestAccountContextMigration:
         """Test that downgrade migration reverts URIs to legacy format"""
         migration_module = get_migration_module()
         downgrade = migration_module.downgrade
-        
+
         # Configurations with account context
         migrated_configurations = [
             (1, "msgraph://user1@example.com/calendars/primary", "msgraph://user1@example.com/calendars/archive"),
             (2, "msgraph://user2@example.com/calendars/work", "msgraph://user2@example.com/calendars/backup"),
         ]
-        
+
         # Mock the operations with proper context manager support
         mock_op, mock_batch_op = create_mock_op(mock_connection)
 
         with patch('migration_module.op', mock_op):
-            def mock_execute_side_effect(query):
+            def mock_execute_side_effect(query, params=None):
                 result_mock = Mock()
                 if "SELECT id, source_calendar_uri, destination_calendar_uri" in str(query):
                     result_mock.fetchall.return_value = migrated_configurations
@@ -341,13 +325,13 @@ class TestAccountContextMigration:
                 return result_mock
 
             mock_connection.execute.side_effect = mock_execute_side_effect
-            
+
             downgrade()
-            
+
             # Verify that URI reverts were executed
             update_calls = [call for call in mock_connection.execute.call_args_list 
                           if "UPDATE archive_configurations" in str(call[0][0])]
-            
+
             # Should have update calls for configurations that needed reversion
             assert len(update_calls) > 0
 
@@ -355,14 +339,14 @@ class TestAccountContextMigration:
         """Test migration error handling"""
         migration_module = get_migration_module()
         upgrade = migration_module.upgrade
-        
+
         # Mock the operations with proper context manager support
         mock_op, mock_batch_op = create_mock_op(mock_connection)
 
         with patch('migration_module.op', mock_op):
             # Simulate database error
             mock_connection.execute.side_effect = Exception("Database connection failed")
-            
+
             # Should handle error gracefully (depending on implementation)
             with pytest.raises(Exception):
                 upgrade()
@@ -371,12 +355,12 @@ class TestAccountContextMigration:
         """Test that migration provides proper statistics and logging"""
         migration_module = get_migration_module()
         upgrade = migration_module.upgrade
-        
+
         # Mock the operations with proper context manager support
         mock_op, mock_batch_op = create_mock_op(mock_connection)
 
         with patch('migration_module.op', mock_op):
-                def mock_execute_side_effect(query):
+                def mock_execute_side_effect(query, params=None):
                     result_mock = Mock()
                     if "SELECT id, source_calendar_uri, destination_calendar_uri, user_id" in str(query):
                         result_mock.fetchall.return_value = sample_configurations
@@ -385,9 +369,9 @@ class TestAccountContextMigration:
                     else:
                         result_mock.fetchall.return_value = []
                     return result_mock
-                
+
                 mock_connection.execute.side_effect = mock_execute_side_effect
-                
+
                 upgrade()
 
                 # Verify migration completed successfully
@@ -398,7 +382,7 @@ class TestAccountContextMigration:
         migration_module = get_migration_module()
         add_account_context_to_uri = migration_module.add_account_context_to_uri
         remove_account_context_from_uri = migration_module.remove_account_context_from_uri
-        
+
         # Test with malformed URIs
         edge_cases = [
             "not-a-uri",
@@ -408,7 +392,7 @@ class TestAccountContextMigration:
             "",
             None
         ]
-        
+
         for uri in edge_cases:
             if uri is not None:
                 # Should handle gracefully without crashing
@@ -419,7 +403,7 @@ class TestAccountContextMigration:
                 except Exception:
                     # Some edge cases might raise exceptions, which is acceptable
                     pass
-                
+
                 try:
                     result = remove_account_context_from_uri(uri)
                     assert isinstance(result, str)
@@ -430,12 +414,12 @@ class TestAccountContextMigration:
         """Test that migration is idempotent (can be run multiple times safely)"""
         migration_module = get_migration_module()
         upgrade = migration_module.upgrade
-        
+
         # Mock the operations with proper context manager support
         mock_op, mock_batch_op = create_mock_op(mock_connection)
 
         with patch('migration_module.op', mock_op):
-            def mock_execute_side_effect(query):
+            def mock_execute_side_effect(query, params=None):
                 result_mock = Mock()
                 if "SELECT id, source_calendar_uri, destination_calendar_uri, user_id" in str(query):
                     # Return already migrated URIs
@@ -449,11 +433,11 @@ class TestAccountContextMigration:
                 else:
                     result_mock.fetchall.return_value = []
                 return result_mock
-            
+
             mock_connection.execute.side_effect = mock_execute_side_effect
-            
+
             # Run migration twice
             upgrade()
             upgrade()
-            
+
             # Should not cause errors or duplicate migrations
