@@ -15,7 +15,7 @@ from cli.common.utils import (
     get_uri_autocompletion_suggestions,
 )
 
-backup_config_app = typer.Typer(help="Backup configuration management")
+backup_config_app = typer.Typer(help="Backup configuration management", rich_markup_mode="rich")
 
 
 @backup_config_app.command("list")

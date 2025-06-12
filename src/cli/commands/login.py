@@ -2,7 +2,7 @@
 
 import typer
 
-login_app = typer.Typer(help="Authentication commands")
+login_app = typer.Typer(help="Authentication commands", rich_markup_mode="rich")
 
 
 @login_app.command("msgraph")

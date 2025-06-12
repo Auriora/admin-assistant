@@ -17,7 +17,7 @@ from cli.common.utils import (
 )
 from core.services.archive_configuration_service import ArchiveConfigurationService
 
-timesheet_config_app = typer.Typer(help="Timesheet configuration management")
+timesheet_config_app = typer.Typer(help="Timesheet configuration management", rich_markup_mode="rich")
 
 
 @timesheet_config_app.command("list")
@@ -31,7 +31,7 @@ def list_timesheet_configs(user_input: Optional[str] = user_option):
         # Filter for timesheet configurations only
         all_configs = service.list_for_user(user.id)
         configs = [c for c in all_configs if getattr(c, 'archive_purpose', 'general') == 'timesheet']
-        
+
         console = Console()
         if not configs:
             console.print(

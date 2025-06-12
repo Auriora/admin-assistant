@@ -16,7 +16,7 @@ from cli.common.utils import (
     get_uri_autocompletion_suggestions,
 )
 
-archive_config_app = typer.Typer(help="Archive configuration management")
+archive_config_app = typer.Typer(help="Archive configuration management", rich_markup_mode="rich")
 
 
 @archive_config_app.command("list")

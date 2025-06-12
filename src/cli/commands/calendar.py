@@ -13,7 +13,7 @@ from core.orchestrators.archive_job_runner import ArchiveJobRunner
 from core.utilities import get_graph_client
 from core.utilities.auth_utility import get_cached_access_token
 
-calendar_app = typer.Typer(help="Calendar operations")
+calendar_app = typer.Typer(help="Calendar operations", rich_markup_mode="rich")
 
 
 @calendar_app.command("archive")
@@ -113,7 +113,7 @@ def timesheet(
     user_input: Optional[str] = user_option,
 ):
     """Archive calendar appointments for timesheet/billing purposes using business category filtering.
-    
+
     This command filters appointments to include only business categories (billable, non-billable, travel),
     excludes personal appointments and 'Free' status appointments, and applies automatic overlap resolution.
     """

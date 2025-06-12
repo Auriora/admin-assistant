@@ -73,22 +73,26 @@ from cli.commands.calendar import calendar_app
 from cli.commands.category import category_app
 from cli.commands.login import login_app
 from cli.commands.jobs import jobs_app
+from cli.commands.interactive_prompt import interactive_prompt_app
 from cli.config.archive import archive_config_app
 from cli.config.timesheet import timesheet_config_app
 from cli.config.backup import backup_config_app
+from cli.config.restoration import restoration_config_app
 
 # Create main app and config app
 app = typer.Typer(
-    help="Admin Assistant CLI for running calendar and timesheet operations."
+    help="Admin Assistant CLI for running calendar and timesheet operations.",
+    rich_markup_mode="rich"
 )
-config_app = typer.Typer(help="Configuration operations")
-archive_config_main_app = typer.Typer(help="Calendar configuration operations")
+config_app = typer.Typer(help="Configuration operations", rich_markup_mode="rich")
+archive_config_main_app = typer.Typer(help="Calendar configuration operations", rich_markup_mode="rich")
 
 # Register configuration apps
 archive_config_main_app.add_typer(archive_config_app, name="archive")
 archive_config_main_app.add_typer(timesheet_config_app, name="timesheet")
 archive_config_main_app.add_typer(backup_config_app, name="backup")
 config_app.add_typer(archive_config_main_app, name="calendar")
+config_app.add_typer(restoration_config_app, name="restore")
 
 
 @app.callback()
@@ -124,6 +128,7 @@ app.add_typer(calendar_app, name="calendar")
 app.add_typer(config_app, name="config")
 app.add_typer(login_app, name="login")
 app.add_typer(jobs_app, name="jobs")
+app.add_typer(interactive_prompt_app, name="prompt")
 
 # Import and add existing apps
 from cli.reversible_operations import reversible_app

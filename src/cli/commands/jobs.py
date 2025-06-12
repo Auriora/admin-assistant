@@ -9,7 +9,7 @@ from rich.table import Table
 from cli.common.options import user_option
 from cli.common.utils import resolve_cli_user, parse_date_range
 
-jobs_app = typer.Typer(help="Background job management")
+jobs_app = typer.Typer(help="Background job management", rich_markup_mode="rich")
 
 
 @jobs_app.command("schedule")
@@ -192,17 +192,17 @@ def get_job_status(user_input: Optional[str] = user_option):
 
         # Initialize scheduler to check status
         scheduler = APScheduler()
-        
+
         # Get all jobs
         jobs = scheduler.get_jobs()
-        
+
         if not jobs:
             console.print("[yellow]No scheduled jobs found.[/yellow]")
             return
 
         # Filter jobs for this user (if job ID contains user info)
         user_jobs = [job for job in jobs if str(user.id) in job.id]
-        
+
         if not user_jobs:
             console.print(f"[yellow]No scheduled jobs found for user {user.id} ({user.username or user.email}).[/yellow]")
             return
@@ -237,7 +237,7 @@ def job_health_check():
 
     try:
         scheduler = APScheduler()
-        
+
         # Basic health checks
         health_table = Table(title="Job System Health Check")
         health_table.add_column("Component", style="cyan")

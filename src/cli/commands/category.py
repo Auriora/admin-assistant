@@ -12,7 +12,7 @@ from core.db import get_session
 from core.utilities import get_graph_client
 from core.utilities.auth_utility import get_cached_access_token
 
-category_app = typer.Typer(help="Category management operations")
+category_app = typer.Typer(help="Category management operations", rich_markup_mode="rich")
 
 
 @category_app.command("list")
