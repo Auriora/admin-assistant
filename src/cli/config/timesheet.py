@@ -15,9 +15,10 @@ from cli.common.utils import (
     validate_uri_account_context,
     get_uri_autocompletion_suggestions,
 )
+from cli.common.helpful_group import HelpfulGroup
 from core.services.archive_configuration_service import ArchiveConfigurationService
 
-timesheet_config_app = typer.Typer(help="Timesheet configuration management", rich_markup_mode="rich")
+timesheet_config_app = typer.Typer(help="Timesheet configuration management", rich_markup_mode="rich", cls=HelpfulGroup)
 
 
 @timesheet_config_app.callback()

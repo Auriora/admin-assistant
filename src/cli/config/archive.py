@@ -15,8 +15,9 @@ from cli.common.utils import (
     validate_uri_account_context,
     get_uri_autocompletion_suggestions,
 )
+from cli.common.helpful_group import HelpfulGroup
 
-archive_config_app = typer.Typer(help="Archive configuration management", rich_markup_mode="rich")
+archive_config_app = typer.Typer(help="Archive configuration management", rich_markup_mode="rich", cls=HelpfulGroup)
 
 
 @archive_config_app.callback()

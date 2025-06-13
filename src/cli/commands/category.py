@@ -8,11 +8,12 @@ from rich.table import Table
 
 from cli.common.options import user_option
 from cli.common.utils import parse_date_range, parse_flexible_date, resolve_cli_user
+from cli.common.helpful_group import HelpfulGroup
 from core.db import get_session
 from core.utilities import get_graph_client
 from core.utilities.auth_utility import get_cached_access_token
 
-category_app = typer.Typer(help="Category management operations", rich_markup_mode="rich")
+category_app = typer.Typer(help="Category management operations", rich_markup_mode="rich", cls=HelpfulGroup)
 
 
 @category_app.callback()

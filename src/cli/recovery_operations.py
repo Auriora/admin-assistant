@@ -8,6 +8,7 @@ from datetime import date, datetime
 from rich.console import Console
 from rich.table import Table
 
+from cli.common.helpful_group import HelpfulGroup
 from core.db import get_session
 from core.services.reversible_audit_service import ReversibleAuditService
 from core.services.user_service import UserService
@@ -19,7 +20,8 @@ console = Console()
 # Create the recovery operations app
 recovery_app = typer.Typer(
     help="Manage reversible operations and audit logs",
-    rich_markup_mode="rich"
+    rich_markup_mode="rich",
+    cls=HelpfulGroup
 )
 
 

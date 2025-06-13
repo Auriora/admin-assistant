@@ -1,12 +1,13 @@
 """Authentication commands."""
 
 import typer
+from cli.common.helpful_group import HelpfulGroup
 
 # Create the main auth app
-auth_app = typer.Typer(help="Authentication and authorization commands", rich_markup_mode="rich")
+auth_app = typer.Typer(help="Authentication and authorization commands", rich_markup_mode="rich", cls=HelpfulGroup)
 
 # Create the msgraph sub-app
-msgraph_app = typer.Typer(help="Microsoft Graph authentication", rich_markup_mode="rich")
+msgraph_app = typer.Typer(help="Microsoft Graph authentication", rich_markup_mode="rich", cls=HelpfulGroup)
 
 
 @msgraph_app.callback()

@@ -8,8 +8,9 @@ from rich.table import Table
 
 from cli.common.options import user_option
 from cli.common.utils import resolve_cli_user, parse_date_range
+from cli.common.helpful_group import HelpfulGroup
 
-jobs_app = typer.Typer(help="Background job management", rich_markup_mode="rich")
+jobs_app = typer.Typer(help="Background job management", rich_markup_mode="rich", cls=HelpfulGroup)
 
 
 @jobs_app.callback()

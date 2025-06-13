@@ -14,8 +14,9 @@ from cli.common.utils import (
     validate_uri_account_context,
     get_uri_autocompletion_suggestions,
 )
+from cli.common.helpful_group import HelpfulGroup
 
-backup_config_app = typer.Typer(help="Backup configuration management", rich_markup_mode="rich")
+backup_config_app = typer.Typer(help="Backup configuration management", rich_markup_mode="rich", cls=HelpfulGroup)
 
 
 @backup_config_app.callback()

@@ -80,14 +80,16 @@ from cli.config.archive import archive_config_app
 from cli.config.timesheet import timesheet_config_app
 from cli.config.backup import backup_config_app
 from cli.config.restoration import restoration_config_app
+from cli.common.helpful_group import HelpfulGroup
 
 # Create main app and config app
 app = typer.Typer(
     help="Admin Assistant CLI for running calendar and timesheet operations.",
-    rich_markup_mode="rich"
+    rich_markup_mode="rich",
+    cls=HelpfulGroup
 )
-config_app = typer.Typer(help="Configuration operations", rich_markup_mode="rich")
-archive_config_main_app = typer.Typer(help="Calendar configuration operations", rich_markup_mode="rich")
+config_app = typer.Typer(help="Configuration operations", rich_markup_mode="rich", cls=HelpfulGroup)
+archive_config_main_app = typer.Typer(help="Calendar configuration operations", rich_markup_mode="rich", cls=HelpfulGroup)
 
 
 @config_app.callback()

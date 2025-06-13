@@ -14,12 +14,13 @@ from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
 
+from cli.common.helpful_group import HelpfulGroup
 from core.services.appointment_restoration_service import AppointmentRestorationService
 from core.services.calendar_backup_service import CalendarBackupService, BackupFormat
 from core.models.restoration_configuration import RestorationType, DestinationType
 
 # Create the restoration app
-restoration_app = typer.Typer(help="Appointment restoration operations", rich_markup_mode="rich")
+restoration_app = typer.Typer(help="Appointment restoration operations", rich_markup_mode="rich", cls=HelpfulGroup)
 console = Console()
 
 

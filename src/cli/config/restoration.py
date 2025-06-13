@@ -11,13 +11,14 @@ from rich.panel import Panel
 
 from cli.common.options import user_option
 from cli.common.utils import resolve_cli_user
+from cli.common.helpful_group import HelpfulGroup
 from core.services.appointment_restoration_service import AppointmentRestorationService
 
 # Create console for rich output
 console = Console()
 
 # Create the restoration config app
-restoration_config_app = typer.Typer(help="Restoration configuration management", rich_markup_mode="rich")
+restoration_config_app = typer.Typer(help="Restoration configuration management", rich_markup_mode="rich", cls=HelpfulGroup)
 
 
 @restoration_config_app.callback()

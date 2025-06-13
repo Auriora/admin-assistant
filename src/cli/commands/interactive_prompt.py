@@ -5,13 +5,15 @@ CLI commands for interactive prompts with confirmation markers.
 import typer
 from typing import Optional
 
+from cli.common.helpful_group import HelpfulGroup
+
 from core.db import get_session
 from core.services.interactive_prompt_service import InteractivePromptService
 from core.services.user_service import UserService
 from core.utilities.user_resolution import resolve_user, get_user_identifier_source
 
 # Create the interactive prompt app
-interactive_prompt_app = typer.Typer(help="Interactive prompts with confirmation markers", rich_markup_mode="rich")
+interactive_prompt_app = typer.Typer(help="Interactive prompts with confirmation markers", rich_markup_mode="rich", cls=HelpfulGroup)
 
 
 @interactive_prompt_app.callback()
