@@ -16,11 +16,21 @@ from core.utilities.user_resolution import resolve_user, get_user_identifier_sou
 # Create console for rich output
 console = Console()
 
-# Create the reversible operations app
-reversible_app = typer.Typer(
+# Create the recovery operations app
+recovery_app = typer.Typer(
     help="Manage reversible operations and audit logs",
     rich_markup_mode="rich"
 )
+
+
+@recovery_app.callback()
+def recovery_callback(ctx: typer.Context):
+    """Recovery operations management commands.
+
+    Manage and reverse completed operations.
+    """
+    if ctx.invoked_subcommand is None:
+        typer.echo(ctx.get_help())
 
 
 def resolve_cli_user(cli_user_input: Optional[str] = None):
@@ -43,7 +53,7 @@ def resolve_cli_user(cli_user_input: Optional[str] = None):
         raise typer.Exit(code=1)
 
 
-@reversible_app.command("list")
+@recovery_app.command("list")
 def list_operations(
     user_input: Optional[str] = typer.Option(
         None,
@@ -131,7 +141,7 @@ def list_operations(
         raise typer.Exit(code=1)
 
 
-@reversible_app.command("show")
+@recovery_app.command("show")
 def show_operation(
     operation_id: int = typer.Argument(..., help="ID of the operation to show"),
     user_input: Optional[str] = typer.Option(
@@ -203,7 +213,7 @@ def show_operation(
         raise typer.Exit(code=1)
 
 
-@reversible_app.command("reverse")
+@recovery_app.command("reverse")
 def reverse_operation(
     operation_id: int = typer.Argument(..., help="ID of the operation to reverse"),
     reason: str = typer.Option(
@@ -303,4 +313,4 @@ def reverse_operation(
 
 
 if __name__ == "__main__":
-    reversible_app()
+    recovery_app()

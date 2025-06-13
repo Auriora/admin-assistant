@@ -19,6 +19,16 @@ from cli.common.utils import (
 archive_config_app = typer.Typer(help="Archive configuration management", rich_markup_mode="rich")
 
 
+@archive_config_app.callback()
+def archive_config_callback(ctx: typer.Context):
+    """Archive configuration management commands.
+
+    Manage archive configurations for calendar operations.
+    """
+    if ctx.invoked_subcommand is None:
+        typer.echo(ctx.get_help())
+
+
 @archive_config_app.command("list")
 def list_configs(user_input: Optional[str] = user_option):
     """List all archive configurations for a user."""

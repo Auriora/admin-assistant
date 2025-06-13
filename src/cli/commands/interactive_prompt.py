@@ -14,6 +14,16 @@ from core.utilities.user_resolution import resolve_user, get_user_identifier_sou
 interactive_prompt_app = typer.Typer(help="Interactive prompts with confirmation markers", rich_markup_mode="rich")
 
 
+@interactive_prompt_app.callback()
+def prompt_callback(ctx: typer.Context):
+    """Interactive prompt system commands.
+
+    Run interactive prompts for various tasks.
+    """
+    if ctx.invoked_subcommand is None:
+        typer.echo(ctx.get_help())
+
+
 def resolve_cli_user(cli_user_input: Optional[str] = None):
     """
     Resolve user from CLI input with proper error handling.

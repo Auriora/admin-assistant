@@ -15,6 +15,16 @@ from core.utilities.auth_utility import get_cached_access_token
 category_app = typer.Typer(help="Category management operations", rich_markup_mode="rich")
 
 
+@category_app.callback()
+def category_callback(ctx: typer.Context):
+    """Category management commands.
+
+    Manage calendar categories for appointments.
+    """
+    if ctx.invoked_subcommand is None:
+        typer.echo(ctx.get_help())
+
+
 @category_app.command("list")
 def list_category(
     user_input: Optional[str] = user_option,

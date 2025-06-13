@@ -88,11 +88,16 @@ class CalendarArchiveOrchestrator:
             access_token = get_cached_access_token()
             resolved_id = resolve_calendar_uri(uri, user, access_token)
 
-            print(f"[DEBUG] Resolved calendar URI '{uri}' to ID: {resolved_id}")
+            if logger:
+                logger.debug(f"Resolved calendar URI '{uri}' to ID: {resolved_id}")
             return resolved_id
 
         except Exception as e:
-            print(f"[WARNING] Failed to resolve calendar URI '{uri}': {e}")
+            if logger:
+                logger.warning(f"Failed to resolve calendar URI '{uri}': {e}")
+            else:
+                # Fallback if no logger provided
+                print(f"Failed to resolve calendar URI '{uri}': {e}")
             # Fall back to legacy resolution for backward compatibility
             return self._legacy_resolve_msgraph_calendar_id(uri, user)
 
@@ -122,7 +127,11 @@ class CalendarArchiveOrchestrator:
 
             access_token = get_cached_access_token()
             if not access_token:
-                print(f"[WARNING] No access token available for calendar resolution")
+                if logger:
+                    logger.warning(f"No access token available for calendar resolution")
+                else:
+                    # Fallback if no logger provided
+                    print(f"No access token available for calendar resolution")
                 return calendar_id
 
             headers = {
@@ -135,7 +144,11 @@ class CalendarArchiveOrchestrator:
             response = requests.get(url, headers=headers)
 
             if response.status_code != 200:
-                print(f"[WARNING] Failed to fetch calendars: {response.status_code} {response.text}")
+                if logger:
+                    logger.warning(f"Failed to fetch calendars: {response.status_code} {response.text}")
+                else:
+                    # Fallback if no logger provided
+                    print(f"Failed to fetch calendars: {response.status_code} {response.text}")
                 return calendar_id
 
             calendars_data = response.json()
@@ -152,15 +165,24 @@ class CalendarArchiveOrchestrator:
 
                 if uri_safe_name == calendar_id:
                     resolved_id = cal_data.get('id', '')
-                    print(f"[DEBUG] Legacy resolved '{calendar_id}' to calendar ID: {resolved_id}")
+                    if logger:
+                        logger.debug(f"Legacy resolved '{calendar_id}' to calendar ID: {resolved_id}")
                     return resolved_id
 
             # If not found by friendly name, return the original ID (might be a real ID)
-            print(f"[WARNING] Calendar with friendly name '{calendar_id}' not found, using as-is")
+            if logger:
+                logger.warning(f"Calendar with friendly name '{calendar_id}' not found, using as-is")
+            else:
+                # Fallback if no logger provided
+                print(f"Calendar with friendly name '{calendar_id}' not found, using as-is")
             return calendar_id
 
         except Exception as e:
-            print(f"[WARNING] Failed to resolve calendar ID '{calendar_id}': {e}")
+            if logger:
+                logger.warning(f"Failed to resolve calendar ID '{calendar_id}': {e}")
+            else:
+                # Fallback if no logger provided
+                print(f"Failed to resolve calendar ID '{calendar_id}': {e}")
             return calendar_id
 
     def archive_user_appointments_with_config(

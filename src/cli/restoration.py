@@ -23,6 +23,16 @@ restoration_app = typer.Typer(help="Appointment restoration operations", rich_ma
 console = Console()
 
 
+@restoration_app.callback()
+def restoration_callback(ctx: typer.Context):
+    """Appointment restoration operations.
+
+    Restore appointments from various sources.
+    """
+    if ctx.invoked_subcommand is None:
+        typer.echo(ctx.get_help())
+
+
 def print_restoration_summary(result: dict):
     """Print a formatted summary of restoration results."""
     console.print("\n" + "=" * 60)

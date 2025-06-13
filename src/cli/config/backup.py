@@ -18,6 +18,16 @@ from cli.common.utils import (
 backup_config_app = typer.Typer(help="Backup configuration management", rich_markup_mode="rich")
 
 
+@backup_config_app.callback()
+def backup_config_callback(ctx: typer.Context):
+    """Backup configuration management commands.
+
+    Manage backup configurations for calendar operations.
+    """
+    if ctx.invoked_subcommand is None:
+        typer.echo(ctx.get_help())
+
+
 @backup_config_app.command("list")
 def list_backup_configs(user_input: Optional[str] = user_option):
     """List all backup configurations for a user."""

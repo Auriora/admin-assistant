@@ -20,6 +20,16 @@ console = Console()
 restoration_config_app = typer.Typer(help="Restoration configuration management", rich_markup_mode="rich")
 
 
+@restoration_config_app.callback()
+def restoration_config_callback(ctx: typer.Context):
+    """Restoration configuration management commands.
+
+    Manage restoration configurations for appointment recovery.
+    """
+    if ctx.invoked_subcommand is None:
+        typer.echo(ctx.get_help())
+
+
 @restoration_config_app.command("list")
 def list_configs(
     user_input: Optional[str] = user_option,

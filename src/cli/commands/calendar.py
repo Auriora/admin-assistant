@@ -16,6 +16,16 @@ from core.utilities.auth_utility import get_cached_access_token
 calendar_app = typer.Typer(help="Calendar operations", rich_markup_mode="rich")
 
 
+@calendar_app.callback()
+def calendar_callback(ctx: typer.Context):
+    """Calendar operations and management.
+
+    Manage calendar data, archiving, backups, and restoration.
+    """
+    if ctx.invoked_subcommand is None:
+        typer.echo(ctx.get_help())
+
+
 @calendar_app.command("archive")
 def archive(
     archive_config_name: str = typer.Argument(
@@ -37,12 +47,13 @@ def archive(
     """Manually trigger calendar archiving for the configured user and archive configuration."""
     from core.services.archive_configuration_service import ArchiveConfigurationService
 
+    console = Console()
     runner = ArchiveJobRunner()
     session = get_session()
     try:
         start_dt, end_dt = parse_date_range(date_option)
     except Exception as e:
-        typer.echo(f"Error parsing date: {e}")
+        console.print(f"Error parsing date: {e}")
         raise typer.Exit(code=1)
     try:
         user = resolve_cli_user(user_input)
@@ -51,12 +62,12 @@ def archive(
         archive_service = ArchiveConfigurationService()
         archive_config = archive_service.get_by_name(archive_config_name, user.id)
         if not archive_config:
-            typer.echo(f"[red]Archive configuration '{archive_config_name}' not found for user {user.id} ({user.username or user.email}).[/red]")
+            console.print(f"[red]Archive configuration '{archive_config_name}' not found for user {user.id} ({user.username or user.email}).[/red]")
             raise typer.Exit(code=1)
 
         access_token = get_cached_access_token()
         if not access_token:
-            typer.echo(
+            console.print(
                 "[yellow]No valid MS Graph token found. Please login with 'admin-assistant login msgraph'.[/yellow]"
             )
             raise typer.Exit(code=1)
@@ -68,11 +79,11 @@ def archive(
             start_dt = end_dt
         # Handle replace option with confirmation
         if replace:
-            typer.echo(f"[yellow]WARNING: Replace mode will delete existing archived appointments from {start_dt} to {end_dt}[/yellow]")
-            typer.echo(f"[yellow]Archive calendar: {archive_config.destination_calendar_uri}[/yellow]")
+            console.print(f"[yellow]WARNING: Replace mode will delete existing archived appointments from {start_dt} to {end_dt}[/yellow]")
+            console.print(f"[yellow]Archive calendar: {archive_config.destination_calendar_uri}[/yellow]")
 
             if not typer.confirm("Are you sure you want to proceed with replace mode?"):
-                typer.echo("Operation cancelled.")
+                console.print("Operation cancelled.")
                 raise typer.Exit(code=0)
 
         result = runner.run_archive_job(
@@ -83,10 +94,12 @@ def archive(
             replace_mode=replace,
         )
     except Exception as e:
-        typer.echo(f"Archiving failed: {e}")
+        console.print(f"Archiving failed: {e}")
         raise typer.Exit(code=1)
-    typer.echo("[ARCHIVE RESULT]")
-    typer.echo(result)
+
+    # Print result without debug tags
+    console.print("ARCHIVE RESULT")
+    console.print(result)
 
 
 @calendar_app.command("timesheet")
@@ -119,12 +132,13 @@ def timesheet(
     """
     from core.services.archive_configuration_service import ArchiveConfigurationService
 
+    console = Console()
     runner = ArchiveJobRunner()
     session = get_session()
     try:
         start_dt, end_dt = parse_date_range(date_option)
     except Exception as e:
-        typer.echo(f"Error parsing date: {e}")
+        console.print(f"Error parsing date: {e}")
         raise typer.Exit(code=1)
     try:
         user = resolve_cli_user(user_input)
@@ -133,17 +147,17 @@ def timesheet(
         archive_service = ArchiveConfigurationService()
         timesheet_config = archive_service.get_by_name(timesheet_config_name, user.id)
         if not timesheet_config:
-            typer.echo(f"[red]Timesheet configuration '{timesheet_config_name}' not found for user {user.id} ({user.username or user.email}).[/red]")
+            console.print(f"[red]Timesheet configuration '{timesheet_config_name}' not found for user {user.id} ({user.username or user.email}).[/red]")
             raise typer.Exit(code=1)
 
         # Verify this is a timesheet configuration
         if getattr(timesheet_config, 'archive_purpose', 'general') != 'timesheet':
-            typer.echo(f"[yellow]Warning: Configuration '{timesheet_config_name}' has purpose '{getattr(timesheet_config, 'archive_purpose', 'general')}', not 'timesheet'.[/yellow]")
-            typer.echo("[yellow]Consider using a timesheet-specific configuration for best results.[/yellow]")
+            console.print(f"[yellow]Warning: Configuration '{timesheet_config_name}' has purpose '{getattr(timesheet_config, 'archive_purpose', 'general')}', not 'timesheet'.[/yellow]")
+            console.print("[yellow]Consider using a timesheet-specific configuration for best results.[/yellow]")
 
         access_token = get_cached_access_token()
         if not access_token:
-            typer.echo(
+            console.print(
                 "[yellow]No valid MS Graph token found. Please login with 'admin-assistant login msgraph'.[/yellow]"
             )
             raise typer.Exit(code=1)
@@ -155,11 +169,11 @@ def timesheet(
             start_dt = end_dt
         # Handle replace option with confirmation
         if replace:
-            typer.echo(f"[yellow]WARNING: Replace mode will delete existing timesheet appointments from {start_dt} to {end_dt}[/yellow]")
-            typer.echo(f"[yellow]Timesheet calendar: {timesheet_config.destination_calendar_uri}[/yellow]")
+            console.print(f"[yellow]WARNING: Replace mode will delete existing timesheet appointments from {start_dt} to {end_dt}[/yellow]")
+            console.print(f"[yellow]Timesheet calendar: {timesheet_config.destination_calendar_uri}[/yellow]")
 
             if not typer.confirm("Are you sure you want to proceed with replace mode?"):
-                typer.echo("Operation cancelled.")
+                console.print("Operation cancelled.")
                 raise typer.Exit(code=0)
 
         result = runner.run_archive_job(
@@ -170,10 +184,12 @@ def timesheet(
             replace_mode=replace,
         )
     except Exception as e:
-        typer.echo(f"Timesheet archiving failed: {e}")
+        console.print(f"Timesheet archiving failed: {e}")
         raise typer.Exit(code=1)
-    typer.echo("[TIMESHEET RESULT]")
-    typer.echo(result)
+
+    # Print result without debug tags
+    console.print("TIMESHEET RESULT")
+    console.print(result)
 
 
 @calendar_app.command("travel")

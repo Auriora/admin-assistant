@@ -12,6 +12,16 @@ from cli.common.utils import resolve_cli_user, parse_date_range
 jobs_app = typer.Typer(help="Background job management", rich_markup_mode="rich")
 
 
+@jobs_app.callback()
+def jobs_callback(ctx: typer.Context):
+    """Background job management commands.
+
+    Schedule, monitor, and manage background jobs.
+    """
+    if ctx.invoked_subcommand is None:
+        typer.echo(ctx.get_help())
+
+
 @jobs_app.command("schedule")
 def schedule_archive_job(
     user_input: Optional[str] = user_option,

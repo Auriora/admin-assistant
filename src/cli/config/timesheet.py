@@ -20,6 +20,16 @@ from core.services.archive_configuration_service import ArchiveConfigurationServ
 timesheet_config_app = typer.Typer(help="Timesheet configuration management", rich_markup_mode="rich")
 
 
+@timesheet_config_app.callback()
+def timesheet_config_callback(ctx: typer.Context):
+    """Timesheet configuration management commands.
+
+    Manage timesheet configurations for billing operations.
+    """
+    if ctx.invoked_subcommand is None:
+        typer.echo(ctx.get_help())
+
+
 @timesheet_config_app.command("list")
 def list_timesheet_configs(user_input: Optional[str] = user_option):
     """List all timesheet configurations for a user."""

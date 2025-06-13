@@ -35,7 +35,7 @@ def get_msal_app():
 def get_authorization_url():
     msal_app = get_msal_app()
     redirect_uri = current_app.config["MS_REDIRECT_URI"]
-    print(f"[DEBUG] redirect_uri in get_authorization_url: {redirect_uri}")
+    current_app.logger.debug(f"redirect_uri in get_authorization_url: {redirect_uri}")
     scopes = MS_SCOPES
     state = os.urandom(16).hex()
     auth_url = msal_app.get_authorization_request_url(
@@ -52,7 +52,7 @@ def get_authorization_url():
 def fetch_token(authorization_response):
     msal_app = get_msal_app()
     redirect_uri = current_app.config["MS_REDIRECT_URI"]
-    print(f"[DEBUG] redirect_uri in fetch_token: {redirect_uri}")
+    current_app.logger.debug(f"redirect_uri in fetch_token: {redirect_uri}")
     from urllib.parse import parse_qs, urlparse
 
     parsed = urlparse(authorization_response)
