@@ -16,25 +16,99 @@ def enhanced_cleanup_async_runner():
     import gc
     import threading
     import time
+    import sys
+    import asyncio
 
+    # Store initial state
     initial_thread_count = threading.active_count()
+
+    # Track memory before test (if psutil available)
+    memory_before = None
+    try:
+        import psutil
+        process = psutil.Process()
+        memory_before = process.memory_info().rss / 1024 / 1024  # MB
+    except ImportError:
+        pass
+
+    # Get reference to the global runner before test
+    from core.utilities.async_runner import _async_runner_ref
+    runner_before = None if _async_runner_ref is None else _async_runner_ref()
 
     yield
 
     try:
-        # Shutdown with shorter timeout for tests
+        # 1. Shutdown global runner with more aggressive cleanup
+        from core.utilities.async_runner import shutdown_global_runner, _async_runner_ref
         shutdown_global_runner()
 
-        # Wait for threads to actually terminate
-        max_wait = 1.0
+        # 2. Clear any remaining async tasks
+        try:
+            for task in asyncio.all_tasks():
+                if not task.done():
+                    task.cancel()
+        except RuntimeError:
+            # No running event loop
+            pass
+
+        # 3. Wait for threads to actually terminate with periodic GC
+        max_wait = 2.0
         waited = 0.0
         while threading.active_count() > initial_thread_count and waited < max_wait:
             time.sleep(0.1)
             waited += 0.1
 
-        # Force garbage collection
-        for _ in range(2):
-            gc.collect()
+            # Force GC periodically during wait
+            if waited % 0.5 < 0.001:  # Every ~0.5 seconds
+                gc.collect()
+
+        # 4. Force garbage collection multiple times with different generations
+        for i in range(3):
+            gc.collect(i)  # Collect specific generation
+
+        # 5. Check if runner was properly cleaned up
+        runner_after = None if _async_runner_ref is None else _async_runner_ref()
+        if runner_after is not None and runner_before is runner_after:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning("AsyncRunner instance was not properly cleaned up")
+
+            # Try to clear it manually
+            _async_runner_ref = None
+
+        # 6. Log thread status
+        final_thread_count = threading.active_count()
+        if final_thread_count > initial_thread_count:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(
+                f"Thread count increased from {initial_thread_count} to {final_thread_count} "
+                f"after test cleanup. Potential thread leak."
+            )
+
+            # Log active thread names
+            active_threads = threading.enumerate()
+            thread_names = [t.name for t in active_threads]
+            logger.warning(f"Active threads: {thread_names}")
+
+        # 7. Check memory after cleanup
+        if memory_before is not None:
+            try:
+                import psutil
+                process = psutil.Process()
+                memory_after = process.memory_info().rss / 1024 / 1024  # MB
+                memory_diff = memory_after - memory_before
+
+                # Log significant memory increases
+                if memory_diff > 10:  # More than 10MB increase
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.warning(
+                        f"Memory increased by {memory_diff:.1f}MB after test "
+                        f"(before: {memory_before:.1f}MB, after: {memory_after:.1f}MB)"
+                    )
+            except Exception:
+                pass
 
     except Exception as e:
         # Log but don't fail tests
@@ -51,71 +125,71 @@ pytestmark = [
 
 class TestAsyncRunner:
     """Test cases for the AsyncRunner class."""
-    
+
     def test_basic_async_operation(self):
         """Test basic async operation execution."""
         async def simple_operation():
             await asyncio.sleep(0.1)
             return "success"
-        
+
         result = run_async(simple_operation())
         assert result == "success"
-    
+
     def test_async_operation_with_return_value(self):
         """Test async operation that returns a value."""
         async def operation_with_value():
             return {"status": "completed", "value": 42}
-        
+
         result = run_async(operation_with_value())
         assert result == {"status": "completed", "value": 42}
-    
+
     def test_timeout_handling(self):
         """Test timeout handling."""
         async def slow_operation():
             await asyncio.sleep(2.0)
             return "too_slow"
-        
+
         with pytest.raises(asyncio.TimeoutError):
             run_async(slow_operation(), timeout=0.5)
-    
+
     def test_exception_propagation(self):
         """Test that exceptions are properly propagated."""
         async def failing_operation():
             raise ValueError("Test error")
-        
+
         with pytest.raises(ValueError, match="Test error"):
             run_async(failing_operation())
-    
+
     def test_safe_async_operation_success(self):
         """Test safe async operation with successful execution."""
         async def successful_operation():
             return "success"
-        
+
         result = run_async_safe(successful_operation())
         assert result == "success"
-    
+
     def test_safe_async_operation_failure(self):
         """Test safe async operation with failure returns default."""
         async def failing_operation():
             raise ValueError("Test error")
-        
+
         result = run_async_safe(failing_operation(), default="default_value")
         assert result == "default_value"
-    
+
     def test_safe_async_operation_failure_no_default(self):
         """Test safe async operation with failure and no default."""
         async def failing_operation():
             raise ValueError("Test error")
-        
+
         result = run_async_safe(failing_operation())
         assert result is None
-    
+
     def test_concurrent_operations(self):
         """Test multiple concurrent operations."""
         async def concurrent_operation(value):
             await asyncio.sleep(0.1)
             return value * 2
-        
+
         import concurrent.futures
         with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
             futures = [
@@ -123,20 +197,20 @@ class TestAsyncRunner:
                 for i in range(5)
             ]
             results = [f.result() for f in futures]
-        
+
         assert results == [i * 2 for i in range(5)]
-    
+
     def test_async_runner_health_check(self):
         """Test async runner health check functionality."""
         runner = get_async_runner()
         assert runner.is_healthy() is True
-    
+
     def test_async_runner_reuse(self):
         """Test that the global async runner is reused."""
         runner1 = get_async_runner()
         runner2 = get_async_runner()
         assert runner1 is runner2
-    
+
     def test_async_operation_with_httpx_like_pattern(self):
         """Test async operation that simulates httpx usage pattern."""
         async def mock_http_request():
@@ -146,26 +220,26 @@ class TestAsyncRunner:
                 "status_code": 200,
                 "json": {"events": [{"id": "1", "subject": "Test Meeting"}]}
             }
-        
+
         result = run_async(mock_http_request())
         assert result["status_code"] == 200
         assert len(result["json"]["events"]) == 1
-    
+
     def test_nested_async_calls(self):
         """Test nested async calls to ensure no event loop conflicts."""
         async def inner_operation(value):
             await asyncio.sleep(0.05)
             return value + 1
-        
+
         async def outer_operation():
             # This simulates the pattern where async code calls other async code
             result1 = await inner_operation(1)
             result2 = await inner_operation(result1)
             return result2
-        
+
         result = run_async(outer_operation())
         assert result == 3
-    
+
     def test_error_handling_with_context(self):
         """Test error handling preserves context information."""
         async def operation_with_context():
@@ -176,14 +250,14 @@ class TestAsyncRunner:
                 if hasattr(e, "add_note"):
                     e.add_note("Additional context")
                 raise
-        
+
         with pytest.raises(ValueError, match="Original error"):
             run_async(operation_with_context())
 
 
 class TestAsyncRunnerIntegration:
     """Integration tests for async runner with realistic scenarios."""
-    
+
     def test_msgraph_like_operation_pattern(self):
         """Test operation pattern similar to MSGraph repository."""
         async def mock_msgraph_operation():
@@ -191,7 +265,7 @@ class TestAsyncRunnerIntegration:
             try:
                 # Simulate API call
                 await asyncio.sleep(0.1)
-                
+
                 # Simulate successful response
                 return {
                     "value": [
@@ -202,11 +276,11 @@ class TestAsyncRunnerIntegration:
             except Exception as e:
                 # Simulate error handling pattern
                 raise Exception(f"Failed to fetch appointments: {e}")
-        
+
         result = run_async(mock_msgraph_operation())
         assert len(result["value"]) == 2
         assert result["value"][0]["subject"] == "Meeting 1"
-    
+
     def test_bulk_operation_pattern(self):
         """Test bulk operation pattern similar to appointment archiving."""
         async def mock_bulk_operation(items):
@@ -220,74 +294,74 @@ class TestAsyncRunnerIntegration:
                 except Exception as e:
                     errors.append(f"Item {i}: {str(e)}")
             return errors
-        
+
         test_items = [
             {"id": 1, "name": "Item 1"},
             {"id": 2, "name": "Item 2", "should_fail": True},
             {"id": 3, "name": "Item 3"}
         ]
-        
+
         errors = run_async(mock_bulk_operation(test_items))
         assert len(errors) == 1
         assert "Item 1" in errors[0]
-    
+
     def test_performance_comparison(self):
         """Test performance characteristics of the async runner."""
         async def fast_operation():
             return "fast"
-        
+
         # Measure execution time
         start_time = time.time()
         for _ in range(10):
             result = run_async(fast_operation())
             assert result == "fast"
         end_time = time.time()
-        
+
         # Should complete quickly (less than 1 second for 10 operations)
         assert end_time - start_time < 1.0
-    
+
     @patch('core.utilities.async_runner.logger')
     def test_error_logging(self, mock_logger):
         """Test that errors are properly logged."""
         async def failing_operation():
             raise RuntimeError("Test runtime error")
-        
+
         with pytest.raises(RuntimeError):
             run_async(failing_operation())
-        
+
         # Verify that the safe version logs the error
         result = run_async_safe(failing_operation(), default="fallback")
         assert result == "fallback"
-        
+
         # Check that logger.exception was called
         mock_logger.exception.assert_called()
 
 
 class TestAsyncRunnerEdgeCases:
     """Test edge cases and error conditions."""
-    
+
     def test_very_short_timeout(self):
         """Test with very short timeout."""
         async def quick_operation():
             await asyncio.sleep(0.001)  # 1ms
             return "quick"
-        
+
         # Should succeed with short but sufficient timeout
         result = run_async(quick_operation(), timeout=0.1)
         assert result == "quick"
-        
+
         # Should fail with insufficient timeout
         with pytest.raises(asyncio.TimeoutError):
             run_async(quick_operation(), timeout=0.0001)
-    
+
     def test_none_return_value(self):
         """Test operation that returns None."""
         async def none_operation():
             return None
-        
+
         result = run_async(none_operation())
         assert result is None
-    
+
     def test_complex_data_structures(self):
         """Test with complex data structures."""
         async def complex_operation():
@@ -298,7 +372,7 @@ class TestAsyncRunnerEdgeCases:
                     "set_as_list": list({4, 5, 6})  # Sets aren't JSON serializable
                 }
             }
-        
+
         result = run_async(complex_operation())
         assert result["nested"]["list"][2]["inner"] == "value"
         assert result["nested"]["tuple"] == (1, 2, 3)
