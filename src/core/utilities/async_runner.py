@@ -107,6 +107,21 @@ class AsyncRunner:
                         try:
                             # Process pending tasks and callbacks with shorter sleep for better responsiveness
                             self._loop.run_until_complete(asyncio.sleep(0.01))
+                        except asyncio.CancelledError:
+                            # This is expected during shutdown
+                            logger.debug("Sleep task cancelled in event loop")
+                            break
+                        except RuntimeError as e:
+                            # Handle specific runtime errors that can occur during shutdown
+                            if "Event loop is closed" in str(e):
+                                logger.debug("Event loop closed while running")
+                                break
+                            elif not self._shutdown_event.is_set():
+                                logger.exception(f"RuntimeError in background event loop: {e}")
+                                break
+                            else:
+                                # If shutdown is requested, just exit quietly
+                                break
                         except Exception as e:
                             if not self._shutdown_event.is_set():
                                 logger.exception(f"Error in background event loop: {e}")
@@ -123,28 +138,48 @@ class AsyncRunner:
                     if self._loop and not self._loop.is_closed():
                         try:
                             # Cancel all pending tasks
-                            pending = asyncio.all_tasks(self._loop)
-                            for task in pending:
-                                if not task.done():
-                                    task.cancel()
+                            try:
+                                pending = asyncio.all_tasks(self._loop)
 
-                            # Wait for cancellations to complete with timeout
-                            if pending:
-                                try:
-                                    self._loop.run_until_complete(
-                                        asyncio.wait_for(
-                                            asyncio.gather(*pending, return_exceptions=True),
-                                            timeout=2.0
-                                        )
-                                    )
-                                except asyncio.TimeoutError:
-                                    logger.warning("Some tasks did not cancel within timeout")
-                                except Exception as e:
-                                    logger.debug(f"Expected exception during task cancellation: {e}")
+                                # Log task count for debugging
+                                if pending:
+                                    logger.debug(f"Cancelling {len(pending)} pending tasks in event loop thread")
 
-                            self._loop.close()
+                                for task in pending:
+                                    if not task.done():
+                                        task.cancel()
+
+                                # Wait for cancellations to complete with timeout
+                                if pending:
+                                    try:
+                                        # Wrap in try/except to handle CancelledError
+                                        try:
+                                            self._loop.run_until_complete(
+                                                asyncio.wait_for(
+                                                    asyncio.gather(*pending, return_exceptions=True),
+                                                    timeout=1.0  # Shorter timeout for faster shutdown
+                                                )
+                                            )
+                                        except asyncio.CancelledError:
+                                            # This is expected when cancelling tasks
+                                            pass
+                                    except asyncio.TimeoutError:
+                                        logger.warning("Some tasks did not cancel within timeout")
+                                    except RuntimeError as e:
+                                        # This can happen if the loop is already stopping
+                                        logger.debug(f"RuntimeError during task cancellation: {e}")
+                                    except Exception as e:
+                                        logger.debug(f"Expected exception during task cancellation: {e}")
+                            except Exception as e:
+                                logger.debug(f"Error getting tasks: {e}")
+
+                            # Close the loop safely
+                            try:
+                                self._loop.close()
+                            except Exception as e:
+                                logger.debug(f"Error closing event loop: {e}")
                         except Exception as e:
-                            logger.exception(f"Error during loop cleanup: {e}")
+                            logger.debug(f"Error during loop cleanup: {e}")
 
                     logger.debug("Background event loop stopped")
 
@@ -492,26 +527,40 @@ class AsyncRunner:
                     # Cancel all remaining tasks before stopping
                     try:
                         pending_tasks = asyncio.all_tasks(self._loop)
+
+                        # Log the number of pending tasks for debugging
+                        if pending_tasks:
+                            logger.debug(f"Cancelling {len(pending_tasks)} pending tasks during shutdown")
+
+                        # Cancel all tasks
                         for task in pending_tasks:
                             if not task.done():
+                                # Get task name for better debugging
+                                task_name = task.get_name() if hasattr(task, 'get_name') else str(task)
+                                logger.debug(f"Cancelling task: {task_name}")
                                 task.cancel()
 
                         # Wait briefly for tasks to cancel
                         if pending_tasks:
                             try:
                                 # Use a very short timeout to avoid blocking
-                                self._loop.run_until_complete(
-                                    asyncio.wait_for(
-                                        asyncio.gather(*pending_tasks, return_exceptions=True),
-                                        timeout=0.2
+                                # Wrap in try/except to handle CancelledError
+                                try:
+                                    self._loop.run_until_complete(
+                                        asyncio.wait_for(
+                                            asyncio.gather(*pending_tasks, return_exceptions=True),
+                                            timeout=0.2
+                                        )
                                     )
-                                )
+                                except asyncio.CancelledError:
+                                    # This is expected when cancelling tasks
+                                    pass
                             except (asyncio.TimeoutError, RuntimeError):
                                 # Expected if tasks don't complete or loop is already stopping
-                                pass
-                    except RuntimeError:
+                                logger.debug("Timeout or RuntimeError while waiting for tasks to cancel")
+                    except RuntimeError as e:
                         # "There is no current event loop in thread" - can happen during shutdown
-                        pass
+                        logger.debug(f"RuntimeError during task cancellation: {e}")
 
                     # Stop the loop
                     try:
@@ -665,11 +714,11 @@ def run_async_safe(coro: Awaitable[T], timeout: float = 30.0,
 
 def shutdown_global_runner():
     """Shutdown the global AsyncRunner instance with enhanced cleanup."""
-    global _async_runner_ref
+    global _async_runner
 
     with _async_runner_lock:
-        # Get the runner from the weakref if it exists
-        runner = None if _async_runner_ref is None else _async_runner_ref()
+        # Get the runner if it exists
+        runner = _async_runner
 
         if runner is not None:
             try:
@@ -704,7 +753,7 @@ def shutdown_global_runner():
                     runner._loop_thread = None
 
             # Clear the reference immediately
-            _async_runner_ref = None
+            _async_runner = None
 
         # Additional cleanup: clear any module-level caches
         if hasattr(gc, 'set_debug'):

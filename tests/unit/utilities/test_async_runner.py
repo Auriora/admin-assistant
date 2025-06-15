@@ -32,14 +32,14 @@ def enhanced_cleanup_async_runner():
         pass
 
     # Get reference to the global runner before test
-    from core.utilities.async_runner import _async_runner_ref
-    runner_before = None if _async_runner_ref is None else _async_runner_ref()
+    from core.utilities.async_runner import _async_runner
+    runner_before = _async_runner
 
     yield
 
     try:
         # 1. Shutdown global runner with more aggressive cleanup
-        from core.utilities.async_runner import shutdown_global_runner, _async_runner_ref
+        from core.utilities.async_runner import shutdown_global_runner, _async_runner
         shutdown_global_runner()
 
         # 2. Clear any remaining async tasks
@@ -67,14 +67,17 @@ def enhanced_cleanup_async_runner():
             gc.collect(i)  # Collect specific generation
 
         # 5. Check if runner was properly cleaned up
-        runner_after = None if _async_runner_ref is None else _async_runner_ref()
+        runner_after = _async_runner
         if runner_after is not None and runner_before is runner_after:
             import logging
+            import sys
             logger = logging.getLogger(__name__)
             logger.warning("AsyncRunner instance was not properly cleaned up")
 
-            # Try to clear it manually
-            _async_runner_ref = None
+            # Try to clear it manually by modifying the module variable directly
+            # This is more reliable than using 'global' for imported variables
+            import core.utilities.async_runner
+            setattr(core.utilities.async_runner, '_async_runner', None)
 
         # 6. Log thread status
         final_thread_count = threading.active_count()
