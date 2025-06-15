@@ -223,14 +223,86 @@ def setup_test_logging():
 
 
 @pytest.fixture(autouse=True, scope="function")
-def cleanup_async_runner():
-    """Ensure AsyncRunner is properly cleaned up after each test."""
+def comprehensive_test_cleanup():
+    """Comprehensive cleanup after each test to prevent memory accumulation."""
+    import gc
+    import threading
+    import time
+    from unittest.mock import patch
+
+    # Store initial state for comparison
+    initial_thread_count = threading.active_count()
+
     yield
+
     try:
+        # 1. Shutdown AsyncRunner and wait for thread termination
         from core.utilities.async_runner import shutdown_global_runner
         shutdown_global_runner()
-    except Exception:
-        pass
+
+        # Wait for background threads to actually terminate
+        max_wait = 2.0
+        wait_interval = 0.1
+        waited = 0.0
+
+        while threading.active_count() > initial_thread_count and waited < max_wait:
+            time.sleep(wait_interval)
+            waited += wait_interval
+
+        # 2. Clean up database resources
+        from tests.utils.database_cleanup import cleanup_database_resources
+        cleanup_database_resources()
+
+        # 3. Force garbage collection multiple times to handle circular references
+        for _ in range(3):
+            gc.collect()
+
+        # 4. Clear any remaining mock patches
+        patch.stopall()
+
+        # 5. Log warning if threads are still active
+        final_thread_count = threading.active_count()
+        if final_thread_count > initial_thread_count:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(
+                f"Thread count increased from {initial_thread_count} to {final_thread_count} "
+                f"after test cleanup. Potential thread leak."
+            )
+
+    except Exception as e:
+        # Don't let cleanup failures break tests, but log them
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.exception(f"Error during comprehensive test cleanup: {e}")
+
+
+@pytest.fixture(autouse=True, scope="function")
+def memory_monitor():
+    """Monitor memory usage during tests and warn about excessive growth."""
+    try:
+        import psutil
+        process = psutil.Process()
+        initial_memory = process.memory_info().rss / 1024 / 1024  # MB
+
+        yield
+
+        # Check memory after test
+        final_memory = process.memory_info().rss / 1024 / 1024  # MB
+        memory_increase = final_memory - initial_memory
+
+        # Warn if memory increased significantly (>50MB per test)
+        if memory_increase > 50:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(
+                f"High memory increase detected: {memory_increase:.1f} MB "
+                f"(from {initial_memory:.1f} to {final_memory:.1f} MB)"
+            )
+
+    except ImportError:
+        # psutil not available, skip monitoring
+        yield
 
 
 @pytest.fixture

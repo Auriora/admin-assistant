@@ -11,13 +11,42 @@ from core.utilities.async_runner import AsyncRunner, run_async, run_async_safe, 
 
 
 @pytest.fixture(autouse=True)
-def cleanup_async_runner():
-    """Ensure AsyncRunner is properly cleaned up after each test."""
+def enhanced_cleanup_async_runner():
+    """Enhanced cleanup for AsyncRunner tests with memory management."""
+    import gc
+    import threading
+    import time
+
+    initial_thread_count = threading.active_count()
+
     yield
+
     try:
+        # Shutdown with shorter timeout for tests
         shutdown_global_runner()
-    except Exception:
-        pass
+
+        # Wait for threads to actually terminate
+        max_wait = 1.0
+        waited = 0.0
+        while threading.active_count() > initial_thread_count and waited < max_wait:
+            time.sleep(0.1)
+            waited += 0.1
+
+        # Force garbage collection
+        for _ in range(2):
+            gc.collect()
+
+    except Exception as e:
+        # Log but don't fail tests
+        import logging
+        logging.getLogger(__name__).debug(f"Cleanup error: {e}")
+
+
+# Mark memory-intensive tests
+pytestmark = [
+    pytest.mark.memory_intensive,
+    pytest.mark.requires_cleanup
+]
 
 
 class TestAsyncRunner:

@@ -82,22 +82,84 @@ def all(
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Verbose output"),
     coverage: bool = typer.Option(False, "--coverage", "-c", help="Generate coverage report"),
 ):
-    """Run all tests."""
+    """Run all core application tests (excludes utility tests)."""
     setup_test_environment()
-    
-    cmd = ['python', '-m', 'pytest', 'tests/']
-    
+
+    cmd = ['python', '-m', 'pytest', 'tests/', '-m', 'not utility and not dev']
+
     if verbose:
         cmd.append('-v')
-    
+
     if coverage:
         cmd.extend([
-            '--cov=src/core', '--cov=src/cli', 
+            '--cov=src/core', '--cov=src/cli',
             '--cov-report=term-missing', '--cov-report=html'
         ])
-    
-    console.print("[bold blue]Running all tests...[/bold blue]")
-    return run_command(cmd, "Running all tests")
+
+    console.print("[bold blue]Running all core application tests...[/bold blue]")
+    return run_command(cmd, "Running core application tests")
+
+
+@test_app.command()
+def all_inclusive(
+    verbose: bool = typer.Option(False, "--verbose", "-v", help="Verbose output"),
+    coverage: bool = typer.Option(False, "--coverage", "-c", help="Generate coverage report"),
+):
+    """Run all tests including utility and development tests."""
+    setup_test_environment()
+
+    cmd = ['python', '-m', 'pytest', 'tests/']
+
+    if verbose:
+        cmd.append('-v')
+
+    if coverage:
+        cmd.extend([
+            '--cov=src/core', '--cov=src/cli',
+            '--cov-report=term-missing', '--cov-report=html'
+        ])
+
+    console.print("[bold blue]Running all tests (including utilities)...[/bold blue]")
+    return run_command(cmd, "Running all tests including utilities")
+
+
+@test_app.command()
+def utilities(
+    verbose: bool = typer.Option(False, "--verbose", "-v", help="Verbose output"),
+):
+    """Run utility and development infrastructure tests only."""
+    setup_test_environment()
+
+    cmd = ['python', '-m', 'pytest', 'tests/', '-m', 'utility or dev']
+
+    if verbose:
+        cmd.append('-v')
+
+    console.print("[bold blue]Running utility tests...[/bold blue]")
+    return run_command(cmd, "Running utility tests")
+
+
+@test_app.command()
+def core(
+    verbose: bool = typer.Option(False, "--verbose", "-v", help="Verbose output"),
+    coverage: bool = typer.Option(False, "--coverage", "-c", help="Generate coverage report"),
+):
+    """Run core application tests only (alias for 'all' command)."""
+    setup_test_environment()
+
+    cmd = ['python', '-m', 'pytest', 'tests/', '-m', 'not utility and not dev']
+
+    if verbose:
+        cmd.append('-v')
+
+    if coverage:
+        cmd.extend([
+            '--cov=src/core', '--cov=src/cli',
+            '--cov-report=term-missing', '--cov-report=html'
+        ])
+
+    console.print("[bold blue]Running core application tests...[/bold blue]")
+    return run_command(cmd, "Running core application tests")
 
 
 @test_app.command()
@@ -107,12 +169,12 @@ def specific(
 ):
     """Run a specific test file or test function."""
     setup_test_environment()
-    
+
     cmd = ['python', '-m', 'pytest', test_path]
-    
+
     if verbose:
         cmd.append('-v')
-    
+
     console.print(f"[bold blue]Running specific test: {test_path}[/bold blue]")
     return run_command(cmd, f"Running {test_path}")
 

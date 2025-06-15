@@ -219,12 +219,27 @@ admin-assistant login msgraph --user <YOUR_USER_ID>
 # Activate virtual environment
 source .venv/bin/activate
 
-# Run all tests
-python -m pytest
+# Run core application tests (default - excludes utility tests)
+python scripts/dev_cli.py test all
+
+# Run all tests including utilities
+python scripts/dev_cli.py test all-inclusive
+
+# Run only utility/development infrastructure tests
+python scripts/dev_cli.py test utilities
 
 # Run with coverage
-python -m pytest --cov=core --cov-report=html
+python scripts/dev_cli.py test all --coverage
+
+# Run specific test categories
+python scripts/dev_cli.py test unit
+python scripts/dev_cli.py test integration
 ```
+
+#### Test Organization
+- **Core Tests**: Application logic, services, repositories (default runs)
+- **Utility Tests**: Testing infrastructure, development tools (excluded by default)
+- **Integration Tests**: End-to-end workflows and system integration
 
 ### Development Guidelines
 - Follow the patterns established in `core/` directory

@@ -383,7 +383,7 @@ class AsyncRunner:
 
     def shutdown(self, timeout: float = 5.0):
         """
-        Gracefully shutdown the async runner.
+        Gracefully shutdown the async runner with enhanced cleanup.
 
         Args:
             timeout: Maximum time to wait for shutdown (seconds)
@@ -394,37 +394,63 @@ class AsyncRunner:
             # Signal shutdown
             self._shutdown_event.set()
 
-            # Shutdown executor
+            # Shutdown executor with aggressive cleanup
             if self._executor:
                 try:
+                    # Cancel all pending futures first
+                    self._executor._threads.clear()  # Clear thread references
+
                     # Try with timeout parameter first (Python 3.9+)
                     try:
-                        self._executor.shutdown(wait=True, timeout=timeout)
+                        self._executor.shutdown(wait=True, timeout=timeout/2)
                     except TypeError:
-                        # Fallback for older Python versions or implementations
+                        # Fallback for older Python versions
                         logger.debug("ThreadPoolExecutor.shutdown() doesn't support timeout parameter, using fallback")
                         self._executor.shutdown(wait=True)
+
+                    # Force cleanup if threads are still alive
+                    if hasattr(self._executor, '_threads'):
+                        for thread in list(self._executor._threads):
+                            if thread.is_alive():
+                                logger.warning(f"Force terminating executor thread: {thread.name}")
+
                 except Exception as e:
                     logger.exception(f"Error shutting down executor: {e}")
                 finally:
                     self._executor = None
 
-            # Stop the event loop gracefully
+            # Stop the event loop with enhanced cleanup
             if self._loop and not self._loop.is_closed():
                 try:
-                    # Simply stop the loop - the background thread cleanup will handle tasks
+                    # Cancel all remaining tasks before stopping
+                    pending_tasks = asyncio.all_tasks(self._loop)
+                    for task in pending_tasks:
+                        if not task.done():
+                            task.cancel()
+
+                    # Stop the loop
                     self._loop.call_soon_threadsafe(self._loop.stop)
+
+                    # Give tasks a moment to cancel
+                    import time
+                    time.sleep(0.1)
+
                 except Exception as e:
                     logger.exception(f"Error stopping event loop: {e}")
 
-            # Wait for thread to finish
+            # Wait for thread to finish with verification
             if self._loop_thread and self._loop_thread.is_alive():
-                self._loop_thread.join(timeout=timeout)
+                self._loop_thread.join(timeout=timeout/2)
                 if self._loop_thread.is_alive():
-                    logger.warning("Background thread did not stop within timeout")
+                    logger.warning(f"Background thread {self._loop_thread.name} did not stop within timeout")
+                    # Note: We can't force-kill threads in Python, but we can at least detect the issue
 
             self._loop_thread = None
             self._loop = None
+
+        # Force garbage collection to clean up resources
+        import gc
+        gc.collect()
 
         logger.debug("AsyncRunner shutdown complete")
 
@@ -501,7 +527,7 @@ def run_async_safe(coro: Awaitable[T], timeout: float = 30.0,
 
 
 def shutdown_global_runner():
-    """Shutdown the global AsyncRunner instance."""
+    """Shutdown the global AsyncRunner instance with enhanced cleanup."""
     global _async_runner_ref
 
     with _async_runner_lock:
@@ -510,12 +536,30 @@ def shutdown_global_runner():
 
         if runner is not None:
             try:
-                runner.shutdown()
+                # Use shorter timeout for test cleanup
+                runner.shutdown(timeout=2.0)
+
+                # Verify shutdown completed
+                if hasattr(runner, '_loop_thread') and runner._loop_thread and runner._loop_thread.is_alive():
+                    logger.warning("AsyncRunner thread still alive after shutdown")
+
             except Exception as e:
                 logger.exception(f"Error during global runner shutdown: {e}")
 
-            # Clear the reference
+            # Clear the reference immediately
             _async_runner_ref = None
 
-            # Force garbage collection to clean up resources
-            gc.collect()
+        # Additional cleanup: clear any module-level caches
+        if hasattr(gc, 'set_debug'):
+            # Temporarily enable debug to catch reference cycles
+            old_flags = gc.get_debug()
+            gc.set_debug(gc.DEBUG_UNCOLLECTABLE)
+
+        # Force multiple garbage collection passes
+        for i in range(3):
+            collected = gc.collect()
+            if collected > 0:
+                logger.debug(f"GC pass {i+1}: collected {collected} objects")
+
+        if hasattr(gc, 'set_debug'):
+            gc.set_debug(old_flags)

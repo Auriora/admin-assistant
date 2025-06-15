@@ -2,6 +2,8 @@
 Test utilities and helpers for improved test isolation and mock validation.
 """
 import pytest
+
+pytestmark = pytest.mark.utility
 from unittest.mock import Mock, MagicMock, patch
 from contextlib import contextmanager
 from typing import Any, Dict, List, Optional
