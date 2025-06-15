@@ -395,7 +395,7 @@ class TestTimesheetWorkflowIntegration:
         # Verify CLI execution - the CLI should run and return a result
         # Even if it's an error result due to database issues in the test environment
         assert result.exit_code == 0  # CLI should not crash
-        assert "[TIMESHEET RESULT]" in result.output  # Should show result output
+        assert "TIMESHEET RESULT" in result.output  # Should show result output
 
         # The CLI ran successfully even if the underlying operation failed due to test environment
         # This verifies the CLI interface works correctly

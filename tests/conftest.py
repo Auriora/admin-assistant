@@ -222,6 +222,17 @@ def setup_test_logging():
     logging.getLogger().setLevel(logging.DEBUG)
 
 
+@pytest.fixture(autouse=True, scope="function")
+def cleanup_async_runner():
+    """Ensure AsyncRunner is properly cleaned up after each test."""
+    yield
+    try:
+        from core.utilities.async_runner import shutdown_global_runner
+        shutdown_global_runner()
+    except Exception:
+        pass
+
+
 @pytest.fixture
 def temp_file():
     """Create a temporary file for testing."""

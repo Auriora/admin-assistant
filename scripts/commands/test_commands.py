@@ -1,12 +1,16 @@
 """Test-related commands."""
+import os
 import subprocess
 import sys
+import time
 from pathlib import Path
 from typing import Optional, List
 
 import typer
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
+from rich.table import Table
+from rich.panel import Panel
 
 from scripts.utils.environment import setup_test_environment, get_project_root
 
@@ -222,10 +226,178 @@ def lint():
     try:
         # Check if flake8 is available
         subprocess.run(['flake8', '--version'], capture_output=True, check=True)
-        
+
         cmd = ['flake8', 'tests/', '--max-line-length=120', '--ignore=E501,W503']
         console.print("[bold blue]Running linting on test files...[/bold blue]")
         return run_command(cmd, "Linting test files")
     except (subprocess.CalledProcessError, FileNotFoundError):
         console.print("[yellow]flake8 not available, skipping linting[/yellow]")
         return 0
+
+
+@test_app.command()
+def memory_profile(
+    test_path: Optional[str] = typer.Argument(None, help="Specific test file or directory to profile"),
+    verbose: bool = typer.Option(False, "--verbose", "-v", help="Verbose output"),
+    memray_enabled: bool = typer.Option(True, "--memray/--no-memray", help="Enable memray profiling"),
+):
+    """Run tests with memory profiling to diagnose SIGKILL (exit code 137) issues.
+
+    This command monitors memory usage during test execution using psutil and optionally
+    enables memray profiling for detailed memory allocation tracking.
+
+    Examples:
+        python scripts/dev_cli.py test memory-profile
+        python scripts/dev_cli.py test memory-profile tests/unit/
+        python scripts/dev_cli.py test memory-profile --verbose --no-memray
+    """
+    setup_test_environment()
+
+    # Set environment variables for memory monitoring
+    os.environ['MEMORY_PROFILING_ENABLED'] = 'true'
+    os.environ['PYTEST_CURRENT_TEST_MEMORY_TRACKING'] = 'true'
+
+    # Build pytest command using virtual environment python
+    venv_python = PROJECT_ROOT / '.venv' / 'bin' / 'python'
+    if venv_python.exists():
+        cmd = [str(venv_python), '-m', 'pytest']
+    else:
+        cmd = ['python', '-m', 'pytest']
+
+    if test_path:
+        cmd.append(test_path)
+    else:
+        cmd.append('tests/')
+
+    if verbose:
+        cmd.append('-v')
+
+    if memray_enabled:
+        try:
+            # Check if pytest-memray is available
+            import pytest_memray
+            cmd.extend(['--memray', '--most-allocations=5'])
+            console.print("[blue]✅ Memray profiling enabled[/blue]")
+        except ImportError:
+            console.print("[yellow]⚠️  pytest-memray not available, install with: pip install pytest-memray[/yellow]")
+            memray_enabled = False
+
+    console.print(Panel.fit(
+        "[bold blue]🔍 Memory Profiling Test Execution[/bold blue]\n"
+        f"Target: {test_path or 'tests/'}\n"
+        f"Memray: {'✅ Enabled' if memray_enabled else '❌ Disabled'}\n"
+        f"Verbose: {'✅ Enabled' if verbose else '❌ Disabled'}",
+        title="Memory Profile Configuration"
+    ))
+
+    # Start memory monitoring
+    try:
+        import psutil
+        process = psutil.Process()
+        initial_memory = process.memory_info().rss / 1024 / 1024  # MB
+
+        console.print(f"[dim]Initial memory usage: {initial_memory:.1f} MB[/dim]")
+
+        # Track memory during execution
+        max_memory = initial_memory
+        memory_samples = []
+
+        def monitor_memory():
+            nonlocal max_memory
+            try:
+                current_memory = process.memory_info().rss / 1024 / 1024  # MB
+                max_memory = max(max_memory, current_memory)
+                memory_samples.append(current_memory)
+                return current_memory
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                return None
+
+        # Run tests with memory monitoring
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=console,
+        ) as progress:
+            task = progress.add_task("Running tests with memory profiling", total=None)
+
+            start_time = time.time()
+
+            try:
+                # Start the subprocess
+                proc = subprocess.Popen(cmd, cwd=PROJECT_ROOT)
+
+                # Monitor memory usage
+                while proc.poll() is None:
+                    current_mem = monitor_memory()
+                    if current_mem:
+                        progress.update(task, description=f"Running tests (Memory: {current_mem:.1f} MB)")
+                    time.sleep(0.5)  # Sample every 500ms
+
+                # Get final result
+                result = proc.wait()
+                end_time = time.time()
+
+                progress.update(task, completed=True)
+
+            except KeyboardInterrupt:
+                console.print("\n[red]Test execution interrupted by user[/red]")
+                try:
+                    proc.terminate()
+                    proc.wait(timeout=5)
+                except:
+                    proc.kill()
+                return 130
+            except Exception as e:
+                console.print(f"\n[red]Error during test execution: {e}[/red]")
+                return 1
+
+        # Display memory usage summary
+        execution_time = end_time - start_time
+        final_memory = monitor_memory() or max_memory
+        memory_increase = max_memory - initial_memory
+
+        # Create memory usage table
+        memory_table = Table(title="Memory Usage Summary")
+        memory_table.add_column("Metric", style="cyan")
+        memory_table.add_column("Value", style="green")
+
+        memory_table.add_row("Initial Memory", f"{initial_memory:.1f} MB")
+        memory_table.add_row("Peak Memory", f"{max_memory:.1f} MB")
+        memory_table.add_row("Final Memory", f"{final_memory:.1f} MB")
+        memory_table.add_row("Memory Increase", f"{memory_increase:.1f} MB")
+        memory_table.add_row("Execution Time", f"{execution_time:.1f} seconds")
+        memory_table.add_row("Exit Code", str(result))
+
+        console.print()
+        console.print(memory_table)
+
+        # Memory analysis
+        if result == 137:
+            console.print(Panel(
+                "[red]🚨 SIGKILL detected (exit code 137)![/red]\n"
+                "This typically indicates the process was killed due to memory limits.\n"
+                f"Peak memory usage: {max_memory:.1f} MB\n"
+                "Consider:\n"
+                "• Running tests in smaller batches\n"
+                "• Using container limits to test memory constraints\n"
+                "• Investigating memory-intensive test patterns",
+                title="Memory Issue Detected",
+                border_style="red"
+            ))
+        elif memory_increase > 500:  # More than 500MB increase
+            console.print(Panel(
+                f"[yellow]⚠️  High memory usage detected![/yellow]\n"
+                f"Memory increased by {memory_increase:.1f} MB during execution.\n"
+                "Consider investigating memory usage patterns.",
+                title="High Memory Usage Warning",
+                border_style="yellow"
+            ))
+        else:
+            console.print("[green]✅ Memory usage appears normal[/green]")
+
+        return result
+
+    except ImportError:
+        console.print("[red]❌ psutil not available. Install with: pip install psutil[/red]")
+        console.print("[yellow]Falling back to basic test execution without memory monitoring[/yellow]")
+        return run_command(cmd, "Running tests without memory monitoring")

@@ -7,7 +7,17 @@ import pytest
 import time
 from unittest.mock import AsyncMock, patch
 
-from core.utilities.async_runner import AsyncRunner, run_async, run_async_safe, get_async_runner
+from core.utilities.async_runner import AsyncRunner, run_async, run_async_safe, get_async_runner, shutdown_global_runner
+
+
+@pytest.fixture(autouse=True)
+def cleanup_async_runner():
+    """Ensure AsyncRunner is properly cleaned up after each test."""
+    yield
+    try:
+        shutdown_global_runner()
+    except Exception:
+        pass
 
 
 class TestAsyncRunner:
