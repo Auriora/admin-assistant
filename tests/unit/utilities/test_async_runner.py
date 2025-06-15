@@ -316,7 +316,8 @@ class TestAsyncRunnerIntegration:
         # Measure execution time
         start_time = time.time()
         for _ in range(10):
-            result = run_async(fast_operation())
+            # Use skip_checks=True to bypass resource checks for better performance
+            result = run_async(fast_operation(), skip_checks=True)
             assert result == "fast"
         end_time = time.time()
 

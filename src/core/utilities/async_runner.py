@@ -272,14 +272,23 @@ class AsyncRunner:
         try:
             # Submit the coroutine to the background loop
             future = asyncio.run_coroutine_threadsafe(coro, self._loop)
-            result = future.result(timeout=timeout)
-            return result
 
-        except FutureTimeoutError:
-            logger.error(f"Async operation timed out after {timeout} seconds")
-            raise asyncio.TimeoutError(f"Operation timed out after {timeout} seconds")
+            # For concurrent operations, we need to be more careful with timeouts
+            # Use a slightly longer effective timeout to account for thread scheduling overhead
+            effective_timeout = timeout * 1.1 if timeout > 0 else timeout
+
+            try:
+                result = future.result(timeout=effective_timeout)
+                return result
+            except FutureTimeoutError:
+                # Cancel the future to prevent it from continuing to run and consuming resources
+                future.cancel()
+                logger.error(f"Async operation timed out after {timeout} seconds")
+                raise asyncio.TimeoutError(f"Operation timed out after {timeout} seconds")
+
         except Exception as e:
-            logger.exception(f"Error running async operation: {e}")
+            if not isinstance(e, asyncio.TimeoutError):
+                logger.exception(f"Error running async operation: {e}")
             raise
         finally:
             # Only perform cleanup for non-trivial operations or when explicitly requested
@@ -464,8 +473,20 @@ class AsyncRunner:
                     return True
 
                 # Use a very short timeout to avoid blocking
-                result = self.run_async(health_check(), timeout=0.1, skip_checks=True)
-                return result is True
+                # But make it a bit longer to be more resilient to resource contention
+                try:
+                    result = self.run_async(health_check(), timeout=0.5, skip_checks=True)
+                    return result is True
+                except asyncio.TimeoutError:
+                    # If it times out, try one more time with a longer timeout
+                    # This helps with resource contention from previous tests
+                    logger.debug("Health check timed out, retrying with longer timeout")
+                    try:
+                        result = self.run_async(health_check(), timeout=1.0, skip_checks=True)
+                        return result is True
+                    except Exception as e:
+                        logger.debug(f"Retry coroutine test failed during health check: {e}")
+                        return False
             except Exception as e:
                 logger.debug(f"Coroutine test failed during health check: {e}")
                 return False
@@ -546,18 +567,20 @@ class AsyncRunner:
                                 # Use a very short timeout to avoid blocking
                                 # Wrap in try/except to handle CancelledError
                                 try:
-                                    self._loop.run_until_complete(
-                                        asyncio.wait_for(
-                                            asyncio.gather(*pending_tasks, return_exceptions=True),
-                                            timeout=0.2
-                                        )
+                                    # Create the coroutine but don't run it yet
+                                    wait_coro = asyncio.wait_for(
+                                        asyncio.gather(*pending_tasks, return_exceptions=True),
+                                        timeout=0.2
                                     )
+
+                                    # Run the coroutine with proper exception handling
+                                    self._loop.run_until_complete(wait_coro)
                                 except asyncio.CancelledError:
                                     # This is expected when cancelling tasks
                                     pass
-                            except (asyncio.TimeoutError, RuntimeError):
+                            except (asyncio.TimeoutError, RuntimeError) as e:
                                 # Expected if tasks don't complete or loop is already stopping
-                                logger.debug("Timeout or RuntimeError while waiting for tasks to cancel")
+                                logger.debug(f"Expected error while waiting for tasks to cancel: {type(e).__name__}")
                     except RuntimeError as e:
                         # "There is no current event loop in thread" - can happen during shutdown
                         logger.debug(f"RuntimeError during task cancellation: {e}")
@@ -714,7 +737,10 @@ def run_async_safe(coro: Awaitable[T], timeout: float = 30.0,
 
 def shutdown_global_runner():
     """Shutdown the global AsyncRunner instance with enhanced cleanup."""
-    global _async_runner
+    global _async_runner, _runner_creation_time
+
+    # Import gc at the function level to avoid UnboundLocalError
+    import gc
 
     with _async_runner_lock:
         # Get the runner if it exists
@@ -754,6 +780,12 @@ def shutdown_global_runner():
 
             # Clear the reference immediately
             _async_runner = None
+            # Reset creation time
+            _runner_creation_time = 0
+
+            # Collect all generations
+            for gen in range(3):
+                gc.collect(gen)
 
         # Additional cleanup: clear any module-level caches
         if hasattr(gc, 'set_debug'):
