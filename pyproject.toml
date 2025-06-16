@@ -35,7 +35,7 @@ dependencies = [
     "Flask-APScheduler~=1.13.1",
 
     # API Integrations
-    "msgraph-sdk~=1.32.0",
+    "msgraph-sdk~=1.33.0",
     "xero-python~=8.1.0",
     "openai~=1.84.0",
     "googlemaps~=4.10.0",
