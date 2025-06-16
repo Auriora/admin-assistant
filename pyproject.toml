@@ -36,7 +36,7 @@ dependencies = [
 
     # API Integrations
     "msgraph-sdk~=1.32.0",
-    "xero-python~=8.1.0",
+    "xero-python~=8.2.0",
     "openai~=1.84.0",
     "googlemaps~=4.10.0",
 
