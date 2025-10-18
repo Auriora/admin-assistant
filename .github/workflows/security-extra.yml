@@ -1,0 +1,94 @@
+# CI Workflow: Extra Security Scans (manual)
+#
+# Purpose:
+# - On-demand complementary security scanning alongside the primary CodeQL workflow.
+# - Tools:
+#   - Safety: checks Python dependencies against known CVEs (unique value vs. CodeQL).
+#   - Bandit: Python AST security linter for common insecure patterns.
+#   - Semgrep: rule-based SAST; broad ruleset when using --config=auto.
+#
+# Relationship to CodeQL and overlap notes:
+# - CodeQL remains the primary repository-wide SAST and is maintained in its own workflow.
+# - Bandit and Semgrep overlap with CodeQL in code scanning; Safety uniquely covers dependency vulnerabilities.
+# - All tools here are intentionally non-blocking (`|| true`) to avoid PR noise; results are captured as artifacts.
+#
+# Low-risk improvement suggestions (optional, later):
+# - If desired, schedule this workflow (e.g., weekly) instead of running manually.
+# - Consider uploading SARIF for Semgrep/Bandit if you want alerts in the GitHub code scanning UI; or rely on CodeQL alone.
+# - If making any checks blocking, tune severity thresholds/allowlists to prevent noisy failures.
+# - Pin tool major versions (safety/bandit/semgrep) and update via Dependabot.
+#
+# This block documents intent only — no functional changes were made.
+name: Extra Security Scans (manual)
+
+on:
+  workflow_dispatch:
+    # Manual trigger only
+
+jobs:
+  security:
+    name: Additional Security Scanning
+    runs-on: ubuntu-latest
+    environment: Testing
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v5
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.12'
+
+    - name: Create virtual environment
+      run: |
+        python -m venv .venv
+        echo "VIRTUAL_ENV=$PWD/.venv" >> $GITHUB_ENV
+        echo "$PWD/.venv/bin" >> $GITHUB_PATH
+
+    - name: Install dependencies and security tools
+      run: |
+        source .venv/bin/activate
+        python -m pip install --upgrade pip
+        pip install -e .[dev]
+        pip install safety bandit semgrep
+
+    - name: Run safety check for known vulnerabilities
+      run: |
+        source .venv/bin/activate
+        echo "::group::Safety Check - Dependency Vulnerabilities"
+        echo "Checking Python dependencies for known security vulnerabilities..."
+        safety check --json --output safety-report.json || true
+        safety check --short-report || true
+        echo "::endgroup::"
+
+    - name: Run bandit security linter
+      run: |
+        source .venv/bin/activate
+        echo "::group::Bandit Security Linter - Python Code Analysis"
+        echo "Scanning Python code for common security issues..."
+        bandit -r src/core/ src/cli/ src/web/ -f json -o bandit-report.json || true
+        bandit -r src/core/ src/cli/ src/web/ -f txt || true
+        echo "::endgroup::"
+
+    - name: Run semgrep security analysis
+      run: |
+        source .venv/bin/activate
+        echo "::group::Semgrep Security Analysis - Pattern Matching"
+        echo "Running advanced security pattern analysis..."
+        semgrep --config=auto --json --output=semgrep-report.json src/ || true
+        semgrep --config=auto src/ || true
+        echo "::endgroup::"
+
+    - name: Upload security reports
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: security-reports
+        path: |
+          safety-report.json
+          bandit-report.json
+          semgrep-report.json
+
+    - name: Security scan summary
+      run: |
+        echo "::notice::Security scanning completed. CodeQL provides primary security analysis, while Safety, Bandit, and Semgrep provide complementary vulnerability detection."

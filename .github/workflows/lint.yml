@@ -1,0 +1,82 @@
+# CI Workflow: Lint (manual)
+#
+# Purpose:
+# - Manual lint/quality suite you can run on demand. It mirrors the previous CI lint job without affecting PRs.
+# - Tools:
+#   - flake8: two passes — a strict error-focused pass (E9/F63/F7/F82) and a non-blocking broader pass for stats.
+#   - black: checks code formatting (no writes in CI).
+#   - isort: checks import ordering (no writes in CI).
+#   - mypy: type checking currently softened with --ignore-missing-imports and `|| true` so it won’t fail the run.
+#
+# Value and overlap notes:
+# - black and isort handle formatting/imports that overlap partially with flake8’s style rules.
+# - A single tool like ruff could unify linting + formatting + import rules, if desired later.
+# - mypy adds type safety but is intentionally non-blocking here during early development.
+#
+# Low-risk improvement suggestions (optional, later):
+# - Gradually tighten mypy (remove `|| true`, reduce --ignore-missing-imports per module).
+# - Pin major versions of flake8/black/isort/mypy to limit drift; update via Dependabot.
+# - You can switch to actions/setup-python cache: pip if you want less manual caching boilerplate.
+#
+# This block documents intent only — no functional changes were made.
+name: Lint (manual)
+
+on:
+  workflow_dispatch:
+    # Manual trigger only
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    environment: Testing
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v5
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.12'
+
+    - name: Cache pip dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-lint-${{ hashFiles('**/pyproject.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-lint-
+          ${{ runner.os }}-pip-
+
+    - name: Create virtual environment
+      run: |
+        python -m venv .venv
+        echo "VIRTUAL_ENV=$PWD/.venv" >> $GITHUB_ENV
+        echo "$PWD/.venv/bin" >> $GITHUB_PATH
+
+    - name: Install dependencies
+      run: |
+        source .venv/bin/activate
+        python -m pip install --upgrade pip
+        pip install -e .[dev]
+        pip install flake8 black isort mypy
+
+    - name: Run flake8
+      run: |
+        source .venv/bin/activate
+        flake8 src/core/ src/cli/ src/web/ --count --select=E9,F63,F7,F82 --show-source --statistics
+        flake8 src/core/ src/cli/ src/web/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+    - name: Check code formatting with black
+      run: |
+        source .venv/bin/activate
+        black --check --diff src/core/ src/cli/ src/web/
+
+    - name: Check import sorting with isort
+      run: |
+        source .venv/bin/activate
+        isort --check-only --diff src/core/ src/cli/ src/web/
+
+    - name: Run type checking with mypy
+      run: |
+        source .venv/bin/activate
+        mypy src/core/ src/cli/ src/web/ --ignore-missing-imports || true
