@@ -11,7 +11,7 @@ from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.pool import StaticPool
 
 from core.db import Base
-from tests.utils.database_cleanup import DatabaseTestManager
+from .database_cleanup import DatabaseTestManager
 
 
 @pytest.fixture(scope="function")

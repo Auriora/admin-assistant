@@ -37,7 +37,7 @@ from core.models.reversible_operation import ReversibleOperation, ReversibleOper
 @pytest.fixture(scope="session")
 def test_db_engine():
     """Create a test database engine for the session with enhanced cleanup."""
-    from tests.utils.database_cleanup import _test_engines
+    from .utils.database_cleanup import _test_engines
     from sqlalchemy.pool import StaticPool
 
     # Create engine with optimized settings for testing
@@ -320,7 +320,7 @@ def comprehensive_test_cleanup():
             SessionLocal.remove()
 
         # 3. Clean up database resources
-        from tests.utils.database_cleanup import cleanup_database_resources
+        from .utils.database_cleanup import cleanup_database_resources
         cleanup_database_resources()
 
         # 4. Wait for background threads to actually terminate with increased timeout
