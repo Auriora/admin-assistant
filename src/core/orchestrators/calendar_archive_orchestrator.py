@@ -953,61 +953,6 @@ class CalendarArchiveOrchestrator:
             "errors": archive_errors,
             "deleted_count": len(deleted_appointments),
         }
-        operation_start_time = time.time()
-
-        # Initialize audit logging
-        if audit_service is None:
-            from core.repositories.audit_log_repository import AuditLogRepository
-
-            audit_repo = AuditLogRepository(session=db_session)
-            audit_service = AuditLogService(repository=audit_repo)
-        correlation_id = audit_service.generate_correlation_id()
-
-        # Start OpenTelemetry span
-        if OTEL_AVAILABLE and tracer:
-            with tracer.start_as_current_span(
-                "calendar_archive_orchestrator.archive_user_appointments",
-                attributes={
-                    "user.id": str(user.id),
-                    "user.email": getattr(user, "email", ""),
-                    "source_calendar_uri": source_calendar_uri,
-                    "archive_calendar_id": archive_calendar_id,
-                    "start_date": start_date.isoformat(),
-                    "end_date": end_date.isoformat(),
-                    "correlation_id": correlation_id,
-                },
-            ) as span:
-                return self._archive_user_appointments_impl(
-                    user,
-                    msgraph_client,
-                    source_calendar_uri,
-                    archive_calendar_id,
-                    start_date,
-                    end_date,
-                    db_session,
-                    logger,
-                    audit_service,
-                    correlation_id,
-                    operation_start_time,
-                    span,
-                    replace_mode,
-                )
-        else:
-            return self._archive_user_appointments_impl(
-                user,
-                msgraph_client,
-                source_calendar_uri,
-                archive_calendar_id,
-                start_date,
-                end_date,
-                db_session,
-                logger,
-                audit_service,
-                correlation_id,
-                operation_start_time,
-                None,
-                replace_mode,
-            )
 
     def _archive_user_appointments_impl(
         self,
