@@ -10,8 +10,28 @@ class UserService:
     """
 
     def __init__(self, repository: Optional[UserRepository] = None):
-        self.repository = repository or UserRepository()
-        self._owns_repository = repository is None  # Track if we created the repository
+        # Store the provided repository (may be None); create lazily when accessed
+        self._repository = repository
+        # Track whether we *should* own the repository if we create one lazily
+        self._owns_repository = repository is None
+
+    @property
+    def repository(self) -> UserRepository:
+        """Lazily return or create the underlying repository."""
+        if self._repository is None:
+            # Local import to avoid importing DB-backed repo at module import time
+            from core.repositories.user_repository import UserRepository as _UR
+
+            self._repository = _UR()
+            # We created the repository, so we own it
+            self._owns_repository = True
+        return self._repository
+
+    @repository.setter
+    def repository(self, value: UserRepository) -> None:
+        self._repository = value
+        # If caller injects a repository, we don't own it
+        self._owns_repository = False
 
     def get_by_id(self, user_id: int) -> Optional[User]:
         """Retrieve a User by its ID."""
@@ -66,14 +86,18 @@ class UserService:
         # Add further validation as needed
 
     def close(self) -> None:
-        """Close the repository if we own it."""
-        if self._owns_repository and self.repository:
-            self.repository.close()
+        """Close the repository if we own it and it has been created."""
+        if self._owns_repository and self._repository is not None:
+            try:
+                self._repository.close()
+            except Exception:
+                # Don't raise during normal close
+                pass
 
     def __del__(self):
         """Ensure repository is closed when service is garbage collected."""
         try:
             self.close()
-        except:
+        except Exception:
             # Ignore errors during garbage collection
             pass
