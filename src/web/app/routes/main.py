@@ -1,3 +1,4 @@
+import uuid
 from datetime import UTC, date, datetime, timedelta
 from typing import cast
 
@@ -26,6 +27,24 @@ from web.app.services import msgraph
 from web.app.services.msgraph import MsAuthError
 
 main_bp = Blueprint("main", __name__)
+
+
+def _unexpected_error_response(context_message: str):
+    """
+    Log unexpected exceptions without exposing implementation details to clients.
+    """
+    error_id = uuid.uuid4().hex
+    current_app.logger.exception("%s (error_id=%s)", context_message, error_id)
+    return (
+        jsonify(
+            {
+                "status": "error",
+                "message": "An unexpected error occurred.",
+                "error_id": error_id,
+            }
+        ),
+        500,
+    )
 
 
 @main_bp.route("/")
@@ -265,9 +284,8 @@ def archive_now():
         else:
             current_app.logger.info(f"Manual archive completed for {user.email}")  # type: ignore[attr-defined]
             return jsonify({"status": "success", "message": "Archive complete!"})
-    except Exception as e:
-        current_app.logger.exception(f"Manual archive exception: {str(e)}")
-        return jsonify({"status": "error", "message": str(e)}), 500
+    except Exception:
+        return _unexpected_error_response("Manual archive exception")
 
 
 @main_bp.route("/settings")
@@ -404,9 +422,8 @@ def schedule_archive_job():
                 }
             )
 
-    except Exception as e:
-        current_app.logger.exception(f"Schedule archive job exception: {str(e)}")
-        return jsonify({"status": "error", "message": str(e)}), 500
+    except Exception:
+        return _unexpected_error_response("Schedule archive job exception")
 
 
 @main_bp.route("/jobs/trigger", methods=["POST"])
@@ -480,9 +497,8 @@ def trigger_manual_archive_job():
             }
         )
 
-    except Exception as e:
-        current_app.logger.exception(f"Manual archive job trigger exception: {str(e)}")
-        return jsonify({"status": "error", "message": str(e)}), 500
+    except Exception:
+        return _unexpected_error_response("Manual archive job trigger exception")
 
 
 @main_bp.route("/jobs/status")
@@ -499,9 +515,8 @@ def get_job_status():
 
         return jsonify({"status": "success", "data": status})
 
-    except Exception as e:
-        current_app.logger.exception(f"Get job status exception: {str(e)}")
-        return jsonify({"status": "error", "message": str(e)}), 500
+    except Exception:
+        return _unexpected_error_response("Get job status exception")
 
 
 @main_bp.route("/jobs/remove", methods=["POST"])
@@ -538,9 +553,8 @@ def remove_scheduled_jobs():
                 }
             )
 
-    except Exception as e:
-        current_app.logger.exception(f"Remove scheduled jobs exception: {str(e)}")
-        return jsonify({"status": "error", "message": str(e)}), 500
+    except Exception:
+        return _unexpected_error_response("Remove scheduled jobs exception")
 
 
 @main_bp.route("/jobs/health")
@@ -555,6 +569,5 @@ def job_health_check():
 
         return jsonify({"status": "success", "data": health})
 
-    except Exception as e:
-        current_app.logger.exception(f"Job health check exception: {str(e)}")
-        return jsonify({"status": "error", "message": str(e)}), 500
+    except Exception:
+        return _unexpected_error_response("Job health check exception")

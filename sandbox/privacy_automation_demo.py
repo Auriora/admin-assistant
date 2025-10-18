@@ -6,13 +6,22 @@ This script demonstrates the functionality of the PrivacyAutomationService
 with realistic appointment scenarios.
 """
 
-import sys
+import hashlib
 import os
+import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from unittest.mock import Mock
-from core.services.privacy_automation_service import PrivacyAutomationService
 from core.models.appointment import Appointment
+from core.services.privacy_automation_service import PrivacyAutomationService
+
+
+def mask_subject(subject: str) -> str:
+    """Return a non-sensitive representation of an appointment subject."""
+    if not subject:
+        return "[no-subject]"
+    digest = hashlib.sha256(subject.encode("utf-8")).hexdigest()[:8]
+    return f"[redacted:{digest}]"
 
 
 def create_mock_appointment(subject: str, categories: list = None, sensitivity: str = 'normal'):
@@ -63,7 +72,8 @@ def main():
     print("-" * 40)
     for i, appt in enumerate(appointments, 1):
         categories_str = str(appt.categories) if appt.categories else "None"
-        print(f"{i:2d}. {appt.subject:<30} | Categories: {categories_str:<25} | Sensitivity: {appt.sensitivity}")
+        subject_str = mask_subject(getattr(appt, "subject", ""))
+        print(f"{i:2d}. {subject_str:<30} | Categories: {categories_str:<25} | Sensitivity: {appt.sensitivity}")
     
     # Apply privacy rules
     processed_appointments = privacy_service.apply_privacy_rules(appointments)
@@ -73,7 +83,8 @@ def main():
     for i, appt in enumerate(processed_appointments, 1):
         categories_str = str(appt.categories) if appt.categories else "None"
         privacy_status = "PRIVATE" if appt.sensitivity == 'private' else "PUBLIC"
-        print(f"{i:2d}. {appt.subject:<30} | Categories: {categories_str:<25} | Status: {privacy_status}")
+        subject_str = mask_subject(getattr(appt, "subject", ""))
+        print(f"{i:2d}. {subject_str:<30} | Categories: {categories_str:<25} | Status: {privacy_status}")
     
     # Get detailed statistics
     stats = privacy_service.update_privacy_flags(appointments)
@@ -115,7 +126,7 @@ def main():
         is_personal = privacy_service.is_personal_appointment(appt)
         should_be_private = privacy_service.should_mark_private(appt)
         
-        print(f"'{appt.subject}':")
+        print(f"{mask_subject(getattr(appt, 'subject', ''))}:")
         print(f"  Categories: {appt.categories}")
         print(f"  Is personal: {is_personal}")
         print(f"  Should be private: {should_be_private}")

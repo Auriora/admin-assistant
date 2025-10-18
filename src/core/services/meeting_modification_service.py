@@ -1,7 +1,8 @@
+import hashlib
 import logging
 import re
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional, Tuple
+from typing import List, Optional
 
 from core.models.appointment import Appointment
 
@@ -89,18 +90,35 @@ class MeetingModificationService:
                         idx = processed_appointments.index(original)
                         processed_appointments[idx] = modified_appt
                         modification_log.append(
-                            f"Applied {mod_type} to appointment: {getattr(original, 'subject', 'Unknown')}"
+                            self._format_log_message(
+                                f"Applied {mod_type} to appointment",
+                                original,
+                            )
                         )
 
-                except Exception as e:
-                    logger.error(f"Failed to apply {mod_type} modification: {e}")
-                    modification_log.append(f"Failed to apply {mod_type}: {e}")
+                except Exception:
+                    logger.exception(
+                        "Failed to apply %s modification for appointment %s",
+                        mod_type,
+                        self._describe_appointment(original),
+                    )
+                    modification_log.append(
+                        self._format_log_message(
+                            f"Failed to apply {mod_type} modification",
+                            original,
+                        )
+                    )
             else:
                 logger.warning(
-                    f"No original appointment found for {mod_type} modification: {getattr(modification, 'subject', 'Unknown')}"
+                    "No original appointment found for %s modification (appointment %s)",
+                    mod_type,
+                    self._describe_appointment(modification),
                 )
                 modification_log.append(
-                    f"Orphaned {mod_type} modification: {getattr(modification, 'subject', 'Unknown')}"
+                    self._format_log_message(
+                        f"Orphaned {mod_type} modification",
+                        modification,
+                    )
                 )
 
         if modification_log:
@@ -134,7 +152,9 @@ class MeetingModificationService:
             # Extend the end time by the extension duration
             merged.end_time = getattr(original, "end_time", None) + extension_duration
             logger.debug(
-                f"Extended appointment '{getattr(original, 'subject', 'Unknown')}' by {extension_duration}"
+                "Extended appointment %s by %s",
+                self._describe_appointment(original),
+                extension_duration,
             )
 
         return merged
@@ -175,7 +195,9 @@ class MeetingModificationService:
                 )
 
             logger.debug(
-                f"Shortened appointment '{getattr(original, 'subject', 'Unknown')}' by {shortening_duration}"
+                "Shortened appointment %s by %s",
+                self._describe_appointment(original),
+                shortening_duration,
             )
 
         return shortened
@@ -205,7 +227,8 @@ class MeetingModificationService:
             # Move the original start time to match the adjustment start time
             adjusted.start_time = getattr(timing_adjustment, "start_time", None)
             logger.debug(
-                f"Moved start time earlier for '{getattr(original, 'subject', 'Unknown')}'"
+                "Moved start time earlier for appointment %s",
+                self._describe_appointment(original),
             )
 
         elif mod_type == "late_start":
@@ -228,7 +251,9 @@ class MeetingModificationService:
                     )
 
                 logger.debug(
-                    f"Delayed start time by {delay_duration} for '{getattr(original, 'subject', 'Unknown')}'"
+                    "Delayed start time by %s for appointment %s",
+                    delay_duration,
+                    self._describe_appointment(original),
                 )
 
         return adjusted
@@ -317,6 +342,26 @@ class MeetingModificationService:
             return candidates[0][1]
 
         return None
+
+    def _describe_appointment(self, appointment: Optional[Appointment]) -> str:
+        """
+        Produce a non-sensitive identifier for logging purposes.
+        """
+        if appointment is None:
+            return "unknown"
+        identifier = getattr(appointment, "id", None)
+        if identifier is not None:
+            return f"id={identifier}"
+        subject = getattr(appointment, "subject", None)
+        if subject:
+            digest = hashlib.sha256(str(subject).encode("utf-8")).hexdigest()[:8]
+            return f"subject_hash={digest}"
+        return "unknown"
+
+    def _format_log_message(
+        self, prefix: str, appointment: Optional[Appointment]
+    ) -> str:
+        return f"{prefix} ({self._describe_appointment(appointment)})"
 
     def _copy_appointment(self, appointment: Appointment) -> Appointment:
         """

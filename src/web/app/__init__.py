@@ -145,7 +145,10 @@ def create_app():
     @app.before_request
     def log_request_info():
         app.logger.info(
-            f"Request: {request.method} {request.path} from {request.remote_addr}"
+            "Request: %s %s from %s",
+            request.method,
+            request.path,
+            request.remote_addr,
         )
         # Example custom span for request
         if tracer:
