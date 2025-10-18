@@ -25,7 +25,7 @@ classifiers = [
 dependencies = [
     # Core CLI and UI
     "typer==0.16.1",
-    "rich==14.0.0",
+    "rich==14.2.0",
 
     # Web Framework
     "Flask==3.1.2",
