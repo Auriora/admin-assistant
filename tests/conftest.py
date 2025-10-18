@@ -343,7 +343,8 @@ def comprehensive_test_cleanup():
         patch.stopall()
 
         # 7. Clear any module-level caches that might hold references
-        sys.modules.get('core.utilities.async_runner', {}).clear()
+        # Note: Modules don't have a .clear() method, so we skip this step
+        # The async_runner module manages its own cleanup via shutdown_global_runner()
 
         # 8. Log warning if threads are still active
         final_thread_count = threading.active_count()

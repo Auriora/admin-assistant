@@ -58,8 +58,12 @@ Dockerfile*
 .dockerignore
 
 docs/
+*.md
 logs/
 instance/
+
+examples/
+*.example
 
 # Do NOT ignore pyproject.toml!
 !pyproject.toml

@@ -45,5 +45,6 @@ tests/data/ms365_calendar_*_to_*.json
 ms_token.json
 .idea/
 /.coverage
+coverage.xml
 /htmlcov/
 /exports/

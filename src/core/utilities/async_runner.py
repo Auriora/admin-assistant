@@ -47,7 +47,8 @@ class AsyncRunner:
     MAX_CONCURRENT_TASKS = 100
 
     # Memory threshold for warnings (80% of available memory)
-    MEMORY_WARNING_THRESHOLD = 0.8
+    # Note: psutil.memory_percent() returns percentage values (e.g., 1.7 for 1.7%)
+    MEMORY_WARNING_THRESHOLD = 80.0
 
     @classmethod
     def _register_atexit_handler(cls):
