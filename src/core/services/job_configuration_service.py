@@ -3,16 +3,13 @@ Service for business logic related to JobConfiguration entities.
 """
 
 from datetime import UTC, datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
-from core.models.archive_configuration import ArchiveConfiguration
-from core.models.job_configuration import JobConfiguration
-from core.models.user import User
-from core.repositories.archive_configuration_repository import (
-    ArchiveConfigurationRepository,
-)
-from core.repositories.job_configuration_repository import JobConfigurationRepository
-from core.repositories.user_repository import UserRepository
+if TYPE_CHECKING:
+    from core.models.job_configuration import JobConfiguration
+    from core.repositories.job_configuration_repository import JobConfigurationRepository as _JCRepo
+    from core.repositories.archive_configuration_repository import ArchiveConfigurationRepository as _ACRepo
+    from core.repositories.user_repository import UserRepository as _UserRepo
 
 
 class JobConfigurationService:
@@ -22,35 +19,57 @@ class JobConfigurationService:
 
     def __init__(
         self,
-        repository: Optional[JobConfigurationRepository] = None,
-        archive_config_repository: Optional[ArchiveConfigurationRepository] = None,
-        user_repository: Optional[UserRepository] = None,
+        repository: Optional["_JCRepo"] = None,
+        archive_config_repository: Optional["_ACRepo"] = None,
+        user_repository: Optional["_UserRepo"] = None,
     ):
-        self.repository = repository or JobConfigurationRepository()
-        self.archive_config_repository = (
-            archive_config_repository or ArchiveConfigurationRepository()
-        )
-        self.user_repository = user_repository or UserRepository()
+        self._repository = repository
+        self._archive_config_repository = archive_config_repository
+        self._user_repository = user_repository
 
-    def get_by_id(self, job_config_id: int) -> Optional[JobConfiguration]:
+    @property
+    def repository(self) -> "_JCRepo":
+        if self._repository is None:
+            from core.repositories.job_configuration_repository import JobConfigurationRepository as _Repo
+
+            self._repository = _Repo()
+        return self._repository
+
+    @property
+    def archive_config_repository(self) -> "_ACRepo":
+        if self._archive_config_repository is None:
+            from core.repositories.archive_configuration_repository import ArchiveConfigurationRepository as _Repo
+
+            self._archive_config_repository = _Repo()
+        return self._archive_config_repository
+
+    @property
+    def user_repository(self) -> "_UserRepo":
+        if self._user_repository is None:
+            from core.repositories.user_repository import UserRepository as _Repo
+
+            self._user_repository = _Repo()
+        return self._user_repository
+
+    def get_by_id(self, job_config_id: int) -> Optional["JobConfiguration"]:
         """Retrieve a JobConfiguration by its ID."""
         return self.repository.get_by_id(job_config_id)
 
-    def get_by_user_id(self, user_id: int) -> List[JobConfiguration]:
+    def get_by_user_id(self, user_id: int) -> List["JobConfiguration"]:
         """Retrieve all JobConfigurations for a specific user."""
         return self.repository.get_by_user_id(user_id)
 
     def get_by_archive_config_id(
         self, archive_config_id: int
-    ) -> List[JobConfiguration]:
+    ) -> List["JobConfiguration"]:
         """Retrieve all JobConfigurations for a specific archive configuration."""
         return self.repository.get_by_archive_config_id(archive_config_id)
 
-    def get_active_by_user_id(self, user_id: int) -> List[JobConfiguration]:
+    def get_active_by_user_id(self, user_id: int) -> List["JobConfiguration"]:
         """Retrieve all active JobConfigurations for a specific user."""
         return self.repository.get_active_by_user_id(user_id)
 
-    def create(self, job_config: JobConfiguration) -> JobConfiguration:
+    def create(self, job_config: "JobConfiguration") -> "JobConfiguration":
         """Create a new JobConfiguration after validation."""
         self.validate(job_config)
         self._validate_relationships(job_config)
@@ -67,7 +86,7 @@ class JobConfigurationService:
         self.repository.add(job_config)
         return job_config
 
-    def update(self, job_config: JobConfiguration) -> JobConfiguration:
+    def update(self, job_config: "JobConfiguration") -> "JobConfiguration":
         """Update an existing JobConfiguration after validation."""
         self.validate(job_config)
         self._validate_relationships(job_config)
@@ -84,11 +103,11 @@ class JobConfigurationService:
 
     def list(
         self, user_id: Optional[int] = None, is_active: Optional[bool] = None
-    ) -> List[JobConfiguration]:
+    ) -> List["JobConfiguration"]:
         """List JobConfigurations with optional filters."""
         return self.repository.list(user_id=user_id, is_active=is_active)
 
-    def activate(self, job_config_id: int) -> JobConfiguration:
+    def activate(self, job_config_id: int) -> "JobConfiguration":
         """Activate a JobConfiguration."""
         job_config = self.get_by_id(job_config_id)
         if not job_config:
@@ -99,7 +118,7 @@ class JobConfigurationService:
         self.repository.update(job_config)
         return job_config
 
-    def deactivate(self, job_config_id: int) -> JobConfiguration:
+    def deactivate(self, job_config_id: int) -> "JobConfiguration":
         """Deactivate a JobConfiguration."""
         job_config = self.get_by_id(job_config_id)
         if not job_config:
@@ -112,7 +131,7 @@ class JobConfigurationService:
 
     def get_scheduled_configs(
         self, schedule_type: Optional[str] = None
-    ) -> List[JobConfiguration]:
+    ) -> List["JobConfiguration"]:
         """Get all active job configurations that have scheduled execution."""
         return self.repository.get_scheduled_configs(schedule_type=schedule_type)
 
@@ -124,7 +143,7 @@ class JobConfigurationService:
         schedule_minute: int = 59,
         schedule_day_of_week: Optional[int] = None,
         archive_window_days: int = 30,
-    ) -> JobConfiguration:
+    ) -> "JobConfiguration":
         """Create a default JobConfiguration for an ArchiveConfiguration."""
         # Get the archive configuration to validate it exists and get user_id
         archive_config = self.archive_config_repository.get_by_id(archive_config_id)
@@ -142,7 +161,9 @@ class JobConfigurationService:
                 f"JobConfiguration already exists for archive config {archive_config_id}"
             )
 
-        job_config = JobConfiguration(
+        from core.models.job_configuration import JobConfiguration as _JC
+
+        job_config = _JC(
             user_id=archive_config.user_id,
             archive_configuration_id=archive_config_id,
             archive_window_days=archive_window_days,
@@ -170,7 +191,7 @@ class JobConfigurationService:
             count = self.repository.deactivate_by_archive_config_id(archive_config_id)
             return {"action": "deactivated", "count": count}
 
-    def validate(self, job_config: JobConfiguration) -> None:
+    def validate(self, job_config: "JobConfiguration") -> None:
         """Validate a JobConfiguration."""
         if not job_config:
             raise ValueError("JobConfiguration cannot be None")
@@ -178,7 +199,7 @@ class JobConfigurationService:
         # Use the model's built-in validation
         job_config.validate()
 
-    def _validate_relationships(self, job_config: JobConfiguration) -> None:
+    def _validate_relationships(self, job_config: "JobConfiguration") -> None:
         """Validate that the related entities exist."""
         # Validate user exists
         user = self.user_repository.get_by_id(job_config.user_id)

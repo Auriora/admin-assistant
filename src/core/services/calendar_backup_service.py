@@ -12,21 +12,20 @@ a complete backup and restore solution.
 import json
 import csv
 import os
-from datetime import date, datetime, timedelta
-from typing import List, Dict, Any, Optional, Union
+from datetime import date, datetime
+from typing import List, Dict, Any, Optional, TYPE_CHECKING
 from enum import Enum
 
-from core.db import get_session
-from core.models.user import User
-from core.models.appointment import Appointment
-from core.models.calendar import Calendar
-from core.repositories.calendar_repository_sqlalchemy import SQLAlchemyCalendarRepository
-from core.repositories.appointment_repository_sqlalchemy import SQLAlchemyAppointmentRepository
-from core.repositories.calendar_repository_msgraph import MSGraphCalendarRepository
-from core.repositories.appointment_repository_msgraph import MSGraphAppointmentRepository
-from core.services.audit_log_service import AuditLogService
-from core.repositories.audit_log_repository import AuditLogRepository
-from core.utilities.graph_utility import get_graph_client
+if TYPE_CHECKING:
+    from core.models.user import User
+    from core.models.appointment import Appointment
+    from core.models.calendar import Calendar
+    from core.services.audit_log_service import AuditLogService as _AuditSvc
+    from core.repositories.audit_log_repository import AuditLogRepository as _AuditRepo
+    from core.repositories.calendar_repository_sqlalchemy import SQLAlchemyCalendarRepository as _LocalCalRepo
+    from core.repositories.appointment_repository_sqlalchemy import SQLAlchemyAppointmentRepository as _LocalApptRepo
+    from core.repositories.calendar_repository_msgraph import MSGraphCalendarRepository as _GraphCalRepo
+    from core.repositories.appointment_repository_msgraph import MSGraphAppointmentRepository as _GraphApptRepo
 
 
 class BackupFormat(Enum):
@@ -46,9 +45,9 @@ class BackupResult:
         self.failed = 0
         self.backup_location = ""
         self.backup_format = ""
-        self.errors = []
-        self.warnings = []
-        self.metadata = {}
+        self.errors: List[str] = []
+        self.warnings: List[str] = []
+        self.metadata: Dict[str, Any] = {}
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert result to dictionary for serialization."""
@@ -70,26 +69,35 @@ class CalendarBackupService:
     """
 
     def __init__(self, user_id: int = 1, session=None):
+        from core.db import get_session
+        from core.models.user import User as _User
+        from core.repositories.audit_log_repository import AuditLogRepository as _AuditRepo
+        from core.services.audit_log_service import AuditLogService as _AuditSvc
+        from core.repositories.calendar_repository_sqlalchemy import SQLAlchemyCalendarRepository as _LocalCalRepo
+
         self.session = session or get_session()
-        self.user = self.session.get(User, user_id)
+        self.user: "User" = self.session.get(_User, user_id)
         if not self.user:
             raise ValueError(f"User with ID {user_id} not found")
 
-        # Initialize repositories
-        self.audit_repo = AuditLogRepository(self.session)
-        self.audit_service = AuditLogService(self.audit_repo)
-        self.local_calendar_repo = SQLAlchemyCalendarRepository(self.user, self.session)
+        # Initialize repositories/services (local calendar and audit)
+        self.audit_repo: "_AuditRepo" = _AuditRepo(self.session)
+        self.audit_service: "_AuditSvc" = _AuditSvc(self.audit_repo)
+        self.local_calendar_repo: "_LocalCalRepo" = _LocalCalRepo(self.user, self.session)
 
         # MSGraph repositories (initialized when needed)
-        self._msgraph_calendar_repo = None
-        self._msgraph_appointment_repo = None
+        self._msgraph_calendar_repo: Optional["_GraphCalRepo"] = None
+        self._msgraph_appointment_repo: Optional["_GraphApptRepo"] = None
 
     @property
     def msgraph_calendar_repo(self):
         """Lazy initialization of MSGraph calendar repository."""
         if self._msgraph_calendar_repo is None:
+            from core.utilities.graph_utility import get_graph_client
+            from core.repositories.calendar_repository_msgraph import MSGraphCalendarRepository as _GraphCalRepo
+
             graph_client = get_graph_client()
-            self._msgraph_calendar_repo = MSGraphCalendarRepository(self.user, graph_client)
+            self._msgraph_calendar_repo = _GraphCalRepo(self.user, graph_client)
         return self._msgraph_calendar_repo
 
     def backup_calendar_to_file(
@@ -215,14 +223,19 @@ class CalendarBackupService:
         print(f"Found {len(appointments)} appointments to backup")
 
         # Copy appointments to backup calendar
-        backup_appointment_repo = SQLAlchemyAppointmentRepository(
+        from core.repositories.appointment_repository_sqlalchemy import (
+            SQLAlchemyAppointmentRepository as _LocalApptRepo,
+        )
+        from core.models.appointment import Appointment as _Appointment
+
+        backup_appointment_repo = _LocalApptRepo(
             self.user, str(backup_calendar.id), self.session
         )
 
         for appt in appointments:
             try:
                 # Create a copy of the appointment
-                backup_appointment = Appointment(
+                backup_appointment = _Appointment(
                     user_id=self.user.id,
                     subject=f"[BACKUP] {appt.subject}",
                     start_time=appt.start_time,
@@ -249,7 +262,7 @@ class CalendarBackupService:
 
         return result
 
-    def _find_calendar_by_name(self, calendar_name: str) -> Optional[Calendar]:
+    def _find_calendar_by_name(self, calendar_name: str) -> Optional["Calendar"]:
         """Find a calendar by name."""
         calendars = self.local_calendar_repo.list()
         for calendar in calendars:
@@ -259,12 +272,16 @@ class CalendarBackupService:
 
     def _get_appointments_from_calendar(
         self,
-        calendar: Calendar,
+        calendar: "Calendar",
         start_date: Optional[date] = None,
         end_date: Optional[date] = None
-    ) -> List[Appointment]:
+    ) -> List["Appointment"]:
         """Get appointments from a calendar with optional date filtering."""
-        appointment_repo = SQLAlchemyAppointmentRepository(
+        from core.repositories.appointment_repository_sqlalchemy import (
+            SQLAlchemyAppointmentRepository as _LocalApptRepo,
+        )
+
+        appointment_repo = _LocalApptRepo(
             self.user, str(calendar.id), self.session
         )
         

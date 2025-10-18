@@ -1,8 +1,10 @@
-from typing import List, Optional
+from typing import List, Optional, TYPE_CHECKING
 
-from core.models.chat_session import ChatSession
-from core.repositories.chat_session_repository import ChatSessionRepository
-from core.services.entity_association_service import EntityAssociationService
+if TYPE_CHECKING:
+    from sqlalchemy.orm import Session
+    from core.models.chat_session import ChatSession
+    from core.repositories.chat_session_repository import ChatSessionRepository as _ChatRepo
+    from core.services.entity_association_service import EntityAssociationService as _AssocSvc
 
 
 class ChatSessionService:
@@ -12,19 +14,35 @@ class ChatSessionService:
 
     def __init__(
         self,
-        repository: Optional[ChatSessionRepository] = None,
-        association_service: Optional[EntityAssociationService] = None,
+        repository: Optional["_ChatRepo"] = None,
+        association_service: Optional["_AssocSvc"] = None,
     ):
-        self.repository = repository or ChatSessionRepository()
-        self.association_service = association_service or EntityAssociationService()
+        self._repository = repository
+        self._association_service = association_service
 
-    def get_by_id(self, session_id: int) -> Optional[ChatSession]:
+    @property
+    def repository(self) -> "_ChatRepo":
+        if self._repository is None:
+            from core.repositories.chat_session_repository import ChatSessionRepository as _Repo
+
+            self._repository = _Repo()
+        return self._repository
+
+    @property
+    def association_service(self) -> "_AssocSvc":
+        if self._association_service is None:
+            from core.services.entity_association_service import EntityAssociationService as _Svc
+
+            self._association_service = _Svc()
+        return self._association_service
+
+    def get_by_id(self, session_id: int) -> Optional["ChatSession"]:
         return self.repository.get_by_id(session_id)
 
-    def create(self, session: ChatSession) -> None:
+    def create(self, session: "ChatSession") -> None:
         self.repository.add(session)
 
-    def list_by_user(self, user_id: int) -> List[ChatSession]:
+    def list_by_user(self, user_id: int) -> List["ChatSession"]:
         return self.repository.list_by_user(user_id)
 
     def delete(self, session_id: int) -> None:
@@ -71,11 +89,11 @@ class ChatSessionService:
         setattr(session, "status", "open")  # type: ignore
         self.repository.add(session)
 
-    def list_by_action(self, action_id: int) -> list:
+    def list_by_action(self, db: "Session", action_id: int) -> list:
         """
         Fetch all chat sessions related to a specific action/task (using EntityAssociation).
         """
-        related = self.association_service.list_by_target("action_log", action_id)
+        related = self.association_service.list_by_target(db, "action_log", action_id)
         chat_session_ids = [
             getattr(a, "source_id")
             for a in related

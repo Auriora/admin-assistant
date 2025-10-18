@@ -4,28 +4,40 @@ Provides business logic for backup configuration operations.
 """
 
 from datetime import UTC, datetime
-from typing import List, Optional
+from typing import List, Optional, TYPE_CHECKING
 
-from core.db import get_session
-from core.models.backup_configuration import BackupConfiguration
-from core.repositories.backup_configuration_repository import BackupConfigurationRepository
-from core.services.user_service import UserService
+if TYPE_CHECKING:
+    from core.models.backup_configuration import BackupConfiguration
+    from core.repositories.backup_configuration_repository import BackupConfigurationRepository as _BCRepo
+    from core.services.user_service import UserService as _UserService
 
 
 class BackupConfigurationService:
     """Service for BackupConfiguration operations."""
 
-    def __init__(self, repository: Optional[BackupConfigurationRepository] = None, user_service: Optional[UserService] = None):
-        if repository is None:
-            session = get_session()
-            repository = BackupConfigurationRepository(session)
-        if user_service is None:
-            user_service = UserService()
-            
-        self.repository = repository
-        self.user_service = user_service
+    def __init__(self, repository: Optional["_BCRepo"] = None, user_service: Optional["_UserService"] = None):
+        self._repository = repository
+        self._user_service = user_service
 
-    def validate(self, backup_config: BackupConfiguration) -> None:
+    @property
+    def repository(self) -> "_BCRepo":
+        if self._repository is None:
+            from core.db import get_session
+            from core.repositories.backup_configuration_repository import BackupConfigurationRepository as _Repo
+
+            session = get_session()
+            self._repository = _Repo(session)
+        return self._repository
+
+    @property
+    def user_service(self) -> "_UserService":
+        if self._user_service is None:
+            from core.services.user_service import UserService as _Svc
+
+            self._user_service = _Svc()
+        return self._user_service
+
+    def validate(self, backup_config: "BackupConfiguration") -> None:
         """Validate a backup configuration."""
         if not backup_config.name:
             raise ValueError("Backup configuration name is required")
@@ -44,13 +56,13 @@ class BackupConfigurationService:
         if not backup_config.timezone:
             raise ValueError("Timezone is required")
 
-    def _validate_relationships(self, backup_config: BackupConfiguration) -> None:
+    def _validate_relationships(self, backup_config: "BackupConfiguration") -> None:
         """Validate that related entities exist."""
         user = self.user_service.get_by_id(backup_config.user_id)
         if not user:
             raise ValueError(f"User with ID {backup_config.user_id} not found")
 
-    def create(self, backup_config: BackupConfiguration) -> BackupConfiguration:
+    def create(self, backup_config: "BackupConfiguration") -> "BackupConfiguration":
         """Create a new BackupConfiguration after validation."""
         self.validate(backup_config)
         self._validate_relationships(backup_config)
@@ -65,7 +77,7 @@ class BackupConfigurationService:
         self.repository.add(backup_config)
         return backup_config
 
-    def update(self, backup_config: BackupConfiguration) -> BackupConfiguration:
+    def update(self, backup_config: "BackupConfiguration") -> "BackupConfiguration":
         """Update an existing BackupConfiguration after validation."""
         self.validate(backup_config)
         self._validate_relationships(backup_config)
@@ -84,19 +96,19 @@ class BackupConfigurationService:
         self,
         user_id: Optional[int] = None,
         is_active: Optional[bool] = None,
-    ) -> List[BackupConfiguration]:
+    ) -> List["BackupConfiguration"]:
         """List BackupConfigurations with optional filters."""
         return self.repository.list(user_id=user_id, is_active=is_active)
 
-    def get_by_id(self, backup_config_id: int) -> Optional[BackupConfiguration]:
+    def get_by_id(self, backup_config_id: int) -> Optional["BackupConfiguration"]:
         """Get BackupConfiguration by ID."""
         return self.repository.get_by_id(backup_config_id)
 
-    def get_by_name(self, name: str, user_id: int) -> Optional[BackupConfiguration]:
+    def get_by_name(self, name: str, user_id: int) -> Optional["BackupConfiguration"]:
         """Get BackupConfiguration by name and user ID."""
         return self.repository.get_by_name(name, user_id)
 
-    def get_active_configs_for_user(self, user_id: int) -> List[BackupConfiguration]:
+    def get_active_configs_for_user(self, user_id: int) -> List["BackupConfiguration"]:
         """Get all active backup configurations for a user."""
         return self.repository.list(user_id=user_id, is_active=True)
 
@@ -109,7 +121,7 @@ class BackupConfigurationService:
         backup_format: str = "csv",
         include_metadata: bool = True,
         timezone: str = "UTC",
-    ) -> BackupConfiguration:
+    ) -> "BackupConfiguration":
         """Create a BackupConfiguration from individual parameters."""
         # Validate user exists
         user = self.user_service.get_by_id(user_id)
@@ -123,7 +135,9 @@ class BackupConfigurationService:
                 f"BackupConfiguration with name '{name}' already exists for user {user_id}"
             )
 
-        backup_config = BackupConfiguration(
+        from core.models.backup_configuration import BackupConfiguration as _BC
+
+        backup_config = _BC(
             user_id=user_id,
             name=name,
             source_calendar_uri=source_calendar_uri,

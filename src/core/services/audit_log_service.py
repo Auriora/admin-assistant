@@ -1,12 +1,10 @@
-import time
 import uuid
-from datetime import date, datetime
-from typing import Any, Dict, List, Optional, Union
+from datetime import date
+from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
-from sqlalchemy.orm import Session
-
-from core.models.audit_log import AuditLog
-from core.repositories.audit_log_repository import AuditLogRepository
+if TYPE_CHECKING:
+    from core.models.audit_log import AuditLog
+    from core.repositories.audit_log_repository import AuditLogRepository as _AuditRepo
 
 
 class AuditLogService:
@@ -15,8 +13,16 @@ class AuditLogService:
     Provides convenient methods for logging different types of operations.
     """
 
-    def __init__(self, repository: Optional[AuditLogRepository] = None):
-        self.repository = repository or AuditLogRepository()
+    def __init__(self, repository: Optional["_AuditRepo"] = None):
+        self._repository = repository
+
+    @property
+    def repository(self) -> "_AuditRepo":
+        if self._repository is None:
+            from core.repositories.audit_log_repository import AuditLogRepository as _Repo
+
+            self._repository = _Repo()
+        return self._repository
 
     def log_operation(
         self,
@@ -35,7 +41,7 @@ class AuditLogService:
         parent_audit_id: Optional[int] = None,
         ip_address: Optional[str] = None,
         user_agent: Optional[str] = None,
-    ) -> AuditLog:
+    ) -> "AuditLog":
         """
         Log a general operation with full audit details.
 
@@ -59,7 +65,9 @@ class AuditLogService:
         Returns:
             The created AuditLog entry
         """
-        audit_log = AuditLog(
+        from core.models.audit_log import AuditLog as _AuditLog
+
+        audit_log = _AuditLog(
             user_id=user_id,
             action_type=action_type,
             operation=operation,
@@ -93,7 +101,7 @@ class AuditLogService:
         errors: Optional[List[str]] = None,
         duration_ms: Optional[float] = None,
         correlation_id: Optional[str] = None,
-    ) -> AuditLog:
+    ) -> "AuditLog":
         """
         Log calendar archiving operations with specific archiving context.
         """
@@ -139,7 +147,7 @@ class AuditLogService:
         ai_recommendations: Optional[Dict[str, Any]] = None,
         duration_ms: Optional[float] = None,
         correlation_id: Optional[str] = None,
-    ) -> AuditLog:
+    ) -> "AuditLog":
         """
         Log overlap resolution operations with specific resolution context.
         """
@@ -178,7 +186,7 @@ class AuditLogService:
         response_data: Optional[Dict[str, Any]] = None,
         duration_ms: Optional[float] = None,
         correlation_id: Optional[str] = None,
-    ) -> AuditLog:
+    ) -> "AuditLog":
         """
         Log external API calls for traceability and debugging.
         """
@@ -218,7 +226,7 @@ class AuditLogService:
         new_archived_count: int = 0,
         duration_ms: Optional[float] = None,
         correlation_id: Optional[str] = None,
-    ) -> AuditLog:
+    ) -> "AuditLog":
         """
         Log re-archiving (replacement) operations.
         """
@@ -273,7 +281,7 @@ class AuditLogService:
 
         logs = self.repository.list_by_date_range(start_date, end_date, user_id)
 
-        summary = {
+        summary: Dict[str, Any] = {
             "total_operations": len(logs),
             "date_range": {
                 "start": start_date.isoformat(),

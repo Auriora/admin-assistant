@@ -1,7 +1,8 @@
-from typing import List, Optional
+from typing import List, Optional, TYPE_CHECKING
 
-from core.models.prompt import Prompt
-from core.repositories.prompt_repository import PromptRepository
+if TYPE_CHECKING:
+    from core.models.prompt import Prompt
+    from core.repositories.prompt_repository import PromptRepository as _PromptRepo
 
 
 class PromptService:
@@ -9,21 +10,30 @@ class PromptService:
     Service for business logic related to Prompt entities.
     """
 
-    def __init__(self, repository: Optional[PromptRepository] = None):
-        self.repository = repository or PromptRepository()
+    def __init__(self, repository: Optional["_PromptRepo"] = None):
+        self._repository = repository
         self._owns_repository = repository is None  # Track if we created the repository
         self._closed = False
 
-    def get_by_id(self, prompt_id: int) -> Optional[Prompt]:
+    @property
+    def repository(self) -> "_PromptRepo":
+        if self._repository is None:
+            from core.repositories.prompt_repository import PromptRepository as _Repo
+
+            self._repository = _Repo()
+            self._owns_repository = True
+        return self._repository
+
+    def get_by_id(self, prompt_id: int) -> Optional["Prompt"]:
         return self.repository.get_by_id(prompt_id)
 
-    def create(self, prompt: Prompt) -> None:
+    def create(self, prompt: "Prompt") -> None:
         self.repository.add(prompt)
 
-    def list_by_user(self, user_id: int) -> List[Prompt]:
+    def list_by_user(self, user_id: int) -> List["Prompt"]:
         return self.repository.list_by_user(user_id)
 
-    def list_by_type(self, prompt_type: str) -> List[Prompt]:
+    def list_by_type(self, prompt_type: str) -> List["Prompt"]:
         return self.repository.list_by_type(prompt_type)
 
     def delete(self, prompt_id: int) -> None:
@@ -31,7 +41,7 @@ class PromptService:
 
     def get_most_relevant_prompt(
         self, user_id: Optional[int], action_type: Optional[str]
-    ) -> Optional[Prompt]:
+    ) -> Optional["Prompt"]:
         """
         Fetch the most relevant prompt for a user and action_type, falling back to system prompt if needed.
         Priority: user+action > user > action > system.
@@ -72,7 +82,7 @@ class PromptService:
         setattr(prompt, "content", content)  # type: ignore
         self.repository.add(prompt)  # add() will merge if already present
 
-    def validate_prompt(self, prompt: Prompt) -> None:
+    def validate_prompt(self, prompt: "Prompt") -> None:
         """
         Validate prompt uniqueness and content.
         Raises ValueError if invalid.
@@ -110,8 +120,11 @@ class PromptService:
             return
 
         # Close the repository if we own it
-        if self._owns_repository and self.repository:
-            self.repository.close()
+        if self._owns_repository and self._repository:
+            try:
+                self._repository.close()
+            except Exception:
+                pass
 
         self._closed = True
 

@@ -1,9 +1,10 @@
-from typing import List, Optional
+from typing import List, Optional, TYPE_CHECKING
 
-from core.models.archive_configuration import ArchiveConfiguration
-from core.repositories.archive_configuration_repository import (
-    ArchiveConfigurationRepository,
-)
+if TYPE_CHECKING:
+    from core.models.archive_configuration import ArchiveConfiguration
+    from core.repositories.archive_configuration_repository import (
+        ArchiveConfigurationRepository as _ACRepo,
+    )
 
 
 class ArchiveConfigurationService:
@@ -11,23 +12,33 @@ class ArchiveConfigurationService:
     Service for business logic related to ArchiveConfiguration.
     """
 
-    def __init__(self, repository: Optional[ArchiveConfigurationRepository] = None):
-        self.repository = repository or ArchiveConfigurationRepository()
+    def __init__(self, repository: Optional["_ACRepo"] = None):
+        self._repository = repository
 
-    def get_by_id(self, config_id: int) -> Optional[ArchiveConfiguration]:
+    @property
+    def repository(self) -> "_ACRepo":
+        if self._repository is None:
+            from core.repositories.archive_configuration_repository import (
+                ArchiveConfigurationRepository as _Repo,
+            )
+
+            self._repository = _Repo()
+        return self._repository
+
+    def get_by_id(self, config_id: int) -> Optional["ArchiveConfiguration"]:
         """Retrieve an ArchiveConfiguration by its ID."""
         return self.repository.get_by_id(config_id)
 
-    def create(self, config: ArchiveConfiguration) -> None:
+    def create(self, config: "ArchiveConfiguration") -> None:
         """Create a new ArchiveConfiguration after validation."""
         self.validate(config)
         self.repository.add(config)
 
-    def list_for_user(self, user_id: int) -> List[ArchiveConfiguration]:
+    def list_for_user(self, user_id: int) -> List["ArchiveConfiguration"]:
         """List all ArchiveConfigurations for a given user."""
         return self.repository.list_for_user(user_id)
 
-    def update(self, config: ArchiveConfiguration) -> None:
+    def update(self, config: "ArchiveConfiguration") -> None:
         """Update an existing ArchiveConfiguration after validation."""
         self.validate(config)
         self.repository.update(config)
@@ -36,7 +47,7 @@ class ArchiveConfigurationService:
         """Delete an ArchiveConfiguration by its ID."""
         self.repository.delete(config_id)
 
-    def validate(self, config: ArchiveConfiguration) -> None:
+    def validate(self, config: "ArchiveConfiguration") -> None:
         """
         Validate ArchiveConfiguration fields. Raises ValueError if invalid.
         """
@@ -51,7 +62,7 @@ class ArchiveConfigurationService:
         if not timezone or not str(timezone).strip():
             raise ValueError("Timezone is required.")
 
-    def get_active_for_user(self, user_id: int) -> Optional[ArchiveConfiguration]:
+    def get_active_for_user(self, user_id: int) -> Optional["ArchiveConfiguration"]:
         """
         Return the active ArchiveConfiguration for a user, or None if not found.
 
@@ -64,18 +75,18 @@ class ArchiveConfigurationService:
         configs = self.list_for_user(user_id)
         return next((c for c in configs if getattr(c, "is_active", False)), None)
 
-    def list(self, user_id: Optional[int] = None) -> List[ArchiveConfiguration]:
+    def list(self, user_id: Optional[int] = None) -> List["ArchiveConfiguration"]:
         """List all ArchiveConfigurations, optionally filtered by user."""
         return self.repository.list(user_id=user_id)
 
-    def list_active(self, user_id: Optional[int] = None) -> List[ArchiveConfiguration]:
+    def list_active(self, user_id: Optional[int] = None) -> List["ArchiveConfiguration"]:
         """List all active ArchiveConfigurations, optionally filtered by user."""
         return self.repository.list_active(user_id=user_id)
 
-    def get_all_active(self) -> List[ArchiveConfiguration]:
+    def get_all_active(self) -> List["ArchiveConfiguration"]:
         """Get all active ArchiveConfigurations across all users."""
         return self.repository.list_active()
 
-    def get_by_name(self, name: str, user_id: Optional[int] = None) -> Optional[ArchiveConfiguration]:
+    def get_by_name(self, name: str, user_id: Optional[int] = None) -> Optional["ArchiveConfiguration"]:
         """Retrieve an ArchiveConfiguration by its name, optionally filtered by user."""
         return self.repository.get_by_name(name, user_id)
