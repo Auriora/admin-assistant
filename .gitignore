@@ -49,3 +49,4 @@ coverage.xml
 /htmlcov/
 /exports/
 coverage_html/
+/bandit-report.json

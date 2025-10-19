@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Integration Tests" type="tests" factoryName="py.test">
+  <configuration default="false" name="Utilities Tests" type="tests" factoryName="py.test">
     <module name="admin-assistant" />
     <option name="ENV_FILES" value="" />
     <option name="INTERPRETER_OPTIONS" value="" />
@@ -34,8 +34,8 @@
     </EXTENSION>
     <option name="_new_keywords" value="&quot;&quot;" />
     <option name="_new_parameters" value="&quot;&quot;" />
-    <option name="_new_additionalArguments" value="&quot;-v --tb=short -m 'integration and not msgraph'&quot;" />
-    <option name="_new_target" value="&quot;$PROJECT_DIR$/tests/integration&quot;" />
+    <option name="_new_additionalArguments" value="&quot;-v --tb=short -m 'utility or dev'&quot;" />
+    <option name="_new_target" value="&quot;$PROJECT_DIR$/tests/utils&quot;" />
     <option name="_new_targetType" value="&quot;PATH&quot;" />
     <method v="2" />
   </configuration>

@@ -77,7 +77,31 @@ dev = [
 
     # Version management
     "bump2version==1.0.1",
+
+    # Linters & type checking
+    "flake8",
+    "black",
+    "isort",
+    "mypy",
+
+    # Security scanners
+    "safety",
+    "bandit",
+    "semgrep",
 ]
+# Focused extras for specific tasks
+lint = [
+    "flake8",
+    "black",
+    "isort",
+    "mypy",
+]
+security = [
+    "safety",
+    "bandit",
+    "semgrep",
+]
+
 test = [
     # Testing framework (alias for dev)
     "pytest==8.4.2",

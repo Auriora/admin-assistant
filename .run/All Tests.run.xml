@@ -9,6 +9,13 @@
     <option name="IS_MODULE_SDK" value="true" />
     <option name="ADD_CONTENT_ROOTS" value="true" />
     <option name="ADD_SOURCE_ROOTS" value="true" />
+    <envs>
+      <env name="APP_ENV" value="testing" />
+      <env name="DATABASE_URL" value="sqlite:///:memory:" />
+      <env name="CORE_DATABASE_URL" value="sqlite:///:memory:" />
+      <env name="LOG_LEVEL" value="INFO" />
+      <env name="OTEL_SDK_DISABLED" value="true" />
+    </envs>
     <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
     <EXTENSION ID="net.ashald.envfile">
       <option name="IS_ENABLED" value="false" />
@@ -27,7 +34,7 @@
     </EXTENSION>
     <option name="_new_keywords" value="&quot;&quot;" />
     <option name="_new_parameters" value="&quot;&quot;" />
-    <option name="_new_additionalArguments" value="&quot;-v&quot;" />
+    <option name="_new_additionalArguments" value="&quot;-v --tb=short&quot;" />
     <option name="_new_target" value="&quot;$PROJECT_DIR$/tests&quot;" />
     <option name="_new_targetType" value="&quot;PATH&quot;" />
     <method v="2" />

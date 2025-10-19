@@ -1,0 +1,12 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Security Scans (All)" type="CompoundRunConfigurationType">
+    <toRun name="Safety JSON" type="PythonConfigurationType" />
+    <toRun name="Safety Summary" type="PythonConfigurationType" />
+    <toRun name="Bandit JSON" type="PythonConfigurationType" />
+    <toRun name="Bandit Text" type="PythonConfigurationType" />
+    <toRun name="Semgrep JSON" type="PythonConfigurationType" />
+    <toRun name="Semgrep Text" type="PythonConfigurationType" />
+    <method v="2" />
+  </configuration>
+</component>
+

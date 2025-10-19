@@ -1,0 +1,11 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Lint All" type="CompoundRunConfigurationType">
+    <toRun name="Flake8 Strict" type="PythonConfigurationType" />
+    <toRun name="Black Check" type="PythonConfigurationType" />
+    <toRun name="Isort Check" type="PythonConfigurationType" />
+    <toRun name="Mypy" type="PythonConfigurationType" />
+    <toRun name="Flake8 Full" type="PythonConfigurationType" />
+    <method v="2" />
+  </configuration>
+</component>
+
