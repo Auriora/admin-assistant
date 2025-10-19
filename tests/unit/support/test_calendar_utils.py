@@ -95,3 +95,44 @@ def test_get_event_date_range_from_real_world_sample():
 
 def test_get_event_date_range_empty_returns_none():
     assert get_event_date_range([]) is None
+
+
+@pytest.mark.parametrize(
+    "filename, expected_start, expected_end",
+    [
+        ("ms365_calendar_overlaps.json", date(2025, 5, 21), date(2025, 5, 21)),
+        ("ms365_calendar_duplicates.json", date(2025, 5, 21), date(2025, 5, 21)),
+        ("ms365_calendar_recurring.json", date(2025, 6, 1), date(2025, 6, 1)),
+        ("ms365_calendar_success.json", date(2025, 5, 22), date(2025, 5, 22)),
+        ("ms365_calendar_timezone.json", date(2025, 6, 1), date(2025, 6, 1)),
+    ],
+)
+def test_get_event_date_range_real_world_parametrized(filename: str, expected_start: date, expected_end: date):
+    sample_path = Path("tests/data") / filename
+    assert sample_path.exists(), f"Sample file not found: {sample_path}"
+
+    events = load_events_from_file(str(sample_path))
+    rng = get_event_date_range(events)
+    assert rng is not None
+    start, end = rng
+    assert start == expected_start
+    assert end == expected_end
+
+
+@pytest.mark.parametrize("sample_path", sorted((Path("tests/data").glob("*.json"))), ids=lambda p: p.name)
+def test_get_event_date_range_glob_all_samples(sample_path: Path):
+    assert sample_path.exists(), f"Sample file not found: {sample_path}"
+    events = load_events_from_file(str(sample_path))
+
+    # Skip if file content is not a list of events
+    if not isinstance(events, list):
+        pytest.skip(f"Skipping {sample_path.name}: unexpected JSON structure (not a list)")
+
+    rng = get_event_date_range(events)
+    if rng is None:
+        pytest.skip(f"Skipping {sample_path.name}: no parseable start/end dateTime fields found")
+
+    start, end = rng
+    # Basic sanity: start/end should be date objects and ordered
+    assert isinstance(start, date) and isinstance(end, date)
+    assert start <= end, f"Invalid range in {sample_path.name}: {start} > {end}"
