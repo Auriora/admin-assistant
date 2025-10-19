@@ -89,11 +89,11 @@ class ChatSessionService:
         setattr(session, "status", "open")  # type: ignore
         self.repository.add(session)
 
-    def list_by_action(self, db: "Session", action_id: int) -> list:
+    def list_by_action(self, action_id: int) -> list:
         """
         Fetch all chat sessions related to a specific action/task (using EntityAssociation).
         """
-        related = self.association_service.list_by_target(db, "action_log", action_id)
+        related = self.association_service.list_by_target("action_log", action_id)
         chat_session_ids = [
             getattr(a, "source_id")
             for a in related

@@ -76,9 +76,9 @@ class ActionLogService:
             summary.setdefault(state, []).append(action)
         return [{"state": k, "actions": v} for k, v in summary.items()]
 
-    def get_related_entities(self, db: "Session", log_id: int) -> List[Any]:
+    def get_related_entities(self, log_id: int) -> List[Any]:
         """
         Fetch all entities related to this ActionLog via EntityAssociation.
         Returns a list of (target_type, target_id) tuples.
         """
-        return self.association_service.get_related_entities(db, "action_log", log_id)
+        return self.association_service.get_related_entities("action_log", log_id)

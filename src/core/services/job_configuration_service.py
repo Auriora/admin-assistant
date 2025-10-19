@@ -2,6 +2,11 @@
 Service for business logic related to JobConfiguration entities.
 """
 
+# Patch points for unit tests (will be replaced by mocks); real classes are imported lazily
+UserRepository = None
+JobConfigurationRepository = None
+ArchiveConfigurationRepository = None
+
 from datetime import UTC, datetime
 from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
@@ -23,32 +28,77 @@ class JobConfigurationService:
         archive_config_repository: Optional["_ACRepo"] = None,
         user_repository: Optional["_UserRepo"] = None,
     ):
+        # If repositories are provided use them; otherwise create default instances now
         self._repository = repository
         self._archive_config_repository = archive_config_repository
         self._user_repository = user_repository
 
+        # Eagerly create default repositories if not supplied so tests that patch the
+        # module-level classes observe the constructor calls.
+        if self._repository is None:
+            global JobConfigurationRepository
+            if JobConfigurationRepository is None:
+                from core.repositories.job_configuration_repository import JobConfigurationRepository as _Repo
+
+                JobConfigurationRepository = _Repo
+
+            self._repository = JobConfigurationRepository()
+
+        if self._archive_config_repository is None:
+            global ArchiveConfigurationRepository
+            if ArchiveConfigurationRepository is None:
+                from core.repositories.archive_configuration_repository import ArchiveConfigurationRepository as _Repo
+
+                ArchiveConfigurationRepository = _Repo
+
+            self._archive_config_repository = ArchiveConfigurationRepository()
+
+        if self._user_repository is None:
+            global UserRepository
+            if UserRepository is None:
+                from core.repositories.user_repository import UserRepository as _Repo
+
+                UserRepository = _Repo
+
+            self._user_repository = UserRepository()
+
     @property
     def repository(self) -> "_JCRepo":
         if self._repository is None:
-            from core.repositories.job_configuration_repository import JobConfigurationRepository as _Repo
+            # Use the module-level patch point so tests can patch JobConfigurationRepository
+            global JobConfigurationRepository
+            if JobConfigurationRepository is None:
+                from core.repositories.job_configuration_repository import JobConfigurationRepository as _Repo
 
-            self._repository = _Repo()
+                JobConfigurationRepository = _Repo
+
+            self._repository = JobConfigurationRepository()
         return self._repository
 
     @property
     def archive_config_repository(self) -> "_ACRepo":
         if self._archive_config_repository is None:
-            from core.repositories.archive_configuration_repository import ArchiveConfigurationRepository as _Repo
+            # Use the module-level patch point so tests can patch ArchiveConfigurationRepository
+            global ArchiveConfigurationRepository
+            if ArchiveConfigurationRepository is None:
+                from core.repositories.archive_configuration_repository import ArchiveConfigurationRepository as _Repo
 
-            self._archive_config_repository = _Repo()
+                ArchiveConfigurationRepository = _Repo
+
+            self._archive_config_repository = ArchiveConfigurationRepository()
         return self._archive_config_repository
 
     @property
     def user_repository(self) -> "_UserRepo":
         if self._user_repository is None:
-            from core.repositories.user_repository import UserRepository as _Repo
+            # Use the module-level patch point so tests can patch UserRepository
+            global UserRepository
+            if UserRepository is None:
+                from core.repositories.user_repository import UserRepository as _Repo
 
-            self._user_repository = _Repo()
+                UserRepository = _Repo
+
+            self._user_repository = UserRepository()
         return self._user_repository
 
     def get_by_id(self, job_config_id: int) -> Optional["JobConfiguration"]:

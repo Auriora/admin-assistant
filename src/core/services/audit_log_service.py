@@ -2,8 +2,11 @@ import uuid
 from datetime import date
 from typing import Any, Dict, List, Optional, TYPE_CHECKING
 
+# Expose patch points for tests without importing DB-backed models at import time
+AuditLog = None  # Will be patched in tests; real class imported inside methods
+
 if TYPE_CHECKING:
-    from core.models.audit_log import AuditLog
+    from core.models.audit_log import AuditLog  # noqa: F401
     from core.repositories.audit_log_repository import AuditLogRepository as _AuditRepo
 
 
@@ -65,9 +68,14 @@ class AuditLogService:
         Returns:
             The created AuditLog entry
         """
-        from core.models.audit_log import AuditLog as _AuditLog
+        # Prefer module-level patched AuditLog if tests set it; otherwise import the real model
+        # Note: tests may set the module-level `AuditLog` variable to a test stub.
+        _AuditLogClass = AuditLog if ("AuditLog" in globals() and AuditLog is not None) else None
+        if _AuditLogClass is None:
+            from core.models.audit_log import AuditLog as _AuditLog  # type: ignore
+            _AuditLogClass = _AuditLog
 
-        audit_log = _AuditLog(
+        audit_log = _AuditLogClass(
             user_id=user_id,
             action_type=action_type,
             operation=operation,
@@ -259,7 +267,7 @@ class AuditLogService:
         """Generate a unique correlation ID for tracking related operations."""
         return str(uuid.uuid4())
 
-    def get_audit_trail(self, correlation_id: str) -> List[AuditLog]:
+    def get_audit_trail(self, correlation_id: str) -> List["AuditLog"]:
         """Get all audit log entries for a specific correlation ID."""
         return self.repository.list_by_correlation_id(correlation_id)
 
@@ -268,7 +276,7 @@ class AuditLogService:
         filters: Dict[str, Any],
         limit: Optional[int] = None,
         offset: Optional[int] = None,
-    ) -> List[AuditLog]:
+    ) -> List["AuditLog"]:
         """Search audit logs with advanced filtering."""
         return self.repository.search(filters, limit, offset)
 

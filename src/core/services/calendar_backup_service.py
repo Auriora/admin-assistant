@@ -302,7 +302,7 @@ class CalendarBackupService:
         
         return appointments
 
-    def _get_or_create_backup_calendar(self, calendar_name: str) -> Calendar:
+    def _get_or_create_backup_calendar(self, calendar_name: str) -> "Calendar":
         """Get or create a backup calendar."""
         # Check if calendar already exists
         calendar = self._find_calendar_by_name(calendar_name)
@@ -310,7 +310,8 @@ class CalendarBackupService:
             return calendar
         
         # Create new backup calendar
-        backup_calendar = Calendar(
+        from core.models.calendar import Calendar as _Calendar
+        backup_calendar = _Calendar(
             user_id=self.user.id,
             name=calendar_name,
             description=f"Backup calendar: {calendar_name}",
@@ -324,7 +325,7 @@ class CalendarBackupService:
         return backup_calendar
 
     def _backup_to_csv(
-        self, appointments: List[Appointment], backup_path: str, include_metadata: bool
+        self, appointments: List["Appointment"], backup_path: str, include_metadata: bool
     ) -> None:
         """Backup appointments to CSV format."""
         with open(backup_path, 'w', newline='', encoding='utf-8') as csvfile:
@@ -362,7 +363,7 @@ class CalendarBackupService:
                 writer.writerow(row)
 
     def _backup_to_json(
-        self, appointments: List[Appointment], backup_path: str, include_metadata: bool
+        self, appointments: List["Appointment"], backup_path: str, include_metadata: bool
     ) -> None:
         """Backup appointments to JSON format."""
         backup_data = {
@@ -401,7 +402,7 @@ class CalendarBackupService:
             json.dump(backup_data, jsonfile, indent=2, ensure_ascii=False)
 
     def _backup_to_ics(
-        self, appointments: List[Appointment], backup_path: str, include_metadata: bool
+        self, appointments: List["Appointment"], backup_path: str, include_metadata: bool
     ) -> None:
         """Backup appointments to ICS (iCalendar) format."""
         with open(backup_path, 'w', encoding='utf-8') as icsfile:
