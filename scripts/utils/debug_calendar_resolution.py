@@ -5,11 +5,18 @@ Debug script to check calendar URI resolution
 
 import sys
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
-from core.utilities.calendar_resolver import CalendarResolver
-from core.utilities.auth_utility import get_cached_access_token
-from core.services.user_service import UserService
+# Ensure project src/ is on sys.path when running from scripts/utils/
+CURRENT_DIR = os.path.dirname(__file__)
+PROJECT_ROOT = os.path.abspath(os.path.join(CURRENT_DIR, "..", ".."))
+SRC_DIR = os.path.join(PROJECT_ROOT, "src")
+if SRC_DIR not in sys.path:
+    sys.path.insert(0, SRC_DIR)
+
+from core.utilities.calendar_resolver import CalendarResolver  # type: ignore
+from core.utilities.auth_utility import get_cached_access_token  # type: ignore
+from core.services.user_service import UserService  # type: ignore
+
 
 def main():
     # Get user
@@ -18,24 +25,24 @@ def main():
     if not user:
         print("User not found!")
         return
-    
+
     # Get access token
     access_token = get_cached_access_token()
     if not access_token:
         print("No access token found!")
         return
-    
+
     # Create resolver
     resolver = CalendarResolver(user, access_token)
-    
+
     # Test URIs from the default configuration
     source_uri = "msgraph://calendars/primary"
     dest_uri = 'msgraph://calendars/"Activity Archive"'
-    
+
     print("=== Calendar URI Resolution Debug ===")
     print(f"User: {user.email}")
     print()
-    
+
     print(f"Source URI: {source_uri}")
     try:
         source_id = resolver.resolve_calendar_uri(source_uri)
@@ -44,7 +51,7 @@ def main():
         print(f"Source ID length: {len(source_id) if source_id else 0}")
     except Exception as e:
         print(f"Source resolution error: {e}")
-    
+
     print()
     print(f"Destination URI: {dest_uri}")
     try:
@@ -54,7 +61,7 @@ def main():
         print(f"Dest ID length: {len(dest_id) if dest_id else 0}")
     except Exception as e:
         print(f"Destination resolution error: {e}")
-    
+
     print()
     print("=== Available Calendars ===")
     try:
@@ -70,5 +77,7 @@ def main():
     except Exception as e:
         print(f"Error listing calendars: {e}")
 
+
 if __name__ == "__main__":
     main()
+
