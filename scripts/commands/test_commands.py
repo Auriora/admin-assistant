@@ -68,13 +68,30 @@ def integration(
     """Run integration tests."""
     setup_test_environment()
     
-    cmd = ['python', '-m', 'pytest', 'tests/integration/', '-m', 'integration']
-    
+    # Exclude msgraph-marked tests here to align with CI grouping
+    cmd = ['python', '-m', 'pytest', 'tests/integration/', '-m', 'integration and not msgraph']
+
     if verbose:
         cmd.append('-v')
-    
-    console.print("[bold blue]Running integration tests...[/bold blue]")
-    return run_command(cmd, "Running integration tests")
+
+    console.print("[bold blue]Running integration tests (excluding msgraph)...[/bold blue]")
+    return run_command(cmd, "Running integration tests (no msgraph)")
+
+
+@test_app.command()
+def msgraph(
+    verbose: bool = typer.Option(False, "--verbose", "-v", help="Verbose output"),
+):
+    """Run tests that require MS Graph (marked msgraph)."""
+    setup_test_environment()
+
+    cmd = ['python', '-m', 'pytest', 'tests/', '-m', 'msgraph']
+
+    if verbose:
+        cmd.append('-v')
+
+    console.print("[bold blue]Running MS Graph tests...[/bold blue]")
+    return run_command(cmd, "Running MS Graph tests")
 
 
 @test_app.command()

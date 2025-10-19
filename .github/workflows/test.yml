@@ -22,8 +22,11 @@ jobs:
             marker: "unit"
             cov_flag: "unit"
           - name: integration
-            marker: "integration"
+            marker: "integration and not msgraph"
             cov_flag: "integration"
+          - name: msgraph
+            marker: "msgraph"
+            cov_flag: "msgraph"
           - name: utilities
             marker: "utility or dev"
             cov_flag: "utilities"
@@ -73,7 +76,8 @@ jobs:
         LOG_LEVEL: INFO
         OTEL_SDK_DISABLED: true
 
-    - name: Run ${{ matrix.group.name }} tests with coverage
+    - name: Run ${{ matrix.group.name }} tests with coverage (non-msgraph)
+      if: matrix.group.name != 'msgraph'
       run: |
         source .venv/bin/activate
         python -m pytest -v -m "${{ matrix.group.marker }}" \
@@ -83,6 +87,34 @@ jobs:
           --cov-report=term-missing \
           --tb=short \
           --junitxml=test-results.xml
+      env:
+        APP_ENV: testing
+        DATABASE_URL: "sqlite:///:memory:"
+        CORE_DATABASE_URL: "sqlite:///:memory:"
+        LOG_LEVEL: INFO
+        OTEL_SDK_DISABLED: true
+
+    - name: Run ${{ matrix.group.name }} tests with coverage (msgraph - tolerant)
+      if: matrix.group.name == 'msgraph'
+      run: |
+        set -e
+        source .venv/bin/activate
+        set +e
+        python -m pytest -v -m "${{ matrix.group.marker }}" \
+          --cov=src \
+          --cov-report=xml:coverage.xml \
+          --cov-report=html \
+          --cov-report=term-missing \
+          --tb=short \
+          --junitxml=test-results.xml
+        EXIT_CODE=$?
+        if [ "$EXIT_CODE" -eq 5 ]; then
+          echo "No msgraph-marked tests collected. Skipping msgraph job."
+          # Create empty coverage to satisfy upload steps
+          echo '<?xml version="1.0" ?><coverage></coverage>' > coverage.xml
+          exit 0
+        fi
+        exit $EXIT_CODE
       env:
         APP_ENV: testing
         DATABASE_URL: "sqlite:///:memory:"
