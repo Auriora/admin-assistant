@@ -121,6 +121,12 @@ jobs:
         CORE_DATABASE_URL: "sqlite:///:memory:"
         LOG_LEVEL: INFO
         OTEL_SDK_DISABLED: true
+        # MS Graph live test configuration (optional)
+        MSGRAPH_E2E_ENABLED: ${{ secrets.MSGRAPH_E2E_ENABLED }}
+        AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+        AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+        AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+        TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
 
     - name: Upload coverage reports to Codecov (${{ matrix.group.cov_flag }})
       uses: codecov/codecov-action@v4
