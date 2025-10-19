@@ -29,7 +29,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from core.db import get_session
 from core.utilities import get_graph_client
 from core.services import UserService
-from tests.utilities.calendar_utils import load_events_from_file, get_event_date_range
+from support.calendar_utils import load_events_from_file, get_event_date_range
 # Import MS Graph mocks for test/sample use
 from tests.mocks.msgraph_mocks import (
     MockEventObj, MockEvents, MockCalendarView, MockCalendar, MockUser, MockUsers, MockMSGraphClient

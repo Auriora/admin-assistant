@@ -32,7 +32,7 @@ def get_event_date_range(events: List[Dict]) -> Optional[Tuple[date, date]]:
     Returns:
         Optional[Tuple[date, date]]: (min_date, max_date) if dates found, else None.
     """
-    event_dates = []
+    event_dates: List[date] = []
     for event in events:
         for key in ('start', 'end'):
             dt_str = event.get(key, {}).get('dateTime')
@@ -41,9 +41,10 @@ def get_event_date_range(events: List[Dict]) -> Optional[Tuple[date, date]]:
                     # Handle 'Z' (UTC) by replacing with '+00:00'
                     dt = datetime.fromisoformat(dt_str.replace('Z', '+00:00'))
                     event_dates.append(dt.date())
-                except Exception as e:
-                    # Optionally log or handle parse errors
+                except Exception:
+                    # Ignore parse errors for robustness
                     continue
     if event_dates:
         return min(event_dates), max(event_dates)
-    return None 
+    return None
+
