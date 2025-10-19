@@ -9,13 +9,24 @@ on:
     # Allow manual triggering
 
 jobs:
-  test:
+  tests:
+    name: "${{ matrix.group.name }} (Python ${{ matrix.python-version }})"
     runs-on: ubuntu-latest
     environment: Testing
     strategy:
+      fail-fast: false
       matrix:
         python-version: ['3.12']  # TODO: Re-enable 3.13 when asyncpg supports it
-      fail-fast: false
+        group:
+          - name: unit
+            marker: "unit"
+            cov_flag: "unit"
+          - name: integration
+            marker: "integration"
+            cov_flag: "integration"
+          - name: utilities
+            marker: "utility or dev"
+            cov_flag: "utilities"
 
     steps:
     - name: Checkout code
@@ -62,10 +73,16 @@ jobs:
         LOG_LEVEL: INFO
         OTEL_SDK_DISABLED: true
 
-    - name: Run tests with coverage
+    - name: Run ${{ matrix.group.name }} tests with coverage
       run: |
         source .venv/bin/activate
-        python -m pytest tests/ -v --cov=src --cov-report=xml:coverage.xml --cov-report=html --cov-report=term-missing --tb=short
+        python -m pytest -v -m "${{ matrix.group.marker }}" \
+          --cov=src \
+          --cov-report=xml:coverage.xml \
+          --cov-report=html \
+          --cov-report=term-missing \
+          --tb=short \
+          --junitxml=test-results.xml
       env:
         APP_ENV: testing
         DATABASE_URL: "sqlite:///:memory:"
@@ -73,12 +90,12 @@ jobs:
         LOG_LEVEL: INFO
         OTEL_SDK_DISABLED: true
 
-    - name: Upload coverage reports to Codecov
+    - name: Upload coverage reports to Codecov (${{ matrix.group.cov_flag }})
       uses: codecov/codecov-action@v4
       with:
         file: ./coverage.xml
-        flags: unittests
-        name: codecov-umbrella
+        flags: ${{ matrix.group.cov_flag }}
+        name: codecov-${{ matrix.group.cov_flag }}
         fail_ci_if_error: false
         token: ${{ secrets.CODECOV_TOKEN }}
 
@@ -86,14 +103,15 @@ jobs:
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: coverage-report-${{ matrix.python-version }}
+        name: coverage-report-${{ matrix.group.name }}-${{ matrix.python-version }}
         path: htmlcov/
 
-    - name: Upload test results
+    - name: Upload test results (JUnit XML)
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: test-results-${{ matrix.python-version }}
+        name: test-results-${{ matrix.group.name }}-${{ matrix.python-version }}
         path: |
           .coverage
           coverage.xml
+          test-results.xml
