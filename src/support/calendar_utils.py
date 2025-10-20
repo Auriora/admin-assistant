@@ -34,6 +34,14 @@ def get_event_date_range(events: List[Dict]) -> Optional[Tuple[date, date]]:
     """
     event_dates: List[date] = []
     for event in events:
+        # Skip cancelled or free/all-day events which should not affect date range calculations
+        if event.get("isCancelled"):
+            continue
+        show_as = (event.get("showAs") or "").lower()
+        if show_as == "free":
+            continue
+        if event.get("isAllDay"):
+            continue
         for key in ('start', 'end'):
             dt_str = event.get(key, {}).get('dateTime')
             if dt_str:
@@ -47,4 +55,3 @@ def get_event_date_range(events: List[Dict]) -> Optional[Tuple[date, date]]:
     if event_dates:
         return min(event_dates), max(event_dates)
     return None
-
