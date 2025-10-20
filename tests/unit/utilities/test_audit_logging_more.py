@@ -1,6 +1,4 @@
 import types
-import pytest
-
 from core.utilities import audit_logging_utility as al
 
 

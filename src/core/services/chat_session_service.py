@@ -1,12 +1,15 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from sqlalchemy.orm import Session
     from core.models.chat_session import ChatSession
-    from core.repositories.chat_session_repository import ChatSessionRepository as _ChatRepo
-    from core.services.entity_association_service import EntityAssociationService as _AssocSvc
+    from core.repositories.chat_session_repository import ChatSessionRepository
+    from core.services.entity_association_service import EntityAssociationService
+else:  # pragma: no cover - used only for type checking introspection
+    ChatSession = Any  # type: ignore
+    ChatSessionRepository = Any  # type: ignore
+    EntityAssociationService = Any  # type: ignore
 
 
 class ChatSessionService:
@@ -16,14 +19,14 @@ class ChatSessionService:
 
     def __init__(
         self,
-        repository: _ChatRepo | None = None,
-        association_service: _AssocSvc | None = None,
+        repository: ChatSessionRepository | None = None,
+        association_service: EntityAssociationService | None = None,
     ):
         self._repository = repository
         self._association_service = association_service
 
     @property
-    def repository(self) -> _ChatRepo:
+    def repository(self) -> ChatSessionRepository:
         if self._repository is None:
             from core.repositories.chat_session_repository import ChatSessionRepository as _Repo
 
@@ -31,7 +34,7 @@ class ChatSessionService:
         return self._repository
 
     @property
-    def association_service(self) -> _AssocSvc:
+    def association_service(self) -> EntityAssociationService:
         if self._association_service is None:
             from core.services.entity_association_service import EntityAssociationService as _Svc
 

@@ -28,6 +28,14 @@ if TYPE_CHECKING:
     from core.repositories.appointment_repository_sqlalchemy import SQLAlchemyAppointmentRepository as _LocalApptRepo
     from core.repositories.calendar_repository_msgraph import MSGraphCalendarRepository as _GraphCalRepo
     from core.repositories.appointment_repository_msgraph import MSGraphAppointmentRepository as _GraphApptRepo
+else:  # pragma: no cover - runtime fallback for optional typing helpers
+    User = Appointment = Calendar = Any  # type: ignore
+    _AuditSvc = Any  # type: ignore
+    _AuditRepo = Any  # type: ignore
+    _LocalCalRepo = Any  # type: ignore
+    _LocalApptRepo = Any  # type: ignore
+    _GraphCalRepo = Any  # type: ignore
+    _GraphApptRepo = Any  # type: ignore
 
 
 class BackupFormat(Enum):

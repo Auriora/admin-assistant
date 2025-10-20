@@ -88,9 +88,13 @@ def test_audit_context_failure_and_success(monkeypatch):
 
     # failure inside context
     fake.calls.clear()
-    with pytest.raises(RuntimeError):
+
+    def _invoke_failure():
         with al.AuditContext(audit_service=fake, user_id=2, action_type='a', operation='op2'):
             raise RuntimeError('boom')
+
+    with pytest.raises(RuntimeError):
+        _invoke_failure()
     assert fake.calls
     assert fake.calls[-1]['status'] == 'failure'
     assert 'error' in fake.calls[-1].get('details', {}) or 'details' in fake.calls[-1]

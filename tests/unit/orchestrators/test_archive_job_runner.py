@@ -1,5 +1,3 @@
-import pytest
-
 from core.orchestrators.archive_job_runner import ArchiveJobRunner
 
 
@@ -13,6 +11,22 @@ class DummyConfig:
     def __init__(self, source_calendar_uri="", destination_calendar_uri=""):
         self.source_calendar_uri = source_calendar_uri
         self.destination_calendar_uri = destination_calendar_uri
+
+
+def _token() -> str:
+    return "token123"
+
+
+def _graph_client(user: object, access_token: object) -> object:  # noqa: D401 - simple helper
+    return object()
+
+
+def _session() -> object:
+    return object()
+
+
+def _no_token() -> None:
+    return None
 
 
 def test_run_archive_job_user_not_found(monkeypatch):
@@ -58,7 +72,7 @@ def test_run_archive_job_no_token(monkeypatch):
     runner.archive_config_service.get_by_id = _config
 
     # Patch get_cached_access_token to return falsy
-    monkeypatch.setattr("core.utilities.auth_utility.get_cached_access_token", lambda: None)
+    monkeypatch.setattr("core.utilities.auth_utility.get_cached_access_token", _no_token)
 
     res = runner.run_archive_job(user_id=1, archive_config_id=2)
     assert res.get("status") == "error"
@@ -80,12 +94,10 @@ def test_run_archive_job_success(monkeypatch):
     runner.user_service.get_by_id = _existing_user
     runner.archive_config_service.get_by_id = _existing_config
 
-    # Patch token and graph client
-    monkeypatch.setattr("core.utilities.auth_utility.get_cached_access_token", lambda: "token123")
-    monkeypatch.setattr("core.utilities.get_graph_client", lambda user, access_token: object())
-
-    # Patch DB session
-    monkeypatch.setattr("core.db.get_session", lambda: object())
+    # Patch token, graph client, and DB session
+    monkeypatch.setattr("core.utilities.auth_utility.get_cached_access_token", _token)
+    monkeypatch.setattr("core.utilities.get_graph_client", _graph_client)
+    monkeypatch.setattr("core.db.get_session", _session)
 
     called = {}
 
@@ -121,9 +133,10 @@ def test_run_archive_job_date_handling(monkeypatch):
 
     runner.user_service.get_by_id = _date_user
     runner.archive_config_service.get_by_id = _date_config
-    monkeypatch.setattr("core.utilities.auth_utility.get_cached_access_token", lambda: "token123")
-    monkeypatch.setattr("core.utilities.get_graph_client", lambda user, access_token: object())
-    monkeypatch.setattr("core.db.get_session", lambda: object())
+
+    monkeypatch.setattr("core.utilities.auth_utility.get_cached_access_token", _token)
+    monkeypatch.setattr("core.utilities.get_graph_client", _graph_client)
+    monkeypatch.setattr("core.db.get_session", _session)
 
     called = {}
 

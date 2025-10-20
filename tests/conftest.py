@@ -10,13 +10,17 @@ import pytest
 
 logger = logging.getLogger(__name__)
 
+try:
+    import psutil  # type: ignore
+except ImportError:  # pragma: no cover - optional dependency
+    psutil = None  # type: ignore
+
 # Fast-path: when SKIP_SQLALCHEMY_IMPORTS is set, avoid heavy SQLAlchemy imports and define
 # minimal autouse fixtures so isolated unit tests (like the sanitizer tests) can run without
 # requiring SQLAlchemy to be installed.
 if os.environ.get("SKIP_SQLALCHEMY_IMPORTS"):
     @pytest.fixture(autouse=True)
     def setup_test_logging():
-        import logging
         logging.getLogger().setLevel(logging.DEBUG)
 
     @pytest.fixture(autouse=True, scope="function")
@@ -81,9 +85,8 @@ else:
             # Force garbage collection to clean up connection objects
             import gc
             gc.collect()
-        except Exception as e:
-            import logging
-            logging.getLogger(__name__).warning(f"Error during engine cleanup: {e}")
+        except Exception as exc:
+            logger.warning("Error during engine cleanup: %s", exc, exc_info=True)
 
 
     @pytest.fixture(scope="function")
@@ -293,7 +296,6 @@ else:
     @pytest.fixture(autouse=True)
     def setup_test_logging():
         """Setup logging for tests."""
-        import logging
         logging.getLogger().setLevel(logging.DEBUG)
 
 
@@ -303,7 +305,6 @@ else:
         import gc
         import threading
         import time
-        import sys
         from unittest.mock import patch
 
         # Store initial state for comparison
@@ -311,12 +312,9 @@ else:
 
         # Track memory before test (if psutil available)
         memory_before = None
-        try:
-            import psutil
+        if psutil is not None:
             process = psutil.Process()
             memory_before = process.memory_info().rss / 1024 / 1024  # MB
-        except ImportError:
-            pass
 
         yield
 
@@ -360,8 +358,6 @@ else:
             # 8. Log warning if threads are still active
             final_thread_count = threading.active_count()
             if final_thread_count > initial_thread_count:
-                import logging
-                logger = logging.getLogger(__name__)
                 logger.warning(
                     f"Thread count increased from {initial_thread_count} to {final_thread_count} "
                     f"after test cleanup. Potential thread leak."
@@ -374,56 +370,50 @@ else:
 
             # 9. Check memory after cleanup if we tracked it before
             if memory_before is not None:
-                try:
-                    import psutil
-                    process = psutil.Process()
-                    memory_after = process.memory_info().rss / 1024 / 1024  # MB
-                    memory_diff = memory_after - memory_before
+                if psutil is not None:
+                    try:
+                        process = psutil.Process()
+                        memory_after = process.memory_info().rss / 1024 / 1024  # MB
+                        memory_diff = memory_after - memory_before
 
-                    # Log significant memory increases
-                    if memory_diff > 10:  # More than 10MB increase
-                        import logging
-                        logger = logging.getLogger(__name__)
-                        logger.warning(
-                            f"Memory increased by {memory_diff:.1f}MB after test cleanup "
-                            f"(before: {memory_before:.1f}MB, after: {memory_after:.1f}MB)"
-                        )
-                except Exception:
-                    pass
+                        # Log significant memory increases
+                        if memory_diff > 10:  # More than 10MB increase
+                            logger.warning(
+                                f"Memory increased by {memory_diff:.1f}MB after test cleanup "
+                                f"(before: {memory_before:.1f}MB, after: {memory_after:.1f}MB)"
+                            )
+                    except Exception as exc:  # pragma: no cover - diagnostics only
+                        logger.debug("Unable to record memory usage post-test: %s", exc, exc_info=True)
 
-        except Exception as e:
+        except Exception as exc:
             # Don't let cleanup failures break tests, but log them
-            import logging
-            logger = logging.getLogger(__name__)
-            logger.exception(f"Error during comprehensive test cleanup: {e}")
+            logger.exception("Error during comprehensive test cleanup: %s", exc)
 
 
     @pytest.fixture(autouse=True, scope="function")
     def memory_monitor():
         """Monitor memory usage during tests and warn about excessive growth."""
-        try:
-            import psutil
-            process = psutil.Process()
-            initial_memory = process.memory_info().rss / 1024 / 1024  # MB
-
+        if psutil is None:
             yield
+            return
 
-            # Check memory after test
-            final_memory = process.memory_info().rss / 1024 / 1024  # MB
-            memory_increase = final_memory - initial_memory
+        process = psutil.Process()
+        initial_memory = process.memory_info().rss / 1024 / 1024  # MB
 
-            # Warn if memory increased significantly (>50MB per test)
-            if memory_increase > 50:
-                import logging
-                logger = logging.getLogger(__name__)
-                logger.warning(
-                    f"High memory increase detected: {memory_increase:.1f} MB "
-                    f"(from {initial_memory:.1f} to {final_memory:.1f} MB)"
-                )
+        yield
 
-        except ImportError:
-            # psutil not available, skip monitoring
-            yield
+        # Check memory after test
+        final_memory = process.memory_info().rss / 1024 / 1024  # MB
+        memory_increase = final_memory - initial_memory
+
+        # Warn if memory increased significantly (>50MB per test)
+        if memory_increase > 50:
+            logger.warning(
+                "High memory increase detected: %.1f MB (from %.1f to %.1f MB)",
+                memory_increase,
+                initial_memory,
+                final_memory,
+            )
 
 
     @pytest.fixture
