@@ -331,7 +331,7 @@ class TestTimesheetWorkflowIntegration:
 
     @patch('cli.commands.calendar.get_session')
     @patch('core.services.user_service.UserService')
-    @patch('core.orchestrators.archive_job_runner.ArchiveJobRunner')
+    @patch('cli.commands.calendar.ArchiveJobRunner')
     @patch('cli.commands.calendar.get_cached_access_token')
     @patch('cli.commands.calendar.resolve_cli_user')
     @patch('core.services.archive_configuration_service.ArchiveConfigurationService')
