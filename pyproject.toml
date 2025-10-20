@@ -41,7 +41,7 @@ dependencies = [
     "googlemaps==4.10.0",
 
     # Authentication & Security
-    "msal==1.28.1",
+    "msal==1.34.0",
     "requests-oauthlib==2.0.0",
 
     # Database & Storage
