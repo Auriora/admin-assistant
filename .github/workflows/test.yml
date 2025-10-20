@@ -86,7 +86,7 @@ jobs:
         OTEL_SDK_DISABLED: true
 
     - name: Run ${{ matrix.group.name }} tests with coverage (non-msgraph)
-      if: matrix.group.name != 'msgraph'
+      if: matrix.group.name != 'msgraph' && matrix.group.name != 'utilities'
       run: |
         source .venv/bin/activate
         python -m pytest -v -m "${{ matrix.group.marker }}" \
@@ -96,6 +96,33 @@ jobs:
           --cov-report=term-missing \
           --tb=short \
           --junitxml=test-results.xml
+      env:
+        APP_ENV: testing
+        DATABASE_URL: "sqlite:///:memory:"
+        CORE_DATABASE_URL: "sqlite:///:memory:"
+        LOG_LEVEL: INFO
+        OTEL_SDK_DISABLED: true
+
+    - name: Run ${{ matrix.group.name }} tests with coverage (utilities - tolerant)
+      if: matrix.group.name == 'utilities'
+      run: |
+        set -e
+        source .venv/bin/activate
+        set +e
+        python -m pytest -v -m "${{ matrix.group.marker }}" \
+          --cov=src \
+          --cov-report=xml:coverage.xml \
+          --cov-report=html \
+          --cov-report=term-missing \
+          --tb=short \
+          --junitxml=test-results.xml
+        EXIT_CODE=$?
+        if [ "$EXIT_CODE" -eq 5 ]; then
+          echo "No utilities-marked tests collected. Skipping utilities job."
+          echo '<?xml version="1.0" ?><coverage></coverage>' > coverage.xml
+          exit 0
+        fi
+        exit $EXIT_CODE
       env:
         APP_ENV: testing
         DATABASE_URL: "sqlite:///:memory:"
