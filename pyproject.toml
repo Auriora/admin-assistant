@@ -48,7 +48,7 @@ dependencies = [
     "sqlalchemy==2.0.44",
     "sqlalchemy-utils==0.41.2",
     "asyncpg==0.30.0",
-    "alembic==1.16.5",
+    "alembic==1.17.0",
 
     # Utilities
     "python-dotenv==1.1.1",
