@@ -21,6 +21,10 @@
 # This block documents intent only — no functional changes were made.
 name: Extra Security Scans (manual)
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   workflow_dispatch:
     # Manual trigger only
@@ -31,6 +35,11 @@ jobs:
     runs-on: ubuntu-latest
     environment: Testing
     steps:
+    - name: Delay start for non-manual triggers
+      if: ${{ github.event_name != 'workflow_dispatch' }}
+      run: |
+        echo "Delaying start by 10 minutes for automatic trigger..."
+        sleep 600
     - name: Checkout code
       uses: actions/checkout@v5
 
