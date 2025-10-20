@@ -9,7 +9,7 @@ Covers:
 These tests use the Appointment model by constructing instances with the required fields.
 """
 
-from datetime import datetime, date, timedelta, timezone
+from datetime import datetime, date, timedelta
 import pytz
 
 import pytest
@@ -116,4 +116,3 @@ class TestExpandRecurringEventsRange:
 
 if __name__ == '__main__':
     pytest.main([__file__])
-

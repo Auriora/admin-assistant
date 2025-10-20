@@ -1,6 +1,5 @@
 import types
 import pytest
-from unittest.mock import Mock
 
 from core.utilities import audit_logging_utility as al
 
@@ -90,7 +89,7 @@ def test_audit_context_failure_and_success(monkeypatch):
     # failure inside context
     fake.calls.clear()
     with pytest.raises(RuntimeError):
-        with al.AuditContext(audit_service=fake, user_id=2, action_type='a', operation='op2') as c2:
+        with al.AuditContext(audit_service=fake, user_id=2, action_type='a', operation='op2'):
             raise RuntimeError('boom')
     assert fake.calls
     assert fake.calls[-1]['status'] == 'failure'
@@ -121,4 +120,3 @@ def test_auditloghelper_functions(monkeypatch):
     assert fake.calls
     changes = fake.calls[-1]['details']['changes']
     assert 'a' in changes
-

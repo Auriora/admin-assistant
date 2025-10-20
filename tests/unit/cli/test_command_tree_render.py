@@ -1,4 +1,3 @@
-import sys
 from io import StringIO
 
 from rich.console import Console
@@ -29,4 +28,3 @@ def test_show_command_tree_prints_tree(capsys):
     # However, we can assert that at least something was written to stdout
     captured = capsys.readouterr()
     assert "admin-assistant" in captured.out or captured.err == ""
-

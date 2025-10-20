@@ -9,7 +9,8 @@ def test_force_exec_calendar_overlap():
     fp = os.path.join(os.getcwd(), 'src', 'core', 'utilities', 'calendar_overlap_utility.py')
     assert os.path.exists(fp), f"calendar_overlap_utility.py not found at {fp}"
 
-    src = open(fp, 'r', encoding='utf-8').read()
+    with open(fp, 'r', encoding='utf-8') as fh:
+        src = fh.read()
     # Create a fresh globals dict to execute the module code
     g = {}
     # Compile with filename equal to the real path so coverage attributes lines to that file
@@ -56,4 +57,3 @@ def test_force_exec_calendar_overlap():
     if meta:
         assert 'appointments' in meta[0]
         assert 'metadata' in meta[0]
-

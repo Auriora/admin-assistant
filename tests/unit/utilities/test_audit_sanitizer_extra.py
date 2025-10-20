@@ -90,7 +90,7 @@ def test_inspect_raises_and_identifying_fields(monkeypatch):
     def inspect_raise(cls):
         raise RuntimeError("inspect failed")
 
-    InstrumentedAttribute = _setup_fake_sqlalchemy(monkeypatch, inspect_func=inspect_raise)
+    _instrumented_attribute = _setup_fake_sqlalchemy(monkeypatch, inspect_func=inspect_raise)
 
     class OtherModel2:
         __table__ = types.SimpleNamespace(name="tbl2")
@@ -118,7 +118,7 @@ def test_appointment_model_exception_branch(monkeypatch):
     """Cause sanitize_for_audit called from _sanitize_appointment_model to raise for a particular
     field value so the except/continue branch is exercised.
     """
-    InstrumentedAttribute = _setup_fake_sqlalchemy(monkeypatch)
+    _instrumented_attribute = _setup_fake_sqlalchemy(monkeypatch)
 
     class Appointment:
         __table__ = types.SimpleNamespace(name="appts")
@@ -171,7 +171,7 @@ def test_appointment_model_exception_branch(monkeypatch):
 def test_user_and_calendar_key_fields(monkeypatch):
     """Exercise all key fields for user and calendar sanitizers.
     """
-    InstrumentedAttribute = _setup_fake_sqlalchemy(monkeypatch)
+    _instrumented_attribute = _setup_fake_sqlalchemy(monkeypatch)
 
     class User:
         __table__ = types.SimpleNamespace(name="users")

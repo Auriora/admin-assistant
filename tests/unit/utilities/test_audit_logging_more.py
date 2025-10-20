@@ -1,6 +1,5 @@
 import types
 import pytest
-from unittest.mock import Mock
 
 from core.utilities import audit_logging_utility as al
 
@@ -111,4 +110,3 @@ def test_update_resource_and_batch_end_statuses(monkeypatch):
     fake.calls.clear()
     al.AuditLogHelper.log_batch_operation_end(1, 'op', 10, success_count=0, failure_count=2, correlation_id='c')
     assert fake.calls[-1]['status'] == 'failure'
-

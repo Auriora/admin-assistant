@@ -1,6 +1,3 @@
-import importlib
-import os
-
 import core.db as db
 
 
@@ -26,4 +23,3 @@ def test_get_session_returns_session_like_object():
     except Exception:
         # ensure closing doesn't raise in normal circumstances
         assert False, "Closing session raised an unexpected exception"
-

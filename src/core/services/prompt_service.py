@@ -1,3 +1,4 @@
+import logging
 from typing import List, Optional, TYPE_CHECKING
 
 # Patch point for unit tests; real class imported lazily inside repository property
@@ -12,6 +13,8 @@ class PromptService:
     """
     Service for business logic related to Prompt entities.
     """
+
+    _logger = logging.getLogger(__name__)
 
     def __init__(self, repository: Optional["_PromptRepo"] = None):
         self._repository = repository
@@ -145,8 +148,8 @@ class PromptService:
         if self._owns_repository and self._repository:
             try:
                 self._repository.close()
-            except Exception:
-                pass
+            except Exception as exc:
+                self._logger.debug("Failed to close prompt repository: %s", exc, exc_info=True)
 
         self._closed = True
 
@@ -154,6 +157,5 @@ class PromptService:
         """Ensure resources are cleaned up when the service is garbage collected."""
         try:
             self.close()
-        except:
-            # Ignore errors during garbage collection
-            pass
+        except Exception as exc:  # pragma: no cover - best effort during GC
+            self._logger.debug("Error while garbage-collecting PromptService: %s", exc, exc_info=True)

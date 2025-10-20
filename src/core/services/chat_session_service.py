@@ -1,4 +1,6 @@
-from typing import List, Optional, TYPE_CHECKING
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from sqlalchemy.orm import Session
@@ -14,14 +16,14 @@ class ChatSessionService:
 
     def __init__(
         self,
-        repository: Optional["_ChatRepo"] = None,
-        association_service: Optional["_AssocSvc"] = None,
+        repository: _ChatRepo | None = None,
+        association_service: _AssocSvc | None = None,
     ):
         self._repository = repository
         self._association_service = association_service
 
     @property
-    def repository(self) -> "_ChatRepo":
+    def repository(self) -> _ChatRepo:
         if self._repository is None:
             from core.repositories.chat_session_repository import ChatSessionRepository as _Repo
 
@@ -29,20 +31,20 @@ class ChatSessionService:
         return self._repository
 
     @property
-    def association_service(self) -> "_AssocSvc":
+    def association_service(self) -> _AssocSvc:
         if self._association_service is None:
             from core.services.entity_association_service import EntityAssociationService as _Svc
 
             self._association_service = _Svc()
         return self._association_service
 
-    def get_by_id(self, session_id: int) -> Optional["ChatSession"]:
+    def get_by_id(self, session_id: int) -> ChatSession | None:
         return self.repository.get_by_id(session_id)
 
-    def create(self, session: "ChatSession") -> None:
+    def create(self, session: ChatSession) -> None:
         self.repository.add(session)
 
-    def list_by_user(self, user_id: int) -> List["ChatSession"]:
+    def list_by_user(self, user_id: int) -> list[ChatSession]:
         return self.repository.list_by_user(user_id)
 
     def delete(self, session_id: int) -> None:
@@ -60,7 +62,7 @@ class ChatSessionService:
         setattr(session, "messages", messages)  # type: ignore
         self.repository.add(session)
 
-    def get_chat_history(self, session_id: int) -> list:
+    def get_chat_history(self, session_id: int) -> list[dict]:
         """
         Retrieve the full chat history for a session.
         """
@@ -89,18 +91,19 @@ class ChatSessionService:
         setattr(session, "status", "open")  # type: ignore
         self.repository.add(session)
 
-    def list_by_action(self, action_id: int) -> list:
+    def list_by_action(self, action_id: int) -> list[ChatSession]:
         """
         Fetch all chat sessions related to a specific action/task (using EntityAssociation).
         """
         related = self.association_service.list_by_target("action_log", action_id)
-        chat_session_ids = [
-            getattr(a, "source_id")
-            for a in related
-            if getattr(a, "source_type") == "chat_session"
-        ]
-        return [
-            self.get_by_id(int(cid))
-            for cid in chat_session_ids
-            if self.get_by_id(int(cid))
-        ]
+        sessions: list[ChatSession] = []
+        for association in related:
+            if getattr(association, "source_type") != "chat_session":
+                continue
+            session_id = getattr(association, "source_id", None)
+            if session_id is None:
+                continue
+            session = self.get_by_id(int(session_id))
+            if session:
+                sessions.append(session)
+        return sessions

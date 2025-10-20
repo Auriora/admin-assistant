@@ -1,10 +1,14 @@
 """
 Global test configuration and fixtures for the admin-assistant project.
 """
-import pytest
+import logging
 import os
 import tempfile
 from datetime import datetime, UTC
+
+import pytest
+
+logger = logging.getLogger(__name__)
 
 # Fast-path: when SKIP_SQLALCHEMY_IMPORTS is set, avoid heavy SQLAlchemy imports and define
 # minimal autouse fixtures so isolated unit tests (like the sanitizer tests) can run without
@@ -26,7 +30,7 @@ if os.environ.get("SKIP_SQLALCHEMY_IMPORTS"):
 else:
     from sqlalchemy import create_engine
     from sqlalchemy.orm import sessionmaker
-    from unittest.mock import MagicMock, AsyncMock
+    from unittest.mock import AsyncMock, MagicMock
 
     # Set test environment
     os.environ['APP_ENV'] = 'testing'
@@ -40,17 +44,6 @@ else:
     from core.models.category import Category
     from core.models.calendar import Calendar
     from core.models.archive_configuration import ArchiveConfiguration
-    from core.models.action_log import ActionLog
-    from core.models.audit_log import AuditLog
-    from core.models.chat_session import ChatSession
-    from core.models.entity_association import EntityAssociation
-    from core.models.job_configuration import JobConfiguration
-    from core.models.prompt import Prompt
-    from core.models.timesheet import Timesheet
-    from core.models.backup_job_configuration import BackupJobConfiguration
-    from core.models.backup_configuration import BackupConfiguration
-    from core.models.restoration_configuration import RestorationConfiguration
-    from core.models.reversible_operation import ReversibleOperation, ReversibleOperationItem
 
 
     @pytest.fixture(scope="session")
@@ -120,20 +113,19 @@ else:
             if session.is_active:
                 session.rollback()
             session.close()
-        except Exception as e:
-            import logging
-            logging.getLogger(__name__).debug(f"Error during session cleanup: {e}")
+        except Exception as exc:
+            logger.debug("Error during session cleanup: %s", exc, exc_info=True)
         finally:
             # Ensure connection is closed even if session close fails
             try:
                 transaction.rollback()
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.debug("Transaction rollback failed during cleanup: %s", exc, exc_info=True)
 
             try:
                 connection.close()
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.debug("Connection close failed during cleanup: %s", exc, exc_info=True)
 
             # Clear the scoped session registry
             Session.remove()

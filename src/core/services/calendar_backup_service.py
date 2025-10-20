@@ -9,11 +9,13 @@ This is designed to work with the appointment restoration service to provide
 a complete backup and restore solution.
 """
 
-import json
+from __future__ import annotations
+
 import csv
+import json
 import os
 from datetime import date, datetime
-from typing import List, Dict, Any, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from enum import Enum
 
 if TYPE_CHECKING:
@@ -45,11 +47,11 @@ class BackupResult:
         self.failed = 0
         self.backup_location = ""
         self.backup_format = ""
-        self.errors: List[str] = []
-        self.warnings: List[str] = []
-        self.metadata: Dict[str, Any] = {}
+        self.errors: list[str] = []
+        self.warnings: list[str] = []
+        self.metadata: dict[str, Any] = {}
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert result to dictionary for serialization."""
         return {
             'total_appointments': self.total_appointments,
@@ -76,21 +78,21 @@ class CalendarBackupService:
         from core.repositories.calendar_repository_sqlalchemy import SQLAlchemyCalendarRepository as _LocalCalRepo
 
         self.session = session or get_session()
-        self.user: "User" = self.session.get(_User, user_id)
+        self.user: User = self.session.get(_User, user_id)
         if not self.user:
             raise ValueError(f"User with ID {user_id} not found")
 
         # Initialize repositories/services (local calendar and audit)
-        self.audit_repo: "_AuditRepo" = _AuditRepo(self.session)
-        self.audit_service: "_AuditSvc" = _AuditSvc(self.audit_repo)
-        self.local_calendar_repo: "_LocalCalRepo" = _LocalCalRepo(self.user, self.session)
+        self.audit_repo: _AuditRepo = _AuditRepo(self.session)
+        self.audit_service: _AuditSvc = _AuditSvc(self.audit_repo)
+        self.local_calendar_repo: _LocalCalRepo = _LocalCalRepo(self.user, self.session)
 
         # MSGraph repositories (initialized when needed)
-        self._msgraph_calendar_repo: Optional["_GraphCalRepo"] = None
-        self._msgraph_appointment_repo: Optional["_GraphApptRepo"] = None
+        self._msgraph_calendar_repo: _GraphCalRepo | None = None
+        self._msgraph_appointment_repo: _GraphApptRepo | None = None
 
     @property
-    def msgraph_calendar_repo(self):
+    def msgraph_calendar_repo(self) -> _GraphCalRepo:
         """Lazy initialization of MSGraph calendar repository."""
         if self._msgraph_calendar_repo is None:
             from core.utilities.graph_utility import get_graph_client
@@ -105,8 +107,8 @@ class CalendarBackupService:
         calendar_name: str,
         backup_path: str,
         backup_format: BackupFormat,
-        start_date: Optional[date] = None,
-        end_date: Optional[date] = None,
+        start_date: date | None = None,
+        end_date: date | None = None,
         include_metadata: bool = True
     ) -> BackupResult:
         """
@@ -180,8 +182,8 @@ class CalendarBackupService:
         self,
         source_calendar_name: str,
         backup_calendar_name: str,
-        start_date: Optional[date] = None,
-        end_date: Optional[date] = None
+        start_date: date | None = None,
+        end_date: date | None = None
     ) -> BackupResult:
         """
         Backup a calendar to another local calendar.
@@ -262,7 +264,7 @@ class CalendarBackupService:
 
         return result
 
-    def _find_calendar_by_name(self, calendar_name: str) -> Optional["Calendar"]:
+    def _find_calendar_by_name(self, calendar_name: str) -> Calendar | None:
         """Find a calendar by name."""
         calendars = self.local_calendar_repo.list()
         for calendar in calendars:
@@ -272,10 +274,10 @@ class CalendarBackupService:
 
     def _get_appointments_from_calendar(
         self,
-        calendar: "Calendar",
-        start_date: Optional[date] = None,
-        end_date: Optional[date] = None
-    ) -> List["Appointment"]:
+        calendar: Calendar,
+        start_date: date | None = None,
+        end_date: date | None = None,
+    ) -> list[Appointment]:
         """Get appointments from a calendar with optional date filtering."""
         from core.repositories.appointment_repository_sqlalchemy import (
             SQLAlchemyAppointmentRepository as _LocalApptRepo,
@@ -302,7 +304,7 @@ class CalendarBackupService:
         
         return appointments
 
-    def _get_or_create_backup_calendar(self, calendar_name: str) -> "Calendar":
+    def _get_or_create_backup_calendar(self, calendar_name: str) -> Calendar:
         """Get or create a backup calendar."""
         # Check if calendar already exists
         calendar = self._find_calendar_by_name(calendar_name)
@@ -325,7 +327,7 @@ class CalendarBackupService:
         return backup_calendar
 
     def _backup_to_csv(
-        self, appointments: List["Appointment"], backup_path: str, include_metadata: bool
+        self, appointments: list[Appointment], backup_path: str, include_metadata: bool
     ) -> None:
         """Backup appointments to CSV format."""
         with open(backup_path, 'w', newline='', encoding='utf-8') as csvfile:
@@ -363,7 +365,7 @@ class CalendarBackupService:
                 writer.writerow(row)
 
     def _backup_to_json(
-        self, appointments: List["Appointment"], backup_path: str, include_metadata: bool
+        self, appointments: list[Appointment], backup_path: str, include_metadata: bool
     ) -> None:
         """Backup appointments to JSON format."""
         backup_data = {
@@ -402,7 +404,7 @@ class CalendarBackupService:
             json.dump(backup_data, jsonfile, indent=2, ensure_ascii=False)
 
     def _backup_to_ics(
-        self, appointments: List["Appointment"], backup_path: str, include_metadata: bool
+        self, appointments: list[Appointment], backup_path: str, include_metadata: bool
     ) -> None:
         """Backup appointments to ICS (iCalendar) format."""
         with open(backup_path, 'w', encoding='utf-8') as icsfile:
@@ -468,7 +470,7 @@ class CalendarBackupService:
             }
         )
 
-    def list_backup_files(self, backup_directory: str) -> List[Dict[str, Any]]:
+    def list_backup_files(self, backup_directory: str) -> list[dict[str, Any]]:
         """List available backup files in a directory."""
         if not os.path.exists(backup_directory):
             return []
