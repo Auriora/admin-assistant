@@ -61,12 +61,16 @@ def test_can_initialize_msgraph_auth_and_client_when_enabled():
         pytest.skip(f"Skipping MS Graph live test: {reason}")
 
     # Try to obtain an access token using project utilities if available
+    auth_utility_module = None
     try:
-        from core.utilities import auth_utility
+        from core.utilities import auth_utility as auth_utility_module
     except Exception as e:
         pytest.skip(f"auth_utility not available: {e}")
 
-    token = auth_utility.get_cached_access_token()
+    if auth_utility_module is None:
+        pytest.skip("auth_utility module unavailable")
+
+    token = auth_utility_module.get_cached_access_token()
     assert token and isinstance(token, str) and len(token) > 0
 
     # Resolve a Graph client factory function
@@ -90,4 +94,3 @@ def test_can_initialize_msgraph_auth_and_client_when_enabled():
         client = get_graph_client_fn(token)  # type: ignore[call-arg]
 
     assert client is not None
-

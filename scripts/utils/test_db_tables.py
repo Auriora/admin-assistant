@@ -46,6 +46,28 @@ from core.models.reversible_operation import (  # type: ignore
 )
 
 
+MODEL_CLASSES = (
+    User,
+    Appointment,
+    Location,
+    Category,
+    Calendar,
+    ArchiveConfiguration,
+    ActionLog,
+    AuditLog,
+    ChatSession,
+    EntityAssociation,
+    JobConfiguration,
+    Prompt,
+    Timesheet,
+    BackupJobConfiguration,
+    BackupConfiguration,
+    RestorationConfiguration,
+    ReversibleOperation,
+    ReversibleOperationItem,
+)
+
+
 def main() -> int:
     # Create all tables
     Base.metadata.create_all(engine)
@@ -55,10 +77,10 @@ def main() -> int:
     tables: List[str] = inspector.get_table_names()
     print(f"Tables in database: {tables}")
 
-    if "users" in tables:
-        print("Users table exists!")
-    else:
-        print("Users table does not exist!")
+    expected_tables = {model.__tablename__ for model in MODEL_CLASSES}
+    missing_tables = sorted(expected_tables - set(tables))
+    if missing_tables:
+        print(f"Missing tables: {missing_tables}")
         return 1
 
     # Simple user round-trip
@@ -80,4 +102,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

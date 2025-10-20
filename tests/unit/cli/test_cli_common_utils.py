@@ -20,7 +20,6 @@ def test_get_last_month_and_week_ranges():
     ref = date(2025, 10, 15)  # a Wednesday
 
     # Week start: default implementation uses locale; force Monday (0)
-    monkeypatch_target = 'core.cli.common.utils.get_week_start_day'
 
     # If week starts Monday
     original = cu.get_week_start_day
@@ -102,9 +101,6 @@ def test_account_context_and_uri_helpers(monkeypatch):
     assert ok is False and err is not None
 
     # parse raises URIParseError
-    class MyParseError(Exception):
-        pass
-
     monkeypatch.setattr('core.cli.common.utils.parse_resource_uri', lambda u: (_ for _ in ()).throw(cu.URIParseError('bad')))
     ok, err = cu.validate_uri_account_context('bad', user)
     assert ok is False and 'Invalid URI format' in err
@@ -115,4 +111,3 @@ def test_get_uri_autocompletion_suggestions():
     sug = cu.get_uri_autocompletion_suggestions(user)
     assert any('sam@example.com' in s for s in sug)
     assert any('calendars' in s for s in sug)
-
