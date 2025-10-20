@@ -37,9 +37,6 @@ jobs:
     steps:
     - name: Delay start for non-manual triggers
       if: ${{ github.event_name != 'workflow_dispatch' }}
-      run: |
-        echo "Delaying start by 10 minutes for automatic trigger..."
-        sleep 600
     - name: Checkout code
       uses: actions/checkout@v5
 
