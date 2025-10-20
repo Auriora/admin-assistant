@@ -34,8 +34,6 @@ jobs:
         # CodeQL supports: 'c-cpp', 'csharp', 'go', 'java-kotlin', 'javascript-typescript', 'python', 'ruby', 'swift'
 
     steps:
-    - name: Delay start for non-manual triggers
-      if: ${{ github.event_name != 'workflow_dispatch' }}
     - name: Checkout repository
       uses: actions/checkout@v5
 

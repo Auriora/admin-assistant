@@ -36,8 +36,6 @@ jobs:
             cov_flag: "utilities"
 
     steps:
-    - name: Delay start for non-manual triggers
-      if: ${{ github.event_name != 'workflow_dispatch' }}
     - name: Checkout code
       uses: actions/checkout@v5
 
