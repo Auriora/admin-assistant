@@ -73,7 +73,7 @@ dev = [
     "pytest-memray==1.8.0",
 
     # System monitoring
-    "psutil==7.1.0",
+    "psutil==7.1.1",
 
     # Version management
     "bump2version==1.0.1",
