@@ -34,9 +34,9 @@ def test_tables_exist_and_user_roundtrip(test_db_engine):
 
     # Simple user round-trip using the same engine
     with Session(test_db_engine) as session:
-        user = User(email="test@example.com", name="Test User")
+        user = User(email="db_tables_user@example.com", name="Test User")
         session.add(user)
         session.commit()
 
-        queried = session.query(User).filter_by(email="test@example.com").first()
+        queried = session.query(User).filter_by(email="db_tables_user@example.com").first()
         assert queried is not None, "Failed to query user after insert"

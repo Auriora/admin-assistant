@@ -13,14 +13,17 @@ PyCharm run configurations for unit and integration suites were filtering tests 
 - Updated `.run/Unit Tests.run.xml` to remove the `-m unit` filter, add `$PROJECT_DIR$/src` to `PYTHONPATH`, and add `--log-cli-level=WARNING` so GC debug output is suppressed while pytest still runs verbose mode.
 - Updated `.run/Integration Tests.run.xml` to drop the broken `-m 'integration and not msgraph'` expression, add the same environment/logging tweaks, and rely on the directory target so MS Graph scaffolding still skips via existing logic.
 - Updated `.run/All Tests.run.xml` to use the same `PYTHONPATH` and logging arguments for consistency.
+- Adjusted `core.utilities.async_runner` GC warnings to log at info level so routine cleanup doesn't spam PyCharm output, while still capturing counts when needed.
+- Swapped the `test_db_tables` sample user email to `db_tables_user@example.com` so integration fixtures no longer conflict with unique constraints.
 - CLI validation commands:
   - `.venv/bin/pytest --co tests/unit`
   - `.venv/bin/pytest --co tests/integration -m integration`
   - `.venv/bin/pytest tests/integration --maxfail=1` (fails with `sqlite3.IntegrityError` on duplicate user email; matches pre-existing issue).
   - `PYTHONPATH=src .venv/bin/pytest tests/unit -k audit --maxfail=1 -q`
   - `PYTHONPATH=src .venv/bin/pytest tests/unit/support/test_calendar_utils.py -q`
+- `PYTHONPATH=src .venv/bin/pytest tests/integration --maxfail=1`
 - Updated `src/support/calendar_utils.get_event_date_range` to ignore cancelled/free/all-day events and refreshed the expectation in `tests/unit/support/test_calendar_utils.py` for the newer sample data.
-- Follow-up: investigate and stabilize integration data setup to resolve the duplicate user constraint error.
+- Integration suite now passes end-to-end (aside from the expected msgraph skip) after the email tweak; no further action required for duplicate user errors.
 
 ## Documentation & Links
 

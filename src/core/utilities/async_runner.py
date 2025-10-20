@@ -812,7 +812,8 @@ def shutdown_global_runner():
 
         # Check for uncollectable objects
         if hasattr(gc, 'garbage') and gc.garbage:
-            logger.warning(f"Found {len(gc.garbage)} uncollectable objects")
+            # Log at info level so routine test cleanup doesn't flood warning output
+            logger.info(f"Found {len(gc.garbage)} uncollectable objects")
             # Clear the garbage list to prevent memory leaks
             gc.garbage.clear()
 
