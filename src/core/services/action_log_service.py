@@ -1,15 +1,11 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from core.models.action_log import ActionLog
     from core.repositories.action_log_repository import ActionLogRepository
     from core.services.entity_association_service import EntityAssociationService
-else:  # pragma: no cover - for runtime introspection only
-    ActionLog = Any  # type: ignore
-    ActionLogRepository = Any  # type: ignore
-    EntityAssociationService = Any  # type: ignore
 
 
 class ActionLogService:

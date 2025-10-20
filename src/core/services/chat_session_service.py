@@ -1,15 +1,11 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from core.models.chat_session import ChatSession
     from core.repositories.chat_session_repository import ChatSessionRepository
     from core.services.entity_association_service import EntityAssociationService
-else:  # pragma: no cover - used only for type checking introspection
-    ChatSession = Any  # type: ignore
-    ChatSessionRepository = Any  # type: ignore
-    EntityAssociationService = Any  # type: ignore
 
 
 class ChatSessionService:
