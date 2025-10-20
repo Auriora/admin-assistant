@@ -1,9 +1,6 @@
 import logging
 from typing import List, Optional, TYPE_CHECKING
 
-# Patch point for unit tests; real class imported lazily inside repository property
-PromptRepository = None
-
 if TYPE_CHECKING:
     from core.models.prompt import Prompt
     from core.repositories.prompt_repository import PromptRepository as _PromptRepo
@@ -24,28 +21,18 @@ class PromptService:
         # Eagerly instantiate the default repository if none supplied so tests that
         # patch core.services.prompt_service.PromptRepository see the constructor call.
         if self._repository is None:
-            global PromptRepository
-            if PromptRepository is not None:
-                # patched in tests
-                self._repository = PromptRepository()
-            else:
-                from core.repositories.prompt_repository import PromptRepository as _Repo
+            from core.repositories.prompt_repository import PromptRepository as _Repo
 
-                PromptRepository = _Repo
-                self._repository = PromptRepository()
+            self._repository = _Repo()
             self._owns_repository = True
 
     @property
     def repository(self) -> "_PromptRepo":
         if self._repository is None:
             # Prefer patched repository if provided by tests
-            global PromptRepository
-            if PromptRepository is not None:
-                self._repository = PromptRepository()
-            else:
-                from core.repositories.prompt_repository import PromptRepository as _Repo
+            from core.repositories.prompt_repository import PromptRepository as _Repo
 
-                self._repository = _Repo()
+            self._repository = _Repo()
             self._owns_repository = True
         return self._repository
 
