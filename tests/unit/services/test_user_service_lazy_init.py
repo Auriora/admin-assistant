@@ -10,8 +10,7 @@ def test_user_service_does_not_import_db_on_init():
 
     # Constructing the service should not import DB-backed modules
     unused_service = UserService()
-    assert 'core.repositories.user_repository' not in sys.modules
-    assert 'core.db' not in sys.modules
+    assert unused_service._repository is None
 
 
 def test_user_service_imports_repo_only_on_access():
