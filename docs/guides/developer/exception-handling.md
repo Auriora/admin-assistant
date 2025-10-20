@@ -34,7 +34,7 @@ Robust exception handling ensures reliability, maintainability, and debuggabilit
 ## Logging
 - Use `logger.exception()` to log exceptions with stack traces.
 - Include user, operation, and relevant IDs in log messages.
-- Never log sensitive data (see [Observability Guidelines](./observability.md)).
+- Never log sensitive data (see [Observability Guidelines](observability.md)).
 
 ## Examples
 ```python

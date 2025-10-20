@@ -121,7 +121,7 @@ python scripts/restore_to_msgraph_recovery.py --dry-run
 admin-assistant restore from-backup-calendars --source "Recovered" "Recovered Missing" --destination "MSGraph Recovery" --dry-run
 ```
 
-See the [Appointment Restoration Guide](../docs/user-guides/appointment-restoration-guide.md) for complete usage instructions.
+See the [Appointment Restoration Guide](../docs/guides/user/appointment-restoration-guide.md) for complete usage instructions.
 
 ## Architecture
 

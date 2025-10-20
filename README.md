@@ -26,8 +26,8 @@ For detailed status and implementation roadmap, see [Consolidated Action Plan](d
 ### Quick Start Documents
 - **[Consolidated Action Plan](docs/CAP-001-Consolidated-Action-Plan.md)** - Current status and implementation roadmap
 - **[Current Implementation Status](docs/CIS-001-Current-Implementation-Status.md)** - Detailed feature completion status
-- **[CLI Command Structure](docs/2-design/CLI-001-Command-Structure.md)** - Complete CLI reference
-- **[System Architecture](docs/2-design/ARCH-001-System-Architecture.md)** - Technical architecture overview
+- **[CLI Command Structure](docs/2-architecture/CLI-001-Command-Structure.md)** - Complete CLI reference
+- **[System Architecture](docs/2-architecture/ARCH-001-System-Architecture.md)** - Technical architecture overview
 
 ### Complete Documentation Structure
 ```
@@ -159,7 +159,7 @@ admin-assistant restore list-configs --user <USER_ID>
 admin-assistant restore from-audit-logs --dry-run
 ```
 
-For complete CLI documentation, see [CLI Command Structure](docs/2-design/CLI-001-Command-Structure.md).
+For complete CLI documentation, see [CLI Command Structure](docs/2-architecture/CLI-001-Command-Structure.md).
 
 ## 🏗️ Architecture
 
@@ -178,7 +178,7 @@ Key architectural patterns:
 - Orchestrator pattern for complex workflows
 - Generic entity associations for extensibility
 
-See [System Architecture](docs/2-design/ARCH-001-System-Architecture.md) for detailed technical documentation.
+See [System Architecture](docs/2-architecture/ARCH-001-System-Architecture.md) for detailed technical documentation.
 
 ## 🚀 Getting Started
 
@@ -285,9 +285,9 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## 📚 Documentation
 
 ### Quick Start
-- [Getting Started Guide](docs/user-guides/UG-001-Getting-Started.md) - Start here for new users
-- [CLI Reference](docs/user-guides/UG-002-CLI-Reference.md) - Complete command reference
-- [Troubleshooting Guide](docs/user-guides/UG-003-Troubleshooting.md) - Common issues and solutions
+- [Getting Started Guide](docs/guides/user/UG-001-Getting-Started.md) - Start here for new users
+- [CLI Reference](docs/guides/user/UG-002-CLI-Reference.md) - Complete command reference
+- [Troubleshooting Guide](docs/guides/user/UG-003-Troubleshooting.md) - Common issues and solutions
 
 ### Project Documentation
 - [Current Implementation Status](docs/CIS-001-Current-Implementation-Status.md) - Single source of truth for project status
@@ -296,11 +296,11 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ### Technical Documentation
 - [Software Requirements Specification](docs/1-requirements/) - Complete requirements
-- [System Architecture](docs/2-design/ARCH-001-System-Architecture.md) - System design
-- [Database Schema](docs/2-design/DATABASE-SCHEMA-001-Current-Schema.md) - Current database structure
-- [CLI Command Structure](docs/2-design/CLI-001-Command-Structure.md) - Command organization
+- [System Architecture](docs/2-architecture/ARCH-001-System-Architecture.md) - System design
+- [Database Schema](docs/2-architecture/DATABASE-SCHEMA-001-Current-Schema.md) - Current database structure
+- [CLI Command Structure](docs/2-architecture/CLI-001-Command-Structure.md) - Command organization
 - [Test Plan](docs/4-testing/TP-001-Test-Plan.md) - Testing strategy
-- [Requirements Traceability](docs/A-traceability/TM-001-Requirements-Implementation-Matrix.md) - Implementation tracking
+- [Requirements Traceability](docs/traceability/TM-001-Requirements-Implementation-Matrix.md) - Implementation tracking
 
 ## 🔗 Links
 
