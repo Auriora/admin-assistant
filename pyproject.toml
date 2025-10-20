@@ -46,7 +46,7 @@ dependencies = [
 
     # Database & Storage
     "sqlalchemy==2.0.44",
-    "sqlalchemy-utils==0.41.2",
+    "sqlalchemy-utils==0.42.0",
     "asyncpg==0.30.0",
     "alembic==1.16.5",
 
