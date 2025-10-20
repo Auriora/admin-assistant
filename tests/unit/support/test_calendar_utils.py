@@ -88,9 +88,9 @@ def test_get_event_date_range_from_real_world_sample():
     rng = get_event_date_range(events)
     assert rng is not None
     start, end = rng
-    # The sample contains events on 2025-05-21 (including overlaps/duplicates)
+    # The sample includes active events on 2025-05-21 and 2025-05-22 (cancelled/free entries are ignored)
     assert start == date(2025, 5, 21)
-    assert end == date(2025, 5, 21)
+    assert end == date(2025, 5, 22)
 
 
 def test_get_event_date_range_empty_returns_none():
