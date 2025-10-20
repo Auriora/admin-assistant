@@ -24,7 +24,7 @@ classifiers = [
 ]
 dependencies = [
     # Core CLI and UI
-    "typer==0.16.1",
+    "typer==0.19.2",
     "rich==14.2.0",
 
     # Web Framework
