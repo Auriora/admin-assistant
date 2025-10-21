@@ -26,7 +26,7 @@ AI agents collaborating on Auriora projects must follow these practices to remai
 
 ### Core Principles
 
-1. Load `.agents/rules/` before planning or editing files.
+1. Load `docs/guides/agents/` before planning or editing files.
 2. Default to minimal planning for simple, single-file tasks; invoke the planning protocol for complex or multi-language changes.
 3. Record significant actions in `docs/updates/` with references to the rules consulted.
 
