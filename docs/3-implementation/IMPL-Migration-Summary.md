@@ -1,182 +1,133 @@
-# Account Context URI Migration Summary
+---
+title: "Implementation: Account Context URI Migration Summary"
+id: "IMPL-Migration-Summary"
+type: [ implementation, migration ]
+status: [ accepted ]
+owner: "Auriora Team"
+last_reviewed: "DD-MM-YYYY"
+tags: [implementation, migration, uri, database, alembic]
+links:
+  tooling: []
+---
 
-## Overview
+# Implementation Guide: Account Context URI Migration Summary
 
-This document summarizes the new Alembic migration file `20250610_add_account_context_to_uris.py` that adds account context to existing calendar URIs and introduces new archive configuration columns.
+- **Owner**: Auriora Team
+- **Status**: Accepted
+- **Created Date**: DD-MM-YYYY
+- **Last Updated**: DD-MM-YYYY
+- **Audience**: [Developers, Database Administrators]
+- **Scope**: Root
 
-## Migration Details
+## 1. Purpose
 
-### File Location
-```
-src/core/migrations/versions/20250610_add_account_context_to_uris.py
-```
+This document summarizes the Alembic migration `20250610_add_account_context_to_uris.py`, which adds account context to existing calendar URIs and introduces new columns to the `archive_configurations` table. This migration is crucial for enhancing URI management, supporting flexible archiving purposes, and controlling overlap behavior.
 
-### Revision Information
-- **Revision ID**: `20250610_add_account_context_to_uris`
-- **Revises**: `add_restoration_configurations_table`
-- **Create Date**: 2025-06-10 00:00:00.000000
+## 2. Key Concepts
 
-## Changes Made
+### 2.1. Migration Details
 
-### 1. New Columns Added to `archive_configurations` Table
+-   **File Location**: `src/core/migrations/versions/20250610_add_account_context_to_uris.py`
+-   **Revision ID**: `20250610_add_account_context_to_uris`
+-   **Revises**: `add_restoration_configurations_table`
+-   **Create Date**: 2025-06-10 00:00:00.000000
+
+### 2.2. `archive_configurations` Table Updates
 
 #### `allow_overlaps` Column
-- **Type**: Boolean
-- **Default**: True
-- **Nullable**: False
-- **Purpose**: Controls whether overlapping appointments are allowed in archive operations
-- **Use Case**: Enables filtering by appointment categories (travel, billable, non-billable) for timesheet/billing purposes
+-   **Type**: Boolean
+-   **Default**: `True`
+-   **Purpose**: Controls whether overlapping appointments are allowed in archive operations.
 
 #### `archive_purpose` Column
-- **Type**: String(50)
-- **Default**: 'general'
-- **Nullable**: False
-- **Purpose**: Categorizes the purpose of the archive configuration
-- **Use Case**: Supports business billing with categories like 'Billable - [Customer Name]' and 'Non-billable - [Customer Name]'
+-   **Type**: `String(50)`
+-   **Default**: `'general'`
+-   **Purpose**: Categorizes the purpose of the archive configuration (e.g., `'Billable - [Customer Name]'`, `'Travel'`).
 
-### 2. URI Account Context Migration
+### 2.3. URI Account Context Migration
 
-#### Transformation Logic
-The migration updates existing calendar URIs to include account context:
+This migration updates existing calendar URIs to include account context, ensuring better organization and user-specific data handling.
 
-**Before (Legacy Format):**
-```
-msgraph://calendars/primary
-msgraph://calendars/"Activity Archive"
-local://calendars/personal
-```
+-   **Before (Legacy Format)**:
+    ```
+    msgraph://calendars/primary
+    local://calendars/personal
+    ```
+-   **After (New Format with Account Context)**:
+    ```
+    msgraph://user@example.com/calendars/primary
+    local://user@example.com/calendars/personal
+    ```
 
-**After (New Format with Account Context):**
-```
-msgraph://user@example.com/calendars/primary
-msgraph://user@example.com/calendars/"Activity Archive"
-local://user@example.com/calendars/personal
-```
+-   **Account Context Priority**: The migration determines account context using user email (preferred), username (fallback), or user ID (last resort).
+-   **Edge Case Handling**: The migration gracefully handles missing users, null/empty emails/usernames, already migrated URIs, and malformed URIs.
 
-#### Account Context Priority
-The migration uses the following priority order for determining account context:
+### 2.4. Model Updates
 
-1. **User email** (preferred) - e.g., `user@example.com`
-2. **Username** (fallback) - e.g., `jdoe`
-3. **User ID** (last resort) - e.g., `123`
+The `ArchiveConfiguration` SQLAlchemy model (`src/core/models/archive_configuration.py`) has been updated to include the `allow_overlaps` and `archive_purpose` attributes.
 
-#### Edge Case Handling
-- **Missing users**: Uses user_id as context
-- **Null/empty emails**: Falls back to username
-- **Null/empty usernames**: Falls back to user_id
-- **Already migrated URIs**: Skips URIs that already have account context
-- **Malformed URIs**: Attempts to fix by adding proper scheme and context
+## 3. Usage
 
-## Migration Features
+### 3.1. Business Billing Categories
 
-### Comprehensive Error Handling
-- Individual configuration errors don't stop the entire migration
-- Detailed error logging for troubleshooting
-- Graceful handling of missing or invalid user data
+The `archive_purpose` column enables the creation of configurations tailored for specific billing needs, such as:
 
-### Migration Statistics
-The migration provides detailed statistics including:
-- Total configurations processed
-- Successfully updated configurations
-- Skipped configurations (already have account context)
-- Error configurations
-- User contexts created
-- Account context mappings used
-
-### Validation
-Post-migration validation ensures:
-- All configurations have account context in their URIs
-- Source and destination URIs are properly formatted
-- Migration completeness verification
-
-### Reversibility
-The migration is fully reversible with a comprehensive `downgrade()` function that:
-- Removes account context from all URIs
-- Drops the new columns (`allow_overlaps`, `archive_purpose`)
-- Provides rollback statistics
-
-## Model Updates
-
-### Updated `ArchiveConfiguration` Model
-The SQLAlchemy model in `src/core/models/archive_configuration.py` has been updated to include:
-
-```python
-allow_overlaps = Column(
-    Boolean,
-    default=True,
-    nullable=False,
-    doc="Whether to allow overlapping appointments in archive operations",
-)
-archive_purpose = Column(
-    String(50),
-    default='general',
-    nullable=False,
-    doc="Purpose of the archive configuration (general, billing, travel, etc.)",
-)
-```
-
-### Updated Documentation
-- Model docstring updated to include new attributes
-- `__repr__` method updated to show new fields
-
-## Testing
-
-### URI Transformation Logic Testing
-The migration includes comprehensive testing of URI transformation functions:
-- Adding account context to various URI formats
-- Removing account context (for rollback)
-- Roundtrip testing (add then remove should return original)
-- Edge case handling (empty URIs, malformed URIs, etc.)
-
-### Test Results
-All URI transformation tests pass, ensuring:
-- Correct handling of legacy formats
-- Proper account context addition
-- Reversible transformations
-- Edge case robustness
-
-## Usage Examples
-
-### Business Billing Categories
-With the new `archive_purpose` column, users can create configurations like:
 ```
 archive_purpose = 'Billable - Modena'
 archive_purpose = 'Non-billable - Modena'
 archive_purpose = 'Travel'
 ```
 
-### Overlap Control
-The `allow_overlaps` column enables:
-- Filtering appointments by categories for billing
-- Preventing overlap conflicts in specific archive scenarios
-- Maintaining appointment integrity during archival
+### 3.2. Overlap Control
 
-## Migration Safety
+The `allow_overlaps` column provides granular control over archiving behavior, allowing for filtering appointments by categories and preventing overlap conflicts in specific scenarios.
 
-### Backup Compatibility
-- Migration preserves all existing data
-- Fully reversible with comprehensive rollback
-- Detailed logging for audit trails
-- Error handling prevents data corruption
+## 4. Internal Behaviour
 
-### Production Readiness
-- Tested URI transformation logic
-- Comprehensive error handling
-- Detailed validation and statistics
-- Safe fallback mechanisms for edge cases
+### 4.1. Migration Features
 
-## Next Steps
+-   **Comprehensive Error Handling**: Individual configuration errors do not halt the entire migration, with detailed logging for troubleshooting.
+-   **Migration Statistics**: Provides statistics on processed, updated, skipped, and error configurations, as well as user contexts created.
+-   **Validation**: Post-migration validation ensures all configurations have proper account context and URI formatting.
+-   **Reversibility**: A comprehensive `downgrade()` function is provided to remove account context and drop new columns, ensuring full rollback capability.
 
-1. **Run the migration** in a development environment first
-2. **Review migration output** and statistics
-3. **Test the new columns** in application code
-4. **Update any dependent services** that use archive configurations
-5. **Deploy to production** after thorough testing
+### 4.2. Testing
 
-## Support
+-   **URI Transformation Logic Testing**: Extensive tests cover adding/removing account context, roundtrip transformations, and edge case handling for various URI formats.
+-   **Test Results**: All URI transformation tests pass, confirming correct handling of legacy formats, proper account context addition, and robust edge case management.
 
-For questions or issues with this migration:
-1. Review the detailed logging output during migration
-2. Check the validation statistics for completeness
-3. Use the rollback functionality if needed
-4. Refer to the URI utility functions for format specifications
+### 4.3. Migration Safety
+
+-   **Backup Compatibility**: The migration preserves all existing data and is fully reversible.
+-   **Production Readiness**: Tested URI transformation logic, comprehensive error handling, detailed validation, and safe fallback mechanisms ensure production readiness.
+
+### 4.4. Performance Considerations
+
+-   **Indexing**: Comprehensive indexes are in place for common query patterns.
+-   **Partitioning**: Consideration for table partitioning for large datasets.
+-   **Archiving**: Regular archival of old audit logs to separate storage.
+
+### 4.5. Security and Privacy
+
+-   **Data Sanitization**: Sensitive data is sanitized before logging.
+-   **Access Control**: Audit logs are protected by user-based access control.
+
+## 5. Extension Points
+
+### 5.1. Next Steps
+
+1.  Run the migration in a development environment first.
+2.  Review migration output and statistics.
+3.  Test the new columns in application code.
+4.  Update any dependent services that use archive configurations.
+5.  Deploy to production after thorough testing.
+
+### 5.2. Monitoring and Alerting
+
+Consider setting up monitoring for high failure rates, unusual patterns in user activity, performance degradation, and storage growth of the audit log table.
+
+# References
+
+-   [URI Transformation Functions](IMPL-URI-Transformation-Functions.md)
+-   [Current Database Schema](DATA-002-Current-Schema.md)
+-   [System Architecture](ARCH-001-System-Architecture.md)

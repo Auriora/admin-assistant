@@ -1,174 +1,112 @@
-# Username Field Implementation Summary
+---
+title: "Implementation: Username Field Summary"
+id: "IMPL-Overall-Summary"
+type: [ implementation ]
+status: [ draft ]
+owner: "Auriora Team"
+last_reviewed: "DD-MM-YYYY"
+tags: [implementation, user, cli, username]
+links:
+  tooling: []
+---
 
-## Overview
+# Implementation Guide: Username Field Summary
 
-This implementation adds a `username` field to the User models and implements user resolution logic with the specified precedence rules for the CLI commands.
+- **Owner**: Auriora Team
+- **Status**: Draft
+- **Created Date**: DD-MM-YYYY
+- **Last Updated**: DD-MM-YYYY
+- **Audience**: [Developers, Maintainers]
+- **Scope**: Root
 
-## Changes Made
+## 1. Purpose
 
-### 1. User Model Updates
+This document summarizes the implementation of the `username` field for User models and the associated user resolution logic. It details how the system identifies users based on specified precedence rules for CLI commands, enhancing flexibility and usability.
 
-**Files Modified:**
-- `src/core/models/user.py`
-- `src/web/app/models.py`
+## 2. Key Concepts
 
-**Changes:**
-- Added `username` field as `String, unique=True, nullable=True`
-- Field allows mapping users to local OS usernames
+### 2.1. User Model Updates
 
-### 2. Repository Layer Updates
+-   **Files Modified**: `src/core/models/user.py`, `src/web/app/models.py`
+-   **Changes**: Added a `username` field (`String, unique=True, nullable=True`) to allow mapping users to local OS usernames.
 
-**Files Modified:**
-- `src/core/repositories/user_repository.py`
+### 2.2. Repository and Service Layer Updates
 
-**Changes:**
-- Added `get_by_username(username: str)` method
-- Returns user by username lookup
+-   **`UserRepository`**: Added `get_by_username(username: str)`.
+-   **`UserService`**: Enhanced `validate()` to ensure username uniqueness and added `get_by_username(username: str)`.
 
-### 3. Service Layer Updates
+### 2.3. User Resolution Utility (`src/core/utilities/user_resolution.py`)
 
-**Files Modified:**
-- `src/core/services/user_service.py`
+-   **Precedence Rules (highest to lowest)**:
+    1.  Command-line argument (`--user`)
+    2.  `ADMIN_ASSISTANT_USER` environment variable
+    3.  OS environment variables (`USER`, `USERNAME`, `LOGNAME`)
+-   **Functions**: `get_os_username()`, `resolve_user_identifier()`, `resolve_user()`, `get_user_identifier_source()`.
 
-**Changes:**
-- Added `get_by_username(username: str)` method
-- Enhanced `validate()` method to check username uniqueness
-- Validates username is not empty/whitespace if provided
-- Prevents duplicate usernames (excluding same user during updates)
+### 2.4. CLI Integration
 
-### 4. User Resolution Utility
+-   **Files Modified**: `src/cli/main.py`
+-   **Changes**: Updated `user_id_option` to `user_option` (accepts username or ID), added `resolve_cli_user()` helper, and enhanced error messages.
 
-**New File:**
-- `src/core/utilities/user_resolution.py`
+### 2.5. Database Migration
 
-**Features:**
-- `get_os_username()`: Detects OS username from environment variables
-- `resolve_user_identifier()`: Implements precedence rules for user identification
-- `resolve_user()`: Resolves User object from identifier (ID or username)
-- `get_user_identifier_source()`: Returns description of identifier source
+-   **File**: `src/core/migrations/versions/add_username_to_users.py`
+-   **Changes**: Adds the `username` column to the `users` table with a unique constraint.
 
-**Precedence Rules (highest to lowest):**
-1. Command-line argument (`--user`)
-2. `ADMIN_ASSISTANT_USER` environment variable
-3. OS environment variables (`USER`, `USERNAME`, `LOGNAME`)
+### 2.6. Test Coverage
 
-### 5. CLI Integration
+-   **New Files**: `tests/unit/utilities/test_user_resolution.py`
+-   **Modified Files**: `tests/unit/services/test_user_service.py`
+-   **Coverage**: 100% for user resolution utility, covering all precedence rules and edge cases.
 
-**Files Modified:**
-- `src/cli/main.py`
+### 2.7. Backward Compatibility
 
-**Changes:**
-- Updated `user_id_option` to `user_option` (accepts username or ID)
-- Added `resolve_cli_user()` helper function
-- Updated archive command to use new user resolution
-- Updated category list command to use new user resolution
-- Enhanced error messages to show username/email in addition to ID
+-   Existing user IDs continue to work unchanged.
+-   The `username` field is nullable, ensuring existing users are not affected.
+-   The CLI maintains the same command structure with enhanced functionality.
 
-### 6. Database Migration
+## 3. Usage
 
-**New File:**
-- `src/core/migrations/versions/add_username_to_users.py`
+### 3.1. Traditional User ID
 
-**Changes:**
-- Adds `username` column to `users` table
-- Creates unique constraint on username field
-
-### 7. Documentation Updates
-
-**Files Modified:**
-- `docs/user-guides/UG-002-CLI-Reference.md`
-- `docs/2-design/DATABASE-SCHEMA-001-Current-Schema.md`
-- `docs/2-design/data-model.puml`
-
-**Changes:**
-- Updated CLI reference to document username support
-- Added user identification section with examples
-- Updated database schema documentation
-- Updated PlantUML data model diagram
-
-### 8. Test Coverage
-
-**New Files:**
-- `tests/unit/utilities/test_user_resolution.py`
-
-**Modified Files:**
-- `tests/unit/services/test_user_service.py`
-
-**Test Coverage:**
-- 18 tests for user resolution utility (100% coverage)
-- 28 tests for user service including username validation
-- Tests cover all precedence rules and edge cases
-
-### 9. Demo Script
-
-**New File:**
-- `demo_user_resolution.py`
-
-**Features:**
-- Demonstrates OS username detection
-- Shows precedence rules in action
-- Provides CLI usage examples
-
-## Usage Examples
-
-### Traditional User ID
 ```bash
 admin-assistant calendar archive --user 123
 ```
 
-### New Username Support
+### 3.2. New Username Support
+
 ```bash
 admin-assistant calendar archive --user john.doe
 ```
 
-### Environment Variable
+### 3.3. Environment Variable
+
 ```bash
 export ADMIN_ASSISTANT_USER=john.doe
 admin-assistant calendar archive
 ```
 
-### OS Username Fallback
+### 3.4. OS Username Fallback
+
 ```bash
 # If USER=john.doe and user exists in system
 admin-assistant calendar archive
 ```
 
-## Key Features
+## 4. Internal Behaviour
 
-✅ **Username field added to User models**
-- Unique constraint ensures no duplicates
-- Nullable field for backward compatibility
+### 4.1. Precedence Rules in Action
 
-✅ **User resolution utility with precedence rules**
-- CLI argument > ADMIN_ASSISTANT_USER > OS env vars
-- Supports both username and user ID lookup
+The `user_resolution.py` utility applies the defined precedence rules to determine the active user. This ensures that explicit command-line arguments take precedence over environment variables, providing predictable behavior.
 
-✅ **OS environment variable detection**
-- Checks USER, USERNAME, LOGNAME in order
-- Strips whitespace and handles missing variables
+### 4.2. Live Testing Results
 
-✅ **CLI integration with new user resolution**
-- Updated option help text and parameter names
-- Enhanced error messages with user context
+Live testing confirmed that the system correctly resolves users based on OS username fallback, explicit username, explicit user ID, and environment variables, with all methods resolving to the same user and displaying both user ID and username in the output.
 
-✅ **Comprehensive test coverage**
-- 46 tests covering all functionality
-- Edge cases and error conditions tested
+### 4.3. Testing
 
-✅ **Updated documentation**
-- CLI reference guide updated
-- Database schema documentation updated
-- Data model diagrams updated
+Comprehensive testing ensures the robustness of the implementation:
 
-## Backward Compatibility
-
-- Existing user IDs continue to work unchanged
-- Username field is nullable, so existing users are not affected
-- CLI maintains same command structure with enhanced functionality
-
-## Testing
-
-All tests pass successfully:
 ```bash
 # Run user resolution tests
 python -m pytest tests/unit/utilities/test_user_resolution.py -v
@@ -177,43 +115,17 @@ python -m pytest tests/unit/utilities/test_user_resolution.py -v
 python -m pytest tests/unit/services/test_user_service.py -v
 ```
 
-## Live Testing Results
+## 5. Extension Points
 
-The implementation has been successfully tested with the CLI:
+### 5.1. Next Steps
 
-✅ **OS Username Fallback**:
-```bash
-$ aa calendar list
-# Resolves to: "user 1 (bcherrington)" using OS USER environment variable
-```
+1.  Run database migration (when the database is available).
+2.  Update remaining CLI commands to use the new user resolution logic.
+3.  Add username management commands (optional).
+4.  Update the web interface to support the username field (optional).
 
-✅ **Explicit Username**:
-```bash
-$ aa calendar list --user bcherrington
-# Resolves to: "user 1 (bcherrington)" using provided username
-```
+# References
 
-✅ **Explicit User ID (Backward Compatibility)**:
-```bash
-$ aa calendar list --user 1
-# Resolves to: "user 1 (bcherrington)" using provided user ID
-```
-
-✅ **Environment Variable**:
-```bash
-$ ADMIN_ASSISTANT_USER=bcherrington aa calendar list
-# Resolves to: "user 1 (bcherrington)" using environment variable
-```
-
-All methods correctly resolve to the same user and display both user ID and username in the output.
-
-## Next Steps
-
-To complete the implementation:
-
-1. **Run database migration** (when database is available)
-2. **Update remaining CLI commands** to use new user resolution
-3. **Add username management commands** (optional)
-4. **Update web interface** to support username field (optional)
-
-The core functionality is complete and tested. The implementation follows the specified requirements and maintains backward compatibility while adding the requested username functionality.
+-   [CLI Command Structure](HLD-CLI-001-Command-Structure.md)
+-   [Current Database Schema](DATA-002-Current-Schema.md)
+-   [User Guide: CLI Reference](../user-guides/UG-002-CLI-Reference.md) (Note: This path might need adjustment if the user-guides folder is renamed or moved.)

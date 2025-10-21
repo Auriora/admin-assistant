@@ -1,92 +1,81 @@
-# Audit Logging Implementation
+---
+title: "Implementation: Audit Logging"
+id: "IMPL-Audit-Logging"
+type: [ implementation ]
+status: [ draft ]
+owner: "Auriora Team"
+last_reviewed: "DD-MM-YYYY"
+tags: [implementation, audit, logging, security, compliance]
+links:
+  tooling: []
+---
 
-## Overview
+# Implementation Guide: Audit Logging
 
-This document describes the comprehensive audit logging implementation for the Admin Assistant system. The audit logging system provides complete traceability for all archiving actions, overlap resolutions, and re-archiving operations, ensuring compliance and enabling troubleshooting.
+- **Owner**: Auriora Team
+- **Status**: Draft
+- **Created Date**: DD-MM-YYYY
+- **Last Updated**: DD-MM-YYYY
+- **Audience**: [Developers, SRE, Compliance]
+- **Scope**: Root
 
-## Architecture
+## 1. Purpose
 
-### Components
+This document details the comprehensive audit logging implementation for the Admin Assistant system. The audit logging system provides complete traceability for all archiving actions, overlap resolutions, and re-archiving operations, ensuring compliance, enabling troubleshooting, and supporting security requirements.
 
-1. **AuditLog Model** (`core/models/audit_log.py`)
-   - Dedicated database table for audit entries
-   - Separate from ActionLog (which is for task management)
-   - Comprehensive fields for traceability and compliance
+## 2. Key Concepts
 
-2. **AuditLogRepository** (`core/repositories/audit_log_repository.py`)
-   - Data access layer for audit log operations
-   - Advanced querying and filtering capabilities
-   - Optimized for performance with proper indexing
+### 2.1. Architecture Components
 
-3. **AuditLogService** (`core/services/audit_log_service.py`)
-   - Business logic for audit logging
-   - Convenient methods for different operation types
-   - Correlation ID management for operation tracing
+1.  **AuditLog Model** (`core/models/audit_log.py`): A dedicated database table for audit entries, distinct from `ActionLog` (which is for task management). It includes comprehensive fields for traceability and compliance.
+2.  **AuditLogRepository** (`core/repositories/audit_log_repository.py`): The data access layer for audit log operations, optimized for performance with proper indexing.
+3.  **AuditLogService** (`core/services/audit_log_service.py`): Provides business logic for audit logging, including convenient methods for different operation types and correlation ID management for tracing.
+4.  **Audit Utilities** (`core/utilities/audit_logging_utility.py`): Offers an `AuditContext` context manager for automatic logging and decorators for function-level audit logging.
 
-4. **Audit Utilities** (`core/utilities/audit_logging_utility.py`)
-   - AuditContext context manager for automatic logging
-   - Decorators for function-level audit logging
-   - Helper functions for common audit patterns
-
-## Database Schema
-
-### AuditLog Table
+### 2.2. Database Schema (`AuditLog` Table)
 
 ```sql
 CREATE TABLE audit_log (
     id INTEGER PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id),
-    
-    -- Core audit fields
-    action_type VARCHAR(64) NOT NULL,     -- 'archive', 'overlap_resolution', 're_archive', 'api_call'
-    operation VARCHAR(128) NOT NULL,      -- 'calendar_archive', 'resolve_overlap', 'msgraph_api_call'
-    resource_type VARCHAR(64),            -- 'appointment', 'calendar', 'user'
+    action_type VARCHAR(64) NOT NULL,     -- e.g., 'archive', 'overlap_resolution', 'api_call'
+    operation VARCHAR(128) NOT NULL,      -- e.g., 'calendar_archive', 'resolve_overlap', 'msgraph_api_call'
+    resource_type VARCHAR(64),            -- e.g., 'appointment', 'calendar', 'user'
     resource_id VARCHAR(128),             -- ID of the affected resource
-    
-    -- Status and outcome
-    status VARCHAR(32) NOT NULL,          -- 'success', 'failure', 'partial'
+    status VARCHAR(32) NOT NULL,          -- e.g., 'success', 'failure', 'partial'
     message TEXT,                         -- Human-readable description
-    
-    -- Detailed context and metadata
     details JSON,                         -- Operation-specific details
     request_data JSON,                    -- Input parameters/data
     response_data JSON,                   -- Output/results
-    
-    -- Performance and technical details
     duration_ms FLOAT,                    -- Operation duration in milliseconds
     ip_address VARCHAR(45),               -- IPv4/IPv6 address
     user_agent VARCHAR(512),              -- Browser/client info
-    
-    -- Traceability
     correlation_id VARCHAR(128),          -- For tracking related operations
     parent_audit_id INTEGER REFERENCES audit_log(id), -- For nested operations
-    
-    -- Timestamps
     created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 ```
 
-### Indexes
+### 2.3. Indexes
 
-- `ix_audit_log_user_id` - For user-specific queries
-- `ix_audit_log_action_type` - For filtering by action type
-- `ix_audit_log_operation` - For filtering by operation
-- `ix_audit_log_status` - For filtering by status
-- `ix_audit_log_correlation_id` - For tracing related operations
-- `ix_audit_log_created_at` - For date-based queries
-- `ix_audit_log_user_action_type` - Composite index for common queries
-- `ix_audit_log_user_created_at` - Composite index for user activity over time
+Key indexes are defined for efficient querying, including `ix_audit_log_user_id`, `ix_audit_log_action_type`, `ix_audit_log_correlation_id`, and composite indexes for common query patterns.
 
-## Usage Examples
+### 2.4. Security and Privacy
 
-### Basic Audit Logging
+-   **Data Sanitization**: Sensitive data is sanitized before logging.
+-   **Access Control**: Audit logs are protected by user-based access control.
+-   **Encryption**: Consideration for encryption of sensitive audit data.
+-   **Anonymization**: Personal data can be anonymized for long-term retention.
+
+## 3. Usage
+
+### 3.1. Basic Audit Logging
 
 ```python
 from core.services.audit_log_service import AuditLogService
 
 audit_service = AuditLogService()
 
-# Log a simple operation
 audit_log = audit_service.log_operation(
     user_id=1,
     action_type='archive',
@@ -99,45 +88,11 @@ audit_log = audit_service.log_operation(
 )
 ```
 
-### Archive Operation Logging
-
-```python
-# Log archive operation with specific context
-audit_log = audit_service.log_archive_operation(
-    user_id=1,
-    operation='calendar_archive',
-    status='success',
-    source_calendar_uri='msgraph://calendar',
-    archive_calendar_id='archive-123',
-    start_date=date(2024, 1, 1),
-    end_date=date(2024, 1, 31),
-    archived_count=25,
-    overlap_count=3,
-    duration_ms=1500.5
-)
-```
-
-### Overlap Resolution Logging
-
-```python
-# Log overlap resolution
-audit_log = audit_service.log_overlap_resolution(
-    user_id=1,
-    action_log_id=123,
-    resolution_type='merge',
-    status='success',
-    appointments_affected=['appt1', 'appt2', 'appt3'],
-    resolution_data={'merge': {'into': 'appt1', 'from': ['appt2', 'appt3']}},
-    ai_recommendations={'suggested_action': 'merge', 'confidence': 0.85}
-)
-```
-
-### Using AuditContext
+### 3.2. Using `AuditContext`
 
 ```python
 from core.utilities.audit_logging_utility import AuditContext
 
-# Automatic audit logging with context manager
 with AuditContext(
     audit_service=audit_service,
     user_id=1,
@@ -146,21 +101,13 @@ with AuditContext(
     resource_type='calendar',
     resource_id='msgraph://calendar'
 ) as audit_ctx:
-    
-    # Add operation details
     audit_ctx.add_detail('phase', 'initialization')
-    audit_ctx.set_request_data({'start_date': '2024-01-01', 'end_date': '2024-01-31'})
-    
-    # Perform the operation
     result = perform_archive_operation()
-    
-    # Add response data
     audit_ctx.set_response_data(result)
-    
     # Context manager automatically logs success/failure with duration
 ```
 
-### Using Audit Decorator
+### 3.3. Using Audit Decorator
 
 ```python
 from core.utilities.audit_logging_utility import audit_operation
@@ -172,57 +119,7 @@ def archive_appointments(user_id, calendar_id, start_date, end_date):
     return {'archived_count': 25, 'overlap_count': 3}
 ```
 
-### Correlation ID for Operation Tracing
-
-```python
-# Generate correlation ID for related operations
-correlation_id = audit_service.generate_correlation_id()
-
-# Use same correlation ID across related operations
-audit_service.log_operation(
-    user_id=1,
-    action_type='archive',
-    operation='fetch_appointments',
-    status='success',
-    correlation_id=correlation_id
-)
-
-audit_service.log_operation(
-    user_id=1,
-    action_type='archive',
-    operation='process_overlaps',
-    status='success',
-    correlation_id=correlation_id
-)
-
-# Later, retrieve all related operations
-audit_trail = audit_service.get_audit_trail(correlation_id)
-```
-
-## Integration Points
-
-### CalendarArchiveOrchestrator
-
-The `CalendarArchiveOrchestrator` has been enhanced with comprehensive audit logging:
-
-- **Operation Start**: Logs the beginning of archiving with parameters
-- **Phase Tracking**: Logs each phase (fetching, processing, archiving, etc.)
-- **Error Handling**: Automatically logs failures with stack traces
-- **Performance Metrics**: Tracks operation duration
-- **Correlation**: Links all related operations with correlation ID
-
-### OverlapResolutionOrchestrator
-
-The `OverlapResolutionOrchestrator` includes detailed audit logging for:
-
-- **Resolution Actions**: Logs each type of resolution (keep, edit, merge, create, delete)
-- **Data Changes**: Tracks before/after values for modified appointments
-- **User Decisions**: Records user choices and AI recommendations
-- **Traceability**: Links resolution actions to original overlap detection
-
-## Querying and Analysis
-
-### Search Audit Logs
+### 3.4. Querying Audit Logs
 
 ```python
 # Search with filters
@@ -233,116 +130,54 @@ filters = {
     'end_date': date(2024, 1, 31),
     'status': 'success'
 }
-
 audit_logs = audit_service.search_audit_logs(filters, limit=100)
-```
 
-### Get Audit Summary
-
-```python
-# Get activity summary for a user
-summary = audit_service.get_audit_summary(user_id=1, days=30)
-# Returns:
-# {
-#     'total_operations': 150,
-#     'by_action_type': {'archive': 45, 'overlap_resolution': 12, ...},
-#     'by_status': {'success': 140, 'failure': 8, 'partial': 2},
-#     'by_operation': {'calendar_archive': 30, 'resolve_overlap': 12, ...}
-# }
-```
-
-### Trace Operation Chain
-
-```python
 # Get complete audit trail for a correlation ID
 correlation_id = 'uuid-correlation-id'
 audit_trail = audit_service.get_audit_trail(correlation_id)
-
-# Shows all related operations in chronological order
-for audit_log in audit_trail:
-    print(f"{audit_log.created_at}: {audit_log.operation} - {audit_log.status}")
 ```
 
-## Compliance and Retention
+## 4. Internal Behaviour
 
-### Data Retention
+### 4.1. Integration Points
 
-```python
-# Clean up old audit logs (e.g., older than 7 years for compliance)
-deleted_count = audit_service.cleanup_old_logs(older_than_days=2555)  # 7 years
-print(f"Deleted {deleted_count} old audit log entries")
-```
+-   **`CalendarArchiveOrchestrator`**: Enhanced with comprehensive audit logging for operation start, phase tracking, error handling, performance metrics, and correlation.
+-   **`OverlapResolutionOrchestrator`**: Includes detailed audit logging for resolution actions, data changes, user decisions, and traceability to original overlap detection.
 
-### Export for Compliance
+### 4.2. Performance Considerations
 
-```python
-# Export audit logs for compliance reporting
-filters = {
-    'start_date': date(2024, 1, 1),
-    'end_date': date(2024, 12, 31),
-    'action_type': 'archive'
-}
+-   **Indexing**: Comprehensive indexes are crucial for common query patterns.
+-   **Partitioning**: Consider table partitioning for very large datasets.
+-   **Archiving**: Regular archival of old audit logs to separate storage.
+-   **Async Logging**: Consider asynchronous logging for high-volume operations.
 
-audit_logs = audit_service.search_audit_logs(filters)
-# Export to CSV, Excel, or PDF as needed
-```
+### 4.3. Compliance and Retention
 
-## Performance Considerations
+-   **Data Retention**: Provides functionality to clean up old audit logs (e.g., older than 7 years for compliance).
+-   **Export**: Audit logs can be exported for compliance reporting in various formats (CSV, Excel, PDF).
 
-1. **Indexing**: Comprehensive indexes for common query patterns
-2. **Partitioning**: Consider table partitioning for large datasets
-3. **Archiving**: Regular archival of old audit logs to separate storage
-4. **Async Logging**: Consider async logging for high-volume operations
-5. **Batch Operations**: Use correlation IDs to group related operations
+### 4.4. Testing
 
-## Security and Privacy
+A comprehensive test suite covers model creation, repository operations, service business logic, context manager, decorator behavior, and integration with orchestrators.
 
-1. **Data Sanitization**: Sensitive data is sanitized before logging
-2. **Access Control**: Audit logs are protected by user-based access control
-3. **Encryption**: Consider encryption for sensitive audit data
-4. **Anonymization**: Personal data can be anonymized for long-term retention
+### 4.5. Migration
 
-## Testing
+Database changes for audit logging are applied via Alembic migrations. Commands like `alembic upgrade head` are used to apply pending migrations.
 
-Comprehensive test suite covers:
+### 4.6. Monitoring and Alerting
 
-- Model creation and validation
-- Repository operations and querying
-- Service business logic
-- Context manager functionality
-- Decorator behavior
-- Integration with orchestrators
+Monitoring should be set up for high failure rates, unusual user activity patterns, performance degradation, and storage growth of the audit log table.
 
-Run tests with:
-```bash
-pytest tests/test_audit_logging.py -v
-```
+## 5. Extension Points
 
-## Migration
+-   **Real-time Dashboards**: Audit log visualization for immediate insights.
+-   **Anomaly Detection**: Machine learning-based detection of unusual patterns.
+-   **Integration**: Export to external Security Information and Event Management (SIEM) systems.
+-   **Advanced Analytics**: Trend analysis and reporting capabilities.
+-   **Compliance Automation**: Automated generation of compliance reports.
 
-To apply the audit logging database changes:
+# References
 
-```bash
-# Run the migration
-alembic upgrade head
-
-# Or apply specific migration
-alembic upgrade add_audit_log_table
-```
-
-## Monitoring and Alerting
-
-Consider setting up monitoring for:
-
-- High failure rates in audit logs
-- Unusual patterns in user activity
-- Performance degradation in audit operations
-- Storage growth of audit log table
-
-## Future Enhancements
-
-1. **Real-time Dashboards**: Audit log visualization
-2. **Anomaly Detection**: ML-based detection of unusual patterns
-3. **Integration**: Export to external SIEM systems
-4. **Advanced Analytics**: Trend analysis and reporting
-5. **Compliance Automation**: Automated compliance report generation
+-   [System Architecture](ARCH-001-System-Architecture.md)
+-   [Observability Design](ARCH-002-Observability.md)
+-   [Current Database Schema](DATA-002-Current-Schema.md)
