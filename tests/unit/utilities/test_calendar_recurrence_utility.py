@@ -9,7 +9,7 @@ Covers:
 These tests use the Appointment model by constructing instances with the required fields.
 """
 
-from datetime import datetime, date, timedelta, timezone
+from datetime import datetime, date, timezone
 
 from core.models.appointment import Appointment
 from core.utilities.calendar_recurrence_utility import (

@@ -22,10 +22,6 @@ if TYPE_CHECKING:
     from core.models.user import User
     from core.models.appointment import Appointment
     from core.models.calendar import Calendar
-    from core.services.audit_log_service import AuditLogService as _AuditSvc
-    from core.repositories.audit_log_repository import AuditLogRepository as _AuditRepo
-    from core.repositories.calendar_repository_sqlalchemy import SQLAlchemyCalendarRepository as _LocalCalRepo
-    from core.repositories.appointment_repository_sqlalchemy import SQLAlchemyAppointmentRepository as _LocalApptRepo
     from core.repositories.calendar_repository_msgraph import MSGraphCalendarRepository as _GraphCalRepo
     from core.repositories.appointment_repository_msgraph import MSGraphAppointmentRepository as _GraphApptRepo
 
