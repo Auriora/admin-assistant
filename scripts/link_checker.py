@@ -18,6 +18,11 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Check and fix broken markdown links.")
     parser.add_argument("--fix", action="store_true", help="Automatically fix broken links.")
     parser.add_argument("--debug", action="store_true", help="Enable debug output.")
+    parser.add_argument(
+        "--fail-on-style",
+        action="store_true",
+        help="Treat canonical link style issues as errors (non-zero exit).",
+    )
     args = parser.parse_args()
     global DEBUG_MODE
     if args.debug:
@@ -244,15 +249,20 @@ def main():
             print("Ambiguous Filenames:", file=sys.stderr)
             for name, paths in sorted(ambiguous_filenames.items()):
                 rel_paths = sorted([str(p.relative_to(ROOT)) for p in paths])
-                print(f"- '{name}': found in {rel_paths}", file=sys.stderr)
+                print(f"- '{name}': found in", file=sys.stderr)
+                for rel_path in rel_paths:
+                    print(f"    - {rel_path}", file=sys.stderr)
         if ambiguous_stems:
             print("Ambiguous Stems:", file=sys.stderr)
             for stem, paths in sorted(ambiguous_stems.items()):
                 rel_paths = sorted([str(p.relative_to(ROOT)) for p in paths])
-                print(f"- '{stem}': found in {rel_paths}", file=sys.stderr)
+                print(f"- '{stem}': found in", file=sys.stderr)
+                for rel_path in rel_paths:
+                    print(f"    - {rel_path}", file=sys.stderr)
         print("---", file=sys.stderr)
 
     broken_links = []
+    canonical_issues = []
     link_count = 0
 
     # Only check links originating from files within DOCS_DIR
@@ -276,73 +286,119 @@ def main():
 
             resolved_path = resolve_target(file, target_url, filename_to_paths_map, stem_to_paths_map)
 
-            is_broken = False
-            correct_target_path = None
-
             if not resolved_path or not resolved_path.exists():
-                is_broken = True # Could not resolve at all or resolved path does not exist
-            elif resolved_path.is_dir():
+                issue = {
+                    **link_info,
+                    'file': file,
+                    'resolved_absolute_path': resolved_path,
+                    'correct_absolute_path': None,
+                    'issue_type': 'missing-target',
+                }
+                broken_links.append(issue)
+                continue
+
+            if resolved_path.is_dir():
                 index_md_path = resolved_path / 'index.md'
                 readme_md_path = resolved_path / 'README.md'
 
+                correct_target_path = None
                 if index_md_path.is_file():
                     correct_target_path = index_md_path
                 elif readme_md_path.is_file():
                     correct_target_path = readme_md_path
-                
-                if correct_target_path:
-                    ideal_relative_path = get_relative_path(file, correct_target_path, target_url)
-                    if target_url != ideal_relative_path:
-                        is_broken = True
-                else:
-                    is_broken = True # Directory with no index.md or README.md
-            else: # resolved_path exists and is a file
-                correct_target_path = resolved_path
+
+                if not correct_target_path:
+                    issue = {
+                        **link_info,
+                        'file': file,
+                        'resolved_absolute_path': resolved_path,
+                        'correct_absolute_path': None,
+                        'issue_type': 'directory-without-index',
+                    }
+                    broken_links.append(issue)
+                    continue
+
                 ideal_relative_path = get_relative_path(file, correct_target_path, target_url)
                 if target_url != ideal_relative_path:
-                    is_broken = True
+                    issue = {
+                        **link_info,
+                        'file': file,
+                        'resolved_absolute_path': resolved_path,
+                        'correct_absolute_path': correct_target_path,
+                        'issue_type': 'canonical-mismatch',
+                    }
+                    canonical_issues.append(issue)
+                continue
 
-            if is_broken:
-                link_info.update({
+            correct_target_path = resolved_path
+            ideal_relative_path = get_relative_path(file, correct_target_path, target_url)
+            if target_url != ideal_relative_path:
+                issue = {
+                    **link_info,
                     'file': file,
                     'resolved_absolute_path': resolved_path,
                     'correct_absolute_path': correct_target_path,
-                })
-                broken_links.append(link_info)
+                    'issue_type': 'canonical-mismatch',
+                }
+                canonical_issues.append(issue)
 
     rel_docs = DOCS_DIR.relative_to(ROOT)
 
-    if broken_links:
-        fixable_links = [b for b in broken_links if b['correct_absolute_path'] is not None]
-        unfixable_links = [b for b in broken_links if b['correct_absolute_path'] is None]
-
-        if args.fix:
-            print(f"\nFound {len(broken_links)} broken links. Attempting to fix {len(fixable_links)} of them...")
-            if fixable_links:
-                fix_all_broken_links(fixable_links)
-            else:
-                print("No automatically fixable links were found.")
-            
-            if unfixable_links:
-                print("\nThe following links could not be fixed automatically (target not found or ambiguous):", file=sys.stderr)
-                for b in sorted(unfixable_links, key=lambda x: x['file']):
-                    print(f"- {b['file'].relative_to(ROOT)}:{b['line_number']} → '{b['target_url']}'", file=sys.stderr)
-            
-            print("\nFixing process completed. Please re-run the checker without --fix to verify.")
-            sys.exit(0)
+    if args.fix:
+        if canonical_issues:
+            print(f"\nFound {len(canonical_issues)} canonical link issues. Attempting to fix them...")
+            fix_all_broken_links(canonical_issues)
         else:
-            print(f"\nBroken links found ({len(broken_links)}) in {len(md_files_to_check_links_from)} files ({link_count} links scanned) under {rel_docs}/:", file=sys.stderr)
+            print("\nNo canonical link issues detected that can be auto-fixed.")
+
+        if broken_links:
+            print("\nThe following links remain unresolved and require manual attention:", file=sys.stderr)
             for b in sorted(broken_links, key=lambda x: (x['file'], x['line_number'])):
                 rel_file = b['file'].relative_to(ROOT)
-                correct_str = "Unfixable"
-                if b['correct_absolute_path']:
-                    ideal_path = get_relative_path(b['file'], b['correct_absolute_path'], b['target_url'])
-                    correct_str = f"should be '{ideal_path}'"
-                print(f"- {rel_file}:{b['line_number']} → '{b['target_url']}' (resolved: {b['resolved_absolute_path'].relative_to(ROOT) if b['resolved_absolute_path'] and b['resolved_absolute_path'].is_relative_to(ROOT) else 'N/A'}, correct: {correct_str})", file=sys.stderr)
-            sys.exit(1)
-    else:
+                resolved_display = 'N/A'
+                if b['resolved_absolute_path'] and isinstance(b['resolved_absolute_path'], Path):
+                    try:
+                        resolved_display = b['resolved_absolute_path'].relative_to(ROOT)
+                    except ValueError:
+                        resolved_display = b['resolved_absolute_path']
+                print(f"- {rel_file}:{b['line_number']} → '{b['target_url']}' (resolved: {resolved_display})", file=sys.stderr)
+
+        print("\nFixing process completed. Please re-run the checker without --fix to verify.")
+        exit_code = 1 if broken_links or (args.fail_on_style and canonical_issues) else 0
+        sys.exit(exit_code)
+
+    if canonical_issues:
+        print(f"\nCanonical link suggestions ({len(canonical_issues)}) in {len(md_files_to_check_links_from)} files ({link_count} links scanned) under {rel_docs}/:", file=sys.stderr)
+        for issue in sorted(canonical_issues, key=lambda x: (x['file'], x['line_number'])):
+            rel_file = issue['file'].relative_to(ROOT)
+            suggestion = get_relative_path(issue['file'], issue['correct_absolute_path'], issue['target_url']) if issue['correct_absolute_path'] else 'N/A'
+            resolved_display = 'N/A'
+            if issue['resolved_absolute_path'] and isinstance(issue['resolved_absolute_path'], Path):
+                try:
+                    resolved_display = issue['resolved_absolute_path'].relative_to(ROOT)
+                except ValueError:
+                    resolved_display = issue['resolved_absolute_path']
+            print(f"- {rel_file}:{issue['line_number']} → '{issue['target_url']}' (resolved: {resolved_display}, suggested: '{suggestion}')", file=sys.stderr)
+
+    if broken_links:
+        print(f"\nBroken links found ({len(broken_links)}) in {len(md_files_to_check_links_from)} files ({link_count} links scanned) under {rel_docs}/:", file=sys.stderr)
+        for b in sorted(broken_links, key=lambda x: (x['file'], x['line_number'])):
+            rel_file = b['file'].relative_to(ROOT)
+            resolved_display = 'N/A'
+            if b['resolved_absolute_path'] and isinstance(b['resolved_absolute_path'], Path):
+                try:
+                    resolved_display = b['resolved_absolute_path'].relative_to(ROOT)
+                except ValueError:
+                    resolved_display = b['resolved_absolute_path']
+            print(f"- {rel_file}:{b['line_number']} → '{b['target_url']}' (resolved: {resolved_display}, status: {b['issue_type']})", file=sys.stderr)
+
+    if not canonical_issues and not broken_links:
         print(f"No broken local links found under {rel_docs}/. Scanned {len(md_files_to_check_links_from)} files and {link_count} links.")
-        sys.exit(0)
+
+    exit_code = 1 if broken_links or (args.fail_on_style and canonical_issues) else 0
+    if canonical_issues and not broken_links and exit_code == 0:
+        print("\nNote: canonical suggestions reported above but not treated as errors. Use --fail-on-style to escalate.")
+    sys.exit(exit_code)
 
 if __name__ == "__main__":
     try:
