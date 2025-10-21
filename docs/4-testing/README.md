@@ -41,7 +41,7 @@ links:
   - [ ] Delete this `Usage Notes` section before publishing.
   - [ ] Ensure the document is linked from the relevant `README.md` file.
 
-- **Naming Convention**: N/A for this file.
+- **Naming Convention**: `<type>-<description>.md` (e.g., `PLAN-Release-1.0-Test-Plan.md`, `STRAT-Performance-Testing.md`, `CASE-Login-Functionality.md`).
 
 ## 5. Available Templates
 
