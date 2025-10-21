@@ -7,16 +7,16 @@ The Admin Assistant is a Microsoft 365 Calendar management system that automates
 ## 📋 Documentation Structure
 
 ### Primary Documents (Start Here)
-- **[Solo-Developer-AI-Process.md](Solo-Developer-AI-Process.md)** - Development framework and methodology
+- **[Solo-Developer-AI-Process.md](./processes/Solo-Developer-AI-Process.md)** - Development framework and methodology
 - **[Consolidated-Action-Plan.md](Consolidated-Action-Plan.md)** - Current implementation roadmap
 - **[Current-Implementation-Status.md](Current-Implementation-Status.md)** - Single source of truth for project status
 - **[AI-Implementation-Prompts.md](AI-Implementation-Prompts.md)** - Ready-to-use prompts for AI-assisted development
 
 ### Supporting Documentation
 - **[Documentation-Review-Analysis.md](Documentation-Review-Analysis.md)** - Analysis of documentation gaps and redundancy
-- **[1-requirements/](1-requirements/)** - Complete Software Requirements Specification
-- **[2-design/](2-design/)** - System architecture and design documents
-- **[guidelines/](guidelines/)** - Technical implementation guidelines
+- **[1-requirements/](1-requirements)** - Complete Software Requirements Specification
+- **[2-design/](2-design)** - System architecture and design documents
+- **[guidelines/](guidelines)** - Technical implementation guidelines
 
 ## 🚀 Quick Start
 
@@ -164,11 +164,11 @@ python -m cli.main --help
 
 ### Development Questions
 - Use [AI-Implementation-Prompts.md](AI-Implementation-Prompts.md) for AI-assisted development
-- Follow [Solo-Developer-AI-Process.md](Solo-Developer-AI-Process.md) methodology
+- Follow [Solo-Developer-AI-Process.md](./processes/Solo-Developer-AI-Process.md) methodology
 
 ### Technical Guidelines
-- Review [guidelines/](guidelines/) for implementation standards
-- Check [2-design/](2-design/) for architectural decisions
+- Review [guidelines/](guidelines) for implementation standards
+- Check [2-design/](2-design) for architectural decisions
 
 ---
 

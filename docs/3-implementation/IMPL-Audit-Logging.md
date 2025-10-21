@@ -178,6 +178,6 @@ Monitoring should be set up for high failure rates, unusual user activity patter
 
 # References
 
--   [System Architecture](ARCH-001-System-Architecture.md)
--   [Observability Design](ARCH-002-Observability.md)
--   [Current Database Schema](DATA-002-Current-Schema.md)
+-   [System Architecture](../2-architecture/ARCH-001-System-Architecture.md)
+-   [Observability Design](../2-architecture/ARCH-002-Observability.md)
+-   [Current Database Schema](../2-architecture/DATA-002-Current-Schema.md)

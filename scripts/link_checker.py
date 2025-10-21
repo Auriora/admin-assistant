@@ -2,120 +2,353 @@
 import os
 import re
 import sys
+import argparse
 from pathlib import Path
+from collections import defaultdict
 
 # Configuration
 ROOT = Path(os.getcwd()) # This will be the project root
 DOCS_DIR = ROOT / 'docs'
+EXCLUDE_DIRS = {'.venv', 'venv', 'env', '.git', '.pytest_cache', '__pycache__', 'node_modules'}
 
-def list_files_recursive(directory: Path) -> list[Path]:
-    """Recursively list all files under a directory."""
+# Global debug flag
+DEBUG_MODE = False
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Check and fix broken markdown links.")
+    parser.add_argument("--fix", action="store_true", help="Automatically fix broken links.")
+    parser.add_argument("--debug", action="store_true", help="Enable debug output.")
+    args = parser.parse_args()
+    global DEBUG_MODE
+    if args.debug:
+        DEBUG_MODE = True
+    return args
+
+def list_files_recursive(directory: Path, exclude_dirs: set[str]) -> list[Path]:
+    """Recursively list all files under a directory, excluding specified directory names."""
+    if DEBUG_MODE:
+        print(f"DEBUG: list_files_recursive called with directory={directory.relative_to(ROOT) if directory.is_relative_to(ROOT) else directory}")
+        print(f"DEBUG:   Current directory.name: '{directory.name}', exclude_dirs: {exclude_dirs}")
+    
+    # Check if the current directory itself is in the exclude list
+    if directory.name in exclude_dirs:
+        if DEBUG_MODE:
+            print(f"DEBUG:   Skipping excluded directory: {directory.relative_to(ROOT) if directory.is_relative_to(ROOT) else directory}")
+        return []
+
     files = []
-    for entry in directory.iterdir():
-        if entry.is_file():
-            files.append(entry)
-        elif entry.is_dir():
-            files.extend(list_files_recursive(entry))
+    try:
+        for entry in directory.iterdir():
+            if entry.is_dir():
+                # Recursive call will handle its own exclusion check
+                files.extend(list_files_recursive(entry, exclude_dirs))
+            elif entry.is_file() and entry.suffix == '.md': # Only add markdown files here
+                files.append(entry)
+    except PermissionError as e:
+        if DEBUG_MODE:
+            print(f"DEBUG: PermissionError accessing {directory}: {e}")
+    except FileNotFoundError as e:
+        if DEBUG_MODE:
+            print(f"DEBUG: FileNotFoundError accessing {directory}: {e}")
     return files
 
-
 def extract_links(markdown_content: str) -> list[dict]:
-    """Extract markdown links of the form [text](target) ignoring images ![]()."""
+    """
+    Extract markdown links of the form [text](target) ignoring images ![]().
+    """
     links = []
-    # Regex: (?<!\!)\[[^\]]*\]\(([^)\s]+)(?:\s+"[^"]*")?\)
-    # Explanation:
-    # (?<!\!) - Negative lookbehind to ensure it's not preceded by '!' (to ignore images)
-    # \[      - Matches literal '['
-    # [^\]]*  - Matches any character except ']' zero or more times
-    # \]      - Matches literal ']'
-    # \(      - Matches literal '('
-    # ([^)\s]+) - Captures the link target (any character except ')' or whitespace, one or more times)
-    # (?:     - Non-capturing group for optional title
-    # \s+"[^"]*" - Matches whitespace, then a double-quoted string
-    # )?      - Makes the title group optional
-    # \)      - Matches literal ')'
-    link_re = re.compile(r'(?<!\!)\[[^\]]*\]\(([^)\s]+)(?:\s+"[^"]*")?\)')
-    
+    link_re = re.compile(r'(?<!\!)\[([^\]]*)\]\(([^)\s]+)(?:(?:\s+"[^"]*")?)\)')
+
     for idx, line in enumerate(markdown_content.splitlines()):
         for match in link_re.finditer(line):
-            target = match.group(1)
-            links.append({'target': target, 'line': idx + 1})
+            links.append({
+                'full_markdown_link': match.group(0),
+                'link_text': match.group(1),
+                'target_url': match.group(2),
+                'line_number': idx + 1,
+                'line_content': line,
+                'start_col': match.start(0),
+                'end_col': match.end(0)
+            })
     return links
 
 def is_external_link(target: str) -> bool:
-    """Determine if a link is external."""
     return target.startswith(('http://', 'https://'))
 
 def is_anchor(target: str) -> bool:
-    """Determine if a link is an anchor-only link."""
     return target.startswith('#')
 
-def resolve_target(from_file: Path, target: str) -> Path | None:
-    """Normalize a relative link target from a file."""
-    # Strip any anchor (#section) for file existence check
+def resolve_target(
+    from_file: Path,
+    target: str,
+    filename_to_paths_map: dict[str, list[Path]],
+    stem_to_paths_map: dict[str, list[Path]]
+) -> Path | None:
+    """Normalize a relative link target from a file to an absolute path following a clear priority."""
+    if DEBUG_MODE:
+        print(f"DEBUG: resolve_target called for from_file={from_file.relative_to(ROOT) if from_file.is_relative_to(ROOT) else from_file}, target='{target}'")
     file_part = target.split('#')[0]
     if not file_part:
-        return None
+        if DEBUG_MODE:
+            print(f"DEBUG:   Anchor-only link, returning None")
+        return None # Anchor-only link
 
-    # If absolute path (starts with /), map to root
+    # Priority 1: Explicit paths (relative or absolute from root)
     if file_part.startswith('/'):
-        # Remove leading slashes to correctly join with ROOT
-        return ROOT / file_part.lstrip('/')
-    
-    # Otherwise, resolve relative to the from_file directory
-    return (from_file.parent / file_part).resolve()
+        resolved_path = (ROOT / file_part.lstrip('/')).resolve()
+        if DEBUG_MODE:
+            print(f"DEBUG:   Attempting to resolve as absolute path: {resolved_path.relative_to(ROOT) if resolved_path.is_relative_to(ROOT) else resolved_path}")
+        return resolved_path if resolved_path.is_relative_to(ROOT) else None
+    if file_part.startswith('./') or file_part.startswith('../'):
+        resolved_path = (from_file.parent / file_part).resolve()
+        if DEBUG_MODE:
+            print(f"DEBUG:   Attempting to resolve as explicit relative path: {resolved_path.relative_to(ROOT) if resolved_path.is_relative_to(ROOT) else resolved_path}")
+        return resolved_path if resolved_path.is_relative_to(ROOT) else None
+
+    # Priority 2: Bare filename. Check for a file/directory in the same directory first.
+    path_in_same_dir = (from_file.parent / file_part).resolve()
+    if path_in_same_dir.exists() and path_in_same_dir.is_relative_to(ROOT):
+        if DEBUG_MODE:
+            print(f"DEBUG:   Resolved as bare filename/directory in same dir: {path_in_same_dir.relative_to(ROOT)}")
+        return path_in_same_dir
+
+    # Priority 3: Bare filename. Try to resolve by stem (filename without extension).
+    file_stem = Path(file_part).stem
+    if file_stem in stem_to_paths_map:
+        matches = [p for p in stem_to_paths_map[file_stem] if p.is_relative_to(ROOT)]
+        if len(matches) == 1:
+            if DEBUG_MODE:
+                print(f"DEBUG:   Resolved as bare filename by unique stem: {matches[0].relative_to(ROOT)}")
+            return matches[0]
+        elif DEBUG_MODE:
+            print(f"DEBUG:   Found {len(matches)} matches for stem '{file_stem}', not unique.")
+
+    # Priority 4: Bare filename. Try to resolve by exact filename (including extension).
+    if file_part in filename_to_paths_map:
+        matches = [p for p in filename_to_paths_map[file_part] if p.is_relative_to(ROOT)]
+        if len(matches) == 1:
+            if DEBUG_MODE:
+                print(f"DEBUG:   Resolved as bare filename by unique filename: {matches[0].relative_to(ROOT)}")
+            return matches[0]
+        elif DEBUG_MODE:
+            print(f"DEBUG:   Found {len(matches)} matches for filename '{file_part}', not unique.")
+
+    if DEBUG_MODE:
+        print(f"DEBUG:   Could not resolve target '{target}', returning None")
+    return None
+
+def get_relative_path(from_file: Path, to_file: Path, original_target_url: str) -> str:
+    """
+    Calculates the relative path from from_file to to_file, preserving the original anchor.
+    """
+    anchor = ""
+    if '#' in original_target_url:
+        anchor = '#' + original_target_url.split('#', 1)[1]
+
+    try:
+        relative_path = os.path.relpath(to_file, from_file.parent)
+    except ValueError:
+        return str(to_file) + anchor # Fallback to absolute path if relative is not possible
+
+    # Normalize for consistency: ./file.md instead of file.md for files in the same directory
+    # Only add ./ if it's a file and not already starting with . or /
+    if not relative_path.startswith(('.', '/')) and to_file.is_file():
+        relative_path = './' + relative_path
+
+    return relative_path + anchor
+
+def fix_all_broken_links(broken_links: list[dict]):
+    """Applies fixes to all identified broken links."""
+    files_to_fix = defaultdict(list)
+    for link_info in broken_links:
+        files_to_fix[link_info['file']].append(link_info)
+
+    fixed_count = 0
+    for file_path, links_in_file in files_to_fix.items():
+        try:
+            original_content = file_path.read_text(encoding='utf-8')
+            lines = original_content.splitlines()
+        except IOError as e:
+            print(f"Error reading file {file_path}: {e}", file=sys.stderr)
+            continue
+
+        links_in_file.sort(key=lambda x: x['line_number'], reverse=True)
+
+        file_fixed_count = 0
+        for link_info in links_in_file:
+            line_idx = link_info['line_number'] - 1
+            current_line = lines[line_idx]
+            original_target_url = link_info['target_url']
+            correct_absolute_path = link_info['correct_absolute_path']
+
+            new_relative_path = get_relative_path(file_path, correct_absolute_path, original_target_url)
+
+            if new_relative_path and new_relative_path != original_target_url:
+                new_full_markdown_link = f"[{link_info['link_text']}]({new_relative_path})"
+                start_col, end_col = link_info['start_col'], link_info['end_col']
+                lines[line_idx] = current_line[:start_col] + new_full_markdown_link + current_line[end_col:]
+
+                print(f"Fixed: {file_path.relative_to(ROOT)}:{link_info['line_number']} - '{original_target_url}' -> '{new_relative_path}'")
+                file_fixed_count += 1
+                fixed_count += 1
+
+        if file_fixed_count > 0:
+            updated_content = "\n".join(lines)
+            try:
+                file_path.write_text(updated_content, encoding='utf-8')
+                print(f"Updated {file_path.relative_to(ROOT)} with {file_fixed_count} fixes.")
+            except IOError as e:
+                print(f"Error writing to file {file_path}: {e}", file=sys.stderr)
+
+    print(f"\nTotal {fixed_count} links fixed across {len(files_to_fix)} files.")
 
 def main():
+    args = parse_args()
+
+    if DEBUG_MODE:
+        print(f"DEBUG: ROOT is {ROOT}")
+        print(f"DEBUG: DOCS_DIR is {DOCS_DIR}")
+        print(f"DEBUG: EXCLUDE_DIRS are {EXCLUDE_DIRS}")
+
     if not DOCS_DIR.is_dir():
-        print(f"Error: 'docs' directory not found at {DOCS_DIR}")
+        print(f"Error: 'docs' directory not found at {DOCS_DIR}", file=sys.stderr)
         sys.exit(1)
 
-    md_files = [f for f in list_files_recursive(DOCS_DIR) if f.suffix == '.md']
+    all_project_md_files = list_files_recursive(ROOT, EXCLUDE_DIRS)
+
+    if DEBUG_MODE:
+        print(f"DEBUG: All project MD files found (after exclusion): {[p.relative_to(ROOT) for p in all_project_md_files]}")
+
+    # Build maps for resolution
+    filename_to_paths_map = defaultdict(list) # e.g., 'README.md': [path1, path2]
+    stem_to_paths_map = defaultdict(list)     # e.g., 'README': [path1, path2]
+
+    for f in all_project_md_files:
+        filename_to_paths_map[f.name].append(f)
+        stem_to_paths_map[f.stem].append(f)
+
+    # Identify ambiguous files (those with same filename or stem in multiple locations)
+    ambiguous_filenames = {name: paths for name, paths in filename_to_paths_map.items() if len(paths) > 1}
+    ambiguous_stems = {stem: paths for stem, paths in stem_to_paths_map.items() if len(paths) > 1}
+
+    if DEBUG_MODE:
+        print(f"DEBUG: Filename to paths map: { {k: [p.relative_to(ROOT) for p in v] for k, v in filename_to_paths_map.items()} }")
+        print(f"DEBUG: Stem to paths map: { {k: [p.relative_to(ROOT) for p in v] for k, v in stem_to_paths_map.items()} }")
+        print(f"DEBUG: Ambiguous Filenames (from filename_to_paths_map): { {k: [p.relative_to(ROOT) for p in v] for k, v in ambiguous_filenames.items()} }")
+        print(f"DEBUG: Ambiguous Stems (from stem_to_paths_map): { {k: [p.relative_to(ROOT) for p in v] for k, v in ambiguous_stems.items()} }")
+
+    if ambiguous_filenames or ambiguous_stems:
+        print("Warning: The following filenames/stems are ambiguous and cannot be reliably used in bare links (e.g., '[...](filename.md)').", file=sys.stderr)
+        print("Please use explicit relative paths (e.g., '[...](./path/to/filename.md)') for these files to ensure correct resolution.", file=sys.stderr)
+        if ambiguous_filenames:
+            print("Ambiguous Filenames:", file=sys.stderr)
+            for name, paths in sorted(ambiguous_filenames.items()):
+                rel_paths = sorted([str(p.relative_to(ROOT)) for p in paths])
+                print(f"- '{name}': found in {rel_paths}", file=sys.stderr)
+        if ambiguous_stems:
+            print("Ambiguous Stems:", file=sys.stderr)
+            for stem, paths in sorted(ambiguous_stems.items()):
+                rel_paths = sorted([str(p.relative_to(ROOT)) for p in paths])
+                print(f"- '{stem}': found in {rel_paths}", file=sys.stderr)
+        print("---", file=sys.stderr)
+
     broken_links = []
     link_count = 0
 
-    for file in md_files:
-        content = file.read_text(encoding='utf-8')
+    # Only check links originating from files within DOCS_DIR
+    md_files_to_check_links_from = [f for f in list_files_recursive(DOCS_DIR, EXCLUDE_DIRS) if f.suffix == '.md']
+
+    for file in md_files_to_check_links_from:
+        try:
+            content = file.read_text(encoding='utf-8')
+        except IOError as e:
+            print(f"Warning: Could not read file {file}: {e}", file=sys.stderr)
+            continue
+        
         links = extract_links(content)
         link_count += len(links)
 
         for link_info in links:
-            target = link_info['target']
-            line = link_info['line']
+            target_url = link_info['target_url']
 
-            if is_external_link(target) or is_anchor(target):
-                continue
-            # mailto:, tel:, etc. skip
-            if target.startswith(('mailto:', 'tel:')):
+            if is_external_link(target_url) or is_anchor(target_url) or target_url.startswith(('mailto:', 'tel:')):
                 continue
 
-            resolved_path = resolve_target(file, target)
-            if not resolved_path:
-                continue
+            resolved_path = resolve_target(file, target_url, filename_to_paths_map, stem_to_paths_map)
 
-            if not resolved_path.exists():
-                broken_links.append({'file': file, 'line': line, 'target': target, 'resolved': resolved_path})
+            is_broken = False
+            correct_target_path = None
+
+            if not resolved_path or not resolved_path.exists():
+                is_broken = True # Could not resolve at all or resolved path does not exist
             elif resolved_path.is_dir():
-                # If target appears to point to a directory without explicit file, allow index.md fallback
                 index_md_path = resolved_path / 'index.md'
-                if not index_md_path.is_file():
-                    broken_links.append({'file': file, 'line': line, 'target': target, 'resolved': resolved_path})
+                readme_md_path = resolved_path / 'README.md'
 
-    rel_docs = DOCS_DIR.relative_to(ROOT) if DOCS_DIR.is_relative_to(ROOT) else str(DOCS_DIR)
+                if index_md_path.is_file():
+                    correct_target_path = index_md_path
+                elif readme_md_path.is_file():
+                    correct_target_path = readme_md_path
+                
+                if correct_target_path:
+                    ideal_relative_path = get_relative_path(file, correct_target_path, target_url)
+                    if target_url != ideal_relative_path:
+                        is_broken = True
+                else:
+                    is_broken = True # Directory with no index.md or README.md
+            else: # resolved_path exists and is a file
+                correct_target_path = resolved_path
+                ideal_relative_path = get_relative_path(file, correct_target_path, target_url)
+                if target_url != ideal_relative_path:
+                    is_broken = True
+
+            if is_broken:
+                link_info.update({
+                    'file': file,
+                    'resolved_absolute_path': resolved_path,
+                    'correct_absolute_path': correct_target_path,
+                })
+                broken_links.append(link_info)
+
+    rel_docs = DOCS_DIR.relative_to(ROOT)
 
     if broken_links:
-        print(f"\nBroken links found ({len(broken_links)}) in {len(md_files)} files ({link_count} links scanned) under {rel_docs}/:", file=sys.stderr)
-        for b in broken_links:
-            rel_file = b['file'].relative_to(ROOT)
-            rel_resolved = b['resolved'].relative_to(ROOT) if b['resolved'].is_relative_to(ROOT) else str(b['resolved'])
-            print(f"- {rel_file}:{b['line']} → '{b['target']}' (resolved: {rel_resolved})", file=sys.stderr)
-        sys.exit(1)
+        fixable_links = [b for b in broken_links if b['correct_absolute_path'] is not None]
+        unfixable_links = [b for b in broken_links if b['correct_absolute_path'] is None]
+
+        if args.fix:
+            print(f"\nFound {len(broken_links)} broken links. Attempting to fix {len(fixable_links)} of them...")
+            if fixable_links:
+                fix_all_broken_links(fixable_links)
+            else:
+                print("No automatically fixable links were found.")
+            
+            if unfixable_links:
+                print("\nThe following links could not be fixed automatically (target not found or ambiguous):", file=sys.stderr)
+                for b in sorted(unfixable_links, key=lambda x: x['file']):
+                    print(f"- {b['file'].relative_to(ROOT)}:{b['line_number']} → '{b['target_url']}'", file=sys.stderr)
+            
+            print("\nFixing process completed. Please re-run the checker without --fix to verify.")
+            sys.exit(0)
+        else:
+            print(f"\nBroken links found ({len(broken_links)}) in {len(md_files_to_check_links_from)} files ({link_count} links scanned) under {rel_docs}/:", file=sys.stderr)
+            for b in sorted(broken_links, key=lambda x: (x['file'], x['line_number'])):
+                rel_file = b['file'].relative_to(ROOT)
+                correct_str = "Unfixable"
+                if b['correct_absolute_path']:
+                    ideal_path = get_relative_path(b['file'], b['correct_absolute_path'], b['target_url'])
+                    correct_str = f"should be '{ideal_path}'"
+                print(f"- {rel_file}:{b['line_number']} → '{b['target_url']}' (resolved: {b['resolved_absolute_path'].relative_to(ROOT) if b['resolved_absolute_path'] and b['resolved_absolute_path'].is_relative_to(ROOT) else 'N/A'}, correct: {correct_str})", file=sys.stderr)
+            sys.exit(1)
     else:
-        print(f"No broken local links found under {rel_docs}/. Scanned {len(md_files)} files and {link_count} links.")
+        print(f"No broken local links found under {rel_docs}/. Scanned {len(md_files_to_check_links_from)} files and {link_count} links.")
+        sys.exit(0)
 
 if __name__ == "__main__":
     try:
         main()
     except Exception as e:
-        print(f"Link check failed with error: {e}", file=sys.stderr)
+        print(f"An unexpected error occurred: {e}", file=sys.stderr)
+        import traceback
+        traceback.print_exc()
         sys.exit(2)

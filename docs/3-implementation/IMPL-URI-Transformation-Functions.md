@@ -137,6 +137,6 @@ SQL injection protection is ensured through proper parameter escaping. Input val
 
 # References
 
--   [Account Context URI Migration Summary](IMPL-Migration-Summary.md)
--   [Current Database Schema](DATA-002-Current-Schema.md)
--   [System Architecture](ARCH-001-System-Architecture.md)
+-   [Account Context URI Migration Summary](./IMPL-Migration-Summary.md)
+-   [Current Database Schema](../2-architecture/DATA-002-Current-Schema.md)
+-   [System Architecture](../2-architecture/ARCH-001-System-Architecture.md)

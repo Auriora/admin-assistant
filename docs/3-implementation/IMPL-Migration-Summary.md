@@ -128,6 +128,6 @@ Consider setting up monitoring for high failure rates, unusual patterns in user 
 
 # References
 
--   [URI Transformation Functions](IMPL-URI-Transformation-Functions.md)
--   [Current Database Schema](DATA-002-Current-Schema.md)
--   [System Architecture](ARCH-001-System-Architecture.md)
+-   [URI Transformation Functions](./IMPL-URI-Transformation-Functions.md)
+-   [Current Database Schema](../2-architecture/DATA-002-Current-Schema.md)
+-   [System Architecture](../2-architecture/ARCH-001-System-Architecture.md)

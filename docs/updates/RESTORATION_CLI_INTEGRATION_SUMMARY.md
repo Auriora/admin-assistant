@@ -36,10 +36,10 @@ Successfully integrated the appointment restoration feature into the main admin-
 **Updated**:
 - `README.md` - Added restoration commands to CLI examples and features
 - `scripts/README.md` - Added migration information for removed scripts
-- `docs/2-design/CLI-001-Command-Structure.md` - Added complete restoration command documentation
+- `../2-architecture/HLD-CLI-001-Command-Structure.md` - Added complete restoration command documentation
 
 **Created**:
-- `docs/user-guides/restoration-migration-guide.md` - Comprehensive migration guide
+- `../guides/user/restoration-migration-guide.md` - Comprehensive migration guide
 
 ## New CLI Commands
 
@@ -239,12 +239,12 @@ admin-assistant restore list-configs --user 2
 ## Documentation
 
 ### User Guides
-- [Appointment Restoration Guide](docs/user-guides/appointment-restoration-guide.md) - Complete usage guide
-- [Restoration Migration Guide](docs/user-guides/restoration-migration-guide.md) - Migration from old scripts
+- [Appointment Restoration Guide](../guides/user/appointment-restoration-guide.md) - Complete usage guide
+- [Restoration Migration Guide](../guides/user/restoration-migration-guide.md) - Migration from old scripts
 
 ### Technical Documentation  
-- [CLI Command Structure](docs/2-design/CLI-001-Command-Structure.md) - Complete CLI reference
-- [Generic Restoration Implementation](GENERIC_RESTORATION_IMPLEMENTATION_SUMMARY.md) - Technical implementation details
+- [CLI Command Structure](../2-architecture/HLD-CLI-001-Command-Structure.md) - Complete CLI reference
+- [Generic Restoration Implementation](../3-implementation/IMPL-Generic-Restoration-Summary.md) - Technical implementation details
 
 ## Next Steps
 

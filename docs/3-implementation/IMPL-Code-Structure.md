@@ -72,7 +72,7 @@ The `src/core/` directory is the heart of the application, containing reusable b
 
 # References
 
-- [System Architecture](ARCH-001-System-Architecture.md)
-- [Current Database Schema](DATA-002-Current-Schema.md)
-- [Audit Logging Implementation](IMPL-Audit-Logging.md)
-- [CLI Command Structure](HLD-CLI-001-Command-Structure.md)
+- [System Architecture](../2-architecture/ARCH-001-System-Architecture.md)
+- [Current Database Schema](../2-architecture/DATA-002-Current-Schema.md)
+- [Audit Logging Implementation](./IMPL-Audit-Logging.md)
+- [CLI Command Structure](../2-architecture/HLD-CLI-001-Command-Structure.md)

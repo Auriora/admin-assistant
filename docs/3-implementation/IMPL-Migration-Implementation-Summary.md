@@ -180,5 +180,5 @@ alembic downgrade migrate_calendar_uris_user_friendly
 
 # References
 
--   [Current Database Schema](DATA-002-Current-Schema.md)
--   [System Architecture](ARCH-001-System-Architecture.md)
+-   [Current Database Schema](../2-architecture/DATA-002-Current-Schema.md)
+-   [System Architecture](../2-architecture/ARCH-001-System-Architecture.md)

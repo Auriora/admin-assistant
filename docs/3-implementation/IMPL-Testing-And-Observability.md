@@ -94,6 +94,6 @@ The `./dev test` CLI provides comprehensive test execution options:
 
 # References
 
--   [Observability Design](ARCH-002-Observability.md)
--   [System Architecture](ARCH-001-System-Architecture.md)
--   [Audit Logging Implementation](IMPL-Audit-Logging.md)
+-   [Observability Design](../2-architecture/ARCH-002-Observability.md)
+-   [System Architecture](../2-architecture/ARCH-001-System-Architecture.md)
+-   [Audit Logging Implementation](./IMPL-Audit-Logging.md)
