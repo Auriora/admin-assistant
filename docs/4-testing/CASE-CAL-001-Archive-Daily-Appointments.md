@@ -1,27 +1,38 @@
+---
+title: "Test Case: Calendar Archive Daily Appointments"
+id: "CASE-CAL-001"
+type: [ testing, test-case ]
+status: [ draft ]
+owner: "Auriora Team"
+last_reviewed: "DD-MM-YYYY"
+tags: [testing, archiving, functional, integration]
+links:
+  tooling: []
+---
+
 # Test Case: Calendar Archive Daily Appointments
 
-## Test Case Information
-- **Test Case ID**: TC-CAL-001
-- **Test Case Name**: Archive Daily Appointments (Automated)
-- **Created By**: Admin Assistant System
-- **Creation Date**: 2024-12-19
+- **Owner**: Auriora Team
+- **Status**: Draft
+- **Created Date**: 2024-12-19
 - **Last Updated**: 2024-12-19
-- **Related Requirements**: UXF-CAL-001, Calendar Archiving Workflow
-- **Priority**: High
-- **Test Type**: Integration Test
-- **Implementation**: `tests/integration/test_archiving_flow_integration.py`
+- **Audience**: [QA Team, Developers]
+- **Related Requirements**: UXF-CAL-001 (now HLD-CAL-001), Calendar Archiving Workflow (now WF-CAL-001)
 
-## Test Objective
-Verify that the CalendarArchiveOrchestrator successfully archives appointments from source calendar to archive calendar, including overlap detection, category processing, privacy automation, and meeting modification handling.
+## 1. Purpose
 
-## Preconditions
-- User is authenticated with Microsoft Graph
-- Source and archive calendars are configured
-- Test appointments exist in source calendar
-- Database session is available
-- Mock MS Graph client is configured
+Verify that the `CalendarArchiveOrchestrator` successfully archives appointments from the source calendar to the archive calendar. This includes validating overlap detection, category processing, privacy automation, and meeting modification handling, ensuring data integrity and compliance.
 
-## Test Data
+## 2. Preconditions
+
+-   The user is authenticated with Microsoft Graph.
+-   Source and archive calendars are configured and accessible.
+-   Test appointments exist in the source calendar, covering various scenarios (e.g., normal, overlapping, private).
+-   A database session is available.
+-   A mock MS Graph client is configured.
+
+## 3. Test Data
+
 ```python
 # Sample test appointments from conftest.py
 sample_appointments = [
@@ -42,51 +53,51 @@ sample_appointments = [
 ]
 ```
 
-## Test Implementation
-**File**: `tests/integration/test_archiving_flow_integration.py`
-**Method**: `test_end_to_end_archiving_flow`
+## 4. Test Steps
 
-### Test Steps
-1. **Setup Mock Repositories** - Configure MS Graph appointment repositories
-2. **Load Test Data** - Prepare sample appointments with various scenarios
-3. **Execute Archiving** - Call `orchestrator.archive_user_appointments()`
-4. **Verify Results** - Check archiving success, overlap detection, category processing
-5. **Validate Audit Logs** - Ensure proper audit trail creation
-6. **Check Error Handling** - Verify graceful error handling and reporting
+-   **Setup Mock Repositories**: Configure MS Graph appointment repositories with test data.
+-   **Load Test Data**: Prepare sample appointments with various scenarios (e.g., normal, overlapping, private, meeting modifications).
+-   **Execute Archiving**: Call `orchestrator.archive_user_appointments()` with the prepared data.
+-   **Verify Results**: Check for successful archiving, correct category processing, accurate overlap detection, and proper privacy automation.
+-   **Validate Audit Logs**: Ensure that a complete and correct audit trail is created for all operations.
+-   **Check Error Handling**: Verify graceful error handling and reporting for any simulated failures.
 
-## Expected Results
-- **Archiving Success**: All appointments successfully copied to archive calendar
-- **Category Processing**: Customer/billing information parsed correctly
-- **Overlap Detection**: Overlapping appointments identified and logged
-- **Privacy Automation**: Private appointments flagged appropriately
-- **Audit Logging**: Complete audit trail with operation details
-- **Error Handling**: Graceful handling of any failures with detailed logging
+## 5. Expected Results
 
-## Actual Test Coverage
-- ✅ **End-to-end archiving workflow**
-- ✅ **MS Graph API integration (mocked)**
-- ✅ **Category processing integration**
-- ✅ **Overlap resolution integration**
-- ✅ **Privacy automation integration**
-- ✅ **Meeting modification integration**
-- ✅ **Audit logging verification**
-- ✅ **Error scenario handling**
+-   **Archiving Success**: All non-overlapping appointments are successfully copied to the archive calendar.
+-   **Category Processing**: Customer/billing information is parsed and applied correctly.
+-   **Overlap Detection**: Overlapping appointments are accurately identified and logged for user resolution.
+-   **Privacy Automation**: Private appointments are flagged appropriately and handled as per privacy rules.
+-   **Audit Logging**: A complete audit trail with detailed operation metadata is created.
+-   **Error Handling**: Any failures are handled gracefully, with detailed logging and appropriate user notifications.
 
-## Dependencies
-- CalendarArchiveOrchestrator
-- MS Graph API (mocked)
-- Database session
-- Test fixtures from conftest.py
+## 6. Actual Test Coverage
 
-## Notes
-- Test uses comprehensive mocking for MS Graph API
-- Covers both success and failure scenarios
-- Validates all workflow processing services
-- Ensures data integrity and audit compliance
+-   ✅ End-to-end archiving workflow.
+-   ✅ MS Graph API integration (mocked).
+-   ✅ Category processing integration.
+-   ✅ Overlap resolution integration (detection and logging).
+-   ✅ Privacy automation integration.
+-   ✅ Meeting modification integration.
+-   ✅ Audit logging verification.
+-   ✅ Error scenario handling.
 
-## Change Tracking
+## 7. Dependencies
 
-| Version | Date | Author | Description of Changes |
-|---------|------|--------|------------------------|
-| 1.0 | 2024-06-11 | System | Initial version |
-| 2.0 | 2024-12-19 | System | Updated to reflect actual test implementation |
+-   `CalendarArchiveOrchestrator`
+-   MS Graph API (mocked)
+-   Database session
+-   Test fixtures from `conftest.py`
+
+## 8. Notes
+
+-   This integration test uses comprehensive mocking for the MS Graph API to ensure isolation and speed.
+-   It covers both success and failure scenarios to validate robustness.
+-   It verifies the integration of all workflow processing services.
+-   Ensures data integrity and audit compliance throughout the archiving process.
+
+# References
+
+-   [HLD: Daily Calendar Archiving](../../2-architecture/HLD-CAL-001-Daily-Calendar-Archiving.md)
+-   [WF: Outlook Calendar Management Workflow](../../1-requirements/workflows/WF-Outlook-Calendar-Management.md)
+-   [IMPL: Testing and Observability](../../3-implementation/IMPL-Testing-And-Observability.md)

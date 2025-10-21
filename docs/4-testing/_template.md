@@ -1,16 +1,16 @@
 ---
-title: "Test Strategy: {{title}}"
-id: "test-{{id}}"
-type: [ testing ]
-status: [ draft | in_review | approved ]
+title: "Test Template: Generic Test Document"
+id: "TEST-template"
+type: [ template, testing ]
+status: [ draft ]
 owner: "{{owner}}" # e.g., QA Team, Lead Tester
 last_reviewed: "{{DD-MM-YYYY}}"
-tags: [testing, strategy, qa, tag1, tag2] # Practical tags for organization and search
+tags: [template, testing, qa, tag1, tag2] # Practical tags for organization and search
 links:
-  tooling: [ruff, mypy, bandit]
+  tooling: []
 ---
 
-# Test Strategy: {{title}}
+# Test Template: Generic Test Document
 
 - **Owner**: {{owner}} # e.g., QA Team, Lead Tester
 - **Status**: [Draft | In Review | Approved]
@@ -21,9 +21,13 @@ links:
 
 ## 1. Purpose
 
-[Establish the objectives, quality targets, and gating criteria for testing this project or component.] Clearly state the objective and scope of this test strategy document.
+[Establish the objectives, quality targets, and gating criteria for this test document. Clearly state the objective and scope.]
 
-## 2. Test Matrix
+## 2. Key Information
+
+[Provide a summary of the document's content, such as the test matrix for a strategy, or test steps for a test case.]
+
+### 2.1. Test Matrix (for Strategies)
 
 | Level | Purpose | Tooling | Owner |
 | --- | --- | --- | --- |
@@ -31,14 +35,19 @@ links:
 | Integration | [e.g., Component interaction] | [e.g., API tests, end-to-end frameworks] | [e.g., QA Team] |
 | End-to-End | [e.g., User journey validation] | [e.g., Playwright, Cypress] | [e.g., QA Team] |
 
+### 2.2. Test Steps (for Test Cases)
+
+| Step # | Description | Expected Result |
+|--------|-------------|-----------------|
+| 1      | [Action]    | [Expected Outcome] |
+
 ## 3. Environments
 
 [List required testing environments, data fixtures, and any necessary access credentials (redacted).]
 
 ## 4. Automation
 
-- [Describe CI jobs and triggers related to testing.]
-- [Specify expectations for reporting and artifacts.]
+[Describe CI jobs and triggers related to testing. Specify expectations for reporting and artifacts.]
 
 ## 5. Manual Validation
 

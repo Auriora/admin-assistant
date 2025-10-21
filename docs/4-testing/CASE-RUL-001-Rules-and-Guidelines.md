@@ -1,44 +1,73 @@
-# Test Case Template
+---
+title: "Test Case: Rules and Guidelines Management"
+id: "CASE-RUL-001"
+type: [ testing, test-case ]
+status: [ draft ]
+owner: "Auriora Team"
+last_reviewed: "DD-MM-YYYY"
+tags: [testing, rules, functional, ai]
+links:
+  tooling: []
+---
 
-## Test Case Information
-- **Test Case ID**: TC-RUL-001
-- **Test Case Name**: Rules and Guidelines Management
-- **Created By**: [Your Name]
-- **Creation Date**: 2024-06-11
+# Test Case: Rules and Guidelines Management
+
+- **Owner**: Auriora Team
+- **Status**: Draft
+- **Created Date**: 2024-06-11
 - **Last Updated**: 2024-06-11
+- **Audience**: [QA Team, Developers]
 - **Related Requirements**: FR-RUL-001, FR-RUL-002, FR-RUL-003, NFR-MNT-001
-- **Priority**: High
 
-## Test Objective
-Verify that the user can add and edit rules/guidelines via the UI, and that the system uses these rules and AI (OpenAI) for recommendations.
+## 1. Purpose
 
-## Preconditions
-- User is authenticated.
+Verify that the user can add, edit, and delete rules and guidelines via the UI, and that the system correctly uses these rules, including AI (OpenAI) for complex recommendations. This test case ensures user empowerment in customizing system behavior.
 
-## Test Data
-- User-specific rules/guidelines.
+## 2. Preconditions
 
-## Test Steps
-| Step # | Description | Expected Result     |
-|--------|-------------|---------------------|
-| 1      | User adds a new rule via UI | Rule is saved and applied for recommendations |
-| 2      | User edits an existing rule | Changes are saved and reflected in recommendations |
-| 3      | System uses OpenAI for complex recommendation | AI-generated recommendation is provided |
+-   The user is authenticated.
+-   The system has a functional rules engine and, if applicable, integration with the OpenAI API.
 
-## Post-conditions
-- Rules are updated and used for recommendations.
+## 3. Test Data
 
-## Special Requirements
-- User-specific rules.
+-   A new rule to be added (e.g., a rule for categorizing appointments based on keywords).
+-   An existing rule to be edited.
+-   A scenario that triggers an AI-powered recommendation (e.g., an ambiguous appointment needing categorization).
 
-## Dependencies
-- Rules engine, OpenAI API.
+## 4. Test Steps
 
-## Notes
-- Test both manual and AI-assisted flows.
+| Step # | Description                                       | Expected Result                                                              |
+|--------|---------------------------------------------------|------------------------------------------------------------------------------|
+| 1      | Navigate to the Rules/Guidelines management UI.   | The UI displays existing rules (if any) and options to add/edit/delete.      |
+| 2      | Add a new rule via the UI.                        | The new rule is successfully saved and appears in the list.                  |
+| 3      | Verify that the new rule is applied.              | A system action influenced by the new rule (e.g., a recommendation) reflects the rule's logic. |
+| 4      | Edit an existing rule via the UI.                 | The changes are successfully saved and reflected in the rule's application.  |
+| 5      | Trigger a scenario requiring an AI-powered recommendation. | An AI-generated recommendation is provided, influenced by the rules.         |
+| 6      | Delete a rule via the UI.                         | The rule is removed from the system, and its influence on recommendations ceases. |
 
-## Change Tracking
+## 5. Post-conditions
 
-| Version | Date | Author | Description of Changes |
-|---------|------|--------|------------------------|
-| 1.0 | 2024-06-11 | [Your Name] | Initial version | 
+-   Rules and guidelines are correctly managed by the user.
+-   The system applies user-defined rules and AI recommendations as expected.
+-   All rule changes are logged for audit purposes.
+
+## 6. Special Requirements
+
+-   Rules must be user-specific.
+-   The UI for rule management should be intuitive and provide clear feedback.
+
+## 7. Dependencies
+
+-   Rules Engine Service.
+-   OpenAI API integration (for AI-powered recommendations).
+-   Audit Logging Service.
+
+## 8. Notes
+
+-   Test both simple rule applications and scenarios where AI is expected to provide complex recommendations.
+-   Verify that rule conflicts are handled gracefully (if applicable).
+
+# References
+
+-   [HLD: Rules and Guidelines Management](../../2-architecture/HLD-RUL-001-Rules-and-Guidelines-Management.md)
+-   [HLD: AI Integration and Recommendations](../../2-architecture/HLD-AI-001-AI-Integration-and-Recommendations.md)

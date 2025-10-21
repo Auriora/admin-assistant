@@ -45,7 +45,8 @@ links:
 
 ## 5. Available Templates
 
-- `_template.md`: A generic template for testing-related documents.
+- `_template.md`: A generic template, best suited for **STRAT** (Test Strategy) documents.
+- `_template.plan.md`: A template specifically for **PLAN** (Test Plan) documents.
 
 # References
 
