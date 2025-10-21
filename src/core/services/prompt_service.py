@@ -1,6 +1,13 @@
 import logging
 from typing import List, Optional, TYPE_CHECKING
 
+try:  # Module-level alias so tests can patch `PromptRepository`
+    from core.repositories.prompt_repository import (
+        PromptRepository as PromptRepository,  # type: ignore[attr-defined]
+    )
+except ImportError:  # pragma: no cover - repository optional during certain builds
+    PromptRepository = None  # type: ignore[assignment]
+
 if TYPE_CHECKING:
     from core.models.prompt import Prompt
     from core.repositories.prompt_repository import PromptRepository as _PromptRepo
@@ -21,20 +28,28 @@ class PromptService:
         # Eagerly instantiate the default repository if none supplied so tests that
         # patch core.services.prompt_service.PromptRepository see the constructor call.
         if self._repository is None:
-            from core.repositories.prompt_repository import PromptRepository as _Repo
-
-            self._repository = _Repo()
+            repo_cls = self._resolve_repository_cls()
+            self._repository = repo_cls()
             self._owns_repository = True
 
     @property
     def repository(self) -> "_PromptRepo":
         if self._repository is None:
-            # Prefer patched repository if provided by tests
-            from core.repositories.prompt_repository import PromptRepository as _Repo
-
-            self._repository = _Repo()
+            repo_cls = self._resolve_repository_cls()
+            self._repository = repo_cls()
             self._owns_repository = True
         return self._repository
+
+    def _resolve_repository_cls(self):
+        """
+        Return the repository class, preferring a patched module attribute.
+        """
+        repo_cls = PromptRepository
+        if repo_cls is None:
+            from core.repositories.prompt_repository import PromptRepository as repo_cls  # type: ignore
+
+            globals()["PromptRepository"] = repo_cls
+        return repo_cls
 
     def get_by_id(self, prompt_id: int) -> Optional["Prompt"]:
         return self.repository.get_by_id(prompt_id)
