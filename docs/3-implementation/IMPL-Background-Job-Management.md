@@ -178,5 +178,5 @@ admin-assistant jobs remove --user 1 --confirm
 
 # References
 
--   [Implementation Plan](implementation-plan.md) (Note: This path might need adjustment if the file is renamed or moved.)
+-   [Implementation Plan](../plans/PM-ASYNC-001-Full-Migration-Plan.md) (Note: This path might need adjustment if the file is renamed or moved.)
 -   [System Architecture](../2-architecture/ARCH-001-System-Architecture.md)

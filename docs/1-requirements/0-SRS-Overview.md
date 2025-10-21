@@ -24,8 +24,8 @@ This document provides a simplified Software Requirements Specification (SRS) fo
 
 ## 2. Context
 
-- **Current Implementation Status**: Core infrastructure complete (80%), Phase 1 workflows implemented. See [Current Implementation Status](../CIS-001-Current-Implementation-Status.md) for detailed progress.
-- **Related Documents**: [Consolidated Action Plan](../CAP-001-Consolidated-Action-Plan.md), [Current Implementation Status](../CIS-001-Current-Implementation-Status.md)
+- **Current Implementation Status**: Core infrastructure complete (80%), Phase 1 workflows implemented. See [Current Implementation Status](../plans/CIS-001-Current-Implementation-Status.md) for detailed progress.
+- **Related Documents**: [Consolidated Action Plan](../plans/CAP-001-Consolidated-Action-Plan.md), [Current Implementation Status](../plans/CIS-001-Current-Implementation-Status.md)
 
 ## 3. Details
 

@@ -6,7 +6,7 @@
 - **Created By**: Admin Assistant System
 - **Creation Date**: 2024-12-19
 - **Status**: ACTIVE
-- **Related Documents**: [SRS](../1-requirements/README.md), [Current Implementation Status](../CIS-001-Current-Implementation-Status.md)
+- **Related Documents**: [SRS](../1-requirements/README.md), [Current Implementation Status](../plans/CIS-001-Current-Implementation-Status.md)
 
 ## Overview
 

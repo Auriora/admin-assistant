@@ -12,7 +12,7 @@ This index provides an overview and navigation for the project's documentation. 
 
 ## Operational & Reference
 
--   **[Guides](guides/README.md)**:
+-   **Guides**:
     -   [Developer Guides](./guides/developer/README.md): Workflows, environment setup, and tooling instructions for developers.
     -   [User Guides](./guides/user/README.md): Instructions for end-users of the product.
 -   **[Processes](./processes/README.md)**: Standard operating procedures and workflows.

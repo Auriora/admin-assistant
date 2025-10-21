@@ -295,7 +295,7 @@ admin-assistant restore list-configs --help
 
 ### Documentation
 - [Appointment Restoration Guide](./appointment-restoration-guide.md) - Complete usage guide
-- [CLI Command Structure](../../2-architecture/CLI-001-Command-Structure.md) - Full CLI documentation
+- [CLI Command Structure](../../2-architecture/HLD-CLI-001-Command-Structure.md) - Full CLI documentation
 
 ### Testing
 Always test with `--dry-run` first:

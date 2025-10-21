@@ -8,27 +8,27 @@ The Admin Assistant is a Microsoft 365 Calendar management system that automates
 
 ### Primary Documents (Start Here)
 - **[Solo-Developer-AI-Process.md](./processes/Solo-Developer-AI-Process.md)** - Development framework and methodology
-- **[Consolidated-Action-Plan.md](Consolidated-Action-Plan.md)** - Current implementation roadmap
-- **[Current-Implementation-Status.md](Current-Implementation-Status.md)** - Single source of truth for project status
+- **[Consolidated-Action-Plan.md](./plans/CAP-001-Consolidated-Action-Plan.md)** - Current implementation roadmap
+- **[plans/CIS-001-Current-Implementation-Status.md](./plans/CIS-001-Current-Implementation-Status.md)** - Single source of truth for project status
 - **[AI-Implementation-Prompts.md](AI-Implementation-Prompts.md)** - Ready-to-use prompts for AI-assisted development
-
+``
 ### Supporting Documentation
 - **[Documentation-Review-Analysis.md](Documentation-Review-Analysis.md)** - Analysis of documentation gaps and redundancy
 - **[1-requirements/](./1-requirements/README.md)** - Complete Software Requirements Specification
-- **[2-design/](2-design)** - System architecture and design documents
-- **[guidelines/](guidelines)** - Technical implementation guidelines
+- **[2-architecture/](./2-architecture/README.md)** - System architecture and design documents
+- **[guide/](guides)** - Technical implementation guidelines
 
 ## 🚀 Quick Start
 
 ### For Development
-1. Read [Current-Implementation-Status.md](Current-Implementation-Status.md) to understand what's implemented
-2. Review [Consolidated-Action-Plan.md](Consolidated-Action-Plan.md) for next steps
+1. Read [plans/CIS-001-Current-Implementation-Status.md](./plans/CIS-001-Current-Implementation-Status.md) to understand what's implemented
+2. Review [Consolidated-Action-Plan.md](./plans/CAP-001-Consolidated-Action-Plan.md) for next steps
 3. Use prompts from [AI-Implementation-Prompts.md](AI-Implementation-Prompts.md) for AI-assisted development
 
 ### For Understanding the System
 1. Start with [1-requirements/0-SRS-Overview.md](./1-requirements/0-SRS-Overview.md)
-2. Review [2-design/architecture.md](2-design/architecture.md)
-3. Check [Current-Implementation-Status.md](Current-Implementation-Status.md) for current capabilities
+2. Review [2-design/architecture.md](./2-architecture/ARCH-001-System-Architecture.md)
+3. Check [plans/CIS-001-Current-Implementation-Status.md](./plans/CIS-001-Current-Implementation-Status.md) for current capabilities
 
 ## 📊 Project Status Summary
 
@@ -160,15 +160,15 @@ python -m cli.main --help
 
 ### Documentation Issues
 - Check [Documentation-Review-Analysis.md](Documentation-Review-Analysis.md) for known issues
-- Refer to [Current-Implementation-Status.md](Current-Implementation-Status.md) for accurate status
+- Refer to [plans/CIS-001-Current-Implementation-Status.md](./plans/CIS-001-Current-Implementation-Status.md) for accurate status
 
 ### Development Questions
 - Use [AI-Implementation-Prompts.md](AI-Implementation-Prompts.md) for AI-assisted development
 - Follow [Solo-Developer-AI-Process.md](./processes/Solo-Developer-AI-Process.md) methodology
 
 ### Technical Guidelines
-- Review [guidelines/](guidelines) for implementation standards
-- Check [2-design/](2-design) for architectural decisions
+- Review [guides/](guides) for implementation standards
+- Check [2-architecture/](./2-architecture/README.md) for architectural decisions
 
 ---
 
@@ -176,8 +176,8 @@ python -m cli.main --help
 
 This documentation follows the Solo-Developer-AI-Process framework and is designed to minimize maintenance overhead while maximizing development efficiency. The primary documents are:
 
-1. **[Current-Implementation-Status.md](Current-Implementation-Status.md)** - Update as features are completed
-2. **[Consolidated-Action-Plan.md](Consolidated-Action-Plan.md)** - Update priorities and timelines
+1. **[plans/CIS-001-Current-Implementation-Status.md](./plans/CIS-001-Current-Implementation-Status.md)** - Update as features are completed
+2. **[Consolidated-Action-Plan.md](./plans/CAP-001-Consolidated-Action-Plan.md)** - Update priorities and timelines
 3. **[AI-Implementation-Prompts.md](AI-Implementation-Prompts.md)** - Add new prompts as needed
 
 *Last Updated: 2024-12-19*

@@ -241,7 +241,7 @@ admin-assistant config calendar archive list --user <USER_ID>
 - **Email Automation**: Automatic client communication and timesheet delivery
 
 ### Learning More
-- **CLI Reference**: See [CLI Command Structure](../../2-architecture/CLI-001-Command-Structure.md)
+- **CLI Reference**: See [CLI Command Structure](../../2-architecture/HLD-CLI-001-Command-Structure.md)
 - **Workflows**: See [Outlook Calendar Management Workflow](../../1-requirements/WF-Outlook-Calendar-Management.md)
 - **Architecture**: See [System Architecture](../../2-architecture/ARCH-001-System-Architecture.md)
 

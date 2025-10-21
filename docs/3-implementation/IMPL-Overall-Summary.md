@@ -128,4 +128,4 @@ python -m pytest tests/unit/services/test_user_service.py -v
 
 -   [CLI Command Structure](../2-architecture/HLD-CLI-001-Command-Structure.md)
 -   [Current Database Schema](../2-architecture/DATA-002-Current-Schema.md)
--   [User Guide: CLI Reference](../user-guides/UG-002-CLI-Reference.md) (Note: This path might need adjustment if the user-guides folder is renamed or moved.)
+-   [User Guide: CLI Reference](../guides/user/UG-002-CLI-Reference.md) (Note: This path might need adjustment if the user-guides folder is renamed or moved.)
