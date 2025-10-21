@@ -6,7 +6,7 @@
 - **Created By**: Admin Assistant System
 - **Creation Date**: 2024-12-19
 - **Status**: ACTIVE - Generated from actual implementation
-- **Related Documents**: [Data Model](data-model.md), [System Architecture](ARCH-001-System-Architecture.md)
+- **Related Documents**: [Data Model](DATA-001-Application-Data-Model.md), [System Architecture](ARCH-001-System-Architecture.md)
 
 ## Overview
 
