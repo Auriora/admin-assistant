@@ -1,28 +1,39 @@
-# UX Flow Diagram and Description Template
+---
+title: "HLD: Appointment Privacy Management"
+id: "HLD-PRI-001"
+type: [ hld, architecture, workflow ]
+status: [ accepted ]
+owner: "Auriora Team"
+last_reviewed: "DD-MM-YYYY"
+tags: [hld, privacy, automation, ux]
+links:
+  tooling: []
+---
 
-## Flow Information
-- **Flow ID**: UXF-PRI-001
-- **Flow Name**: Appointment Privacy Management
-- **Created By**: [Your Name]
-- **Creation Date**: 2024-06-11
+# High-Level Design: Appointment Privacy Management
+
+- **Owner**: Auriora Team
+- **Status**: Accepted
+- **Created Date**: 2024-06-11
 - **Last Updated**: 2024-06-11
-- **Related Requirements**: FR-PRI-001, FR-PRI-002, FR-PRI-003; UC-PRI-001
-- **Priority**: High
+- **Audience**: [Developers, UX Designers, Product Managers]
 
-## Flow Objective
-Automatically mark personal and travel appointments as private, exclude private appointments from timesheet exports, and maintain a log of privacy changes with rollback capability. This flow ensures user privacy and compliance with data protection requirements.
+## 1. Purpose
 
-## User Personas
-- Professional user (primary, single-user scenario)
-- (Future) Admin or support user (for troubleshooting)
+This document describes the high-level design for managing appointment privacy. The objective is to automatically mark personal and travel appointments as private, exclude them from timesheet exports, and maintain a log of all privacy changes with the ability to roll back individual changes. This ensures user privacy and supports compliance requirements.
 
-## Preconditions
-- User is authenticated via Microsoft account
-- Appointments exist in the calendar/archive
-- User has granted necessary permissions to the application
+## 2. Context
 
-## Flow Diagram
-```
+- **User Personas**: The primary user is a professional who needs to separate personal and billable time.
+- **Preconditions**:
+  - The user must be authenticated.
+  - Appointments must exist in the user's calendar or archive.
+
+## 3. Details
+
+### 3.1. Flow Diagram
+
+```mermaid
 @startuml
 actor User
 participant "Web UI" as UI
@@ -44,67 +55,32 @@ BE -> UI: Confirm update, show status
 @enduml
 ```
 
-## Detailed Flow Description
+### 3.2. Step-by-Step Flow
 
-### Entry Points
-- User views or edits an appointment or timesheet (e.g., on calendar, appointment details, or export page).
-- System detects personal or travel appointments and marks them as private.
+| Step # | Actor        | Action                                      | System Response                                      |
+|--------|--------------|---------------------------------------------|------------------------------------------------------|
+| 1      | User/System  | A personal or travel appointment is identified. | The system automatically marks it as private.        |
+| 2      | Backend      | Records the privacy change in a log.        | The privacy log is updated with the change details.  |
+| 3      | Backend      | Excludes private appointments from exports. | Timesheets and other exports omit private events.    |
+| 4      | User         | Reviews the privacy status and can roll back.| The system provides a rollback option in the UI.     |
+| 5      | Backend      | Reverts the privacy status if requested.    | Updates the appointment and the privacy log.         |
 
-### Step-by-Step Flow
+### 3.3. Error Scenarios
 
-| Step # | Actor        | Action                                      | System Response                                      | UI Elements                | Notes                                  |
-|--------|--------------|---------------------------------------------|------------------------------------------------------|----------------------------|----------------------------------------|
-| 1      | User/System  | Appointment is personal/travel              | System marks as private                              | Privacy indicator           | Can be triggered on save or export     |
-| 2      | Backend      | Records privacy change in log               | Updates privacy log                                  | N/A                        |                                        |
-| 3      | Backend      | Excludes private appointments from export   | Timesheet/export omits private appointments          | N/A                        |                                        |
-| 4      | User         | Reviews privacy status, can roll back       | System provides rollback option                      | Privacy log, Rollback button|                                        |
-| 5      | Backend      | Reverts privacy status (if requested)       | Updates appointment and log                          | N/A                        |                                        |
-| 6      | Backend      | Confirms update to UI                       | Shows success or error message                       | Success/Error notification  |                                        |
+| Scenario         | Trigger                                     | System Response                                 |
+|------------------|---------------------------------------------|-------------------------------------------------|
+| Log Failure      | A privacy log or database error occurs.     | An error message is shown, allowing a retry.    |
+| Rollback Failure | An error occurs while reverting the status. | An error message is shown, allowing a retry.    |
+| Save Failure     | A backend or database error occurs.         | An error message is shown, allowing a retry.    |
 
-### Exit Points
-- Appointment is marked as private or reverted to public.
-- Private appointments are excluded from exports.
-- User is notified of any errors and can resolve them.
-- System logs all actions for audit purposes.
+### 3.4. Design Considerations
 
-### Error Scenarios
+- **UI Components**: The UI will include a privacy indicator on appointments, a privacy log/history panel, and a rollback button for each change.
+- **Auditability**: All privacy-related actions, whether automated or user-initiated, must be logged for a complete audit trail.
 
-| Error Scenario         | Trigger                                 | System Response                                 | User Recovery Action                |
-|-----------------------|-----------------------------------------|------------------------------------------------|-------------------------------------|
-| Log Failure           | Privacy log/database error               | Shows error, allows retry                       | Retry action                        |
-| Rollback Failure      | Error reverting privacy status           | Shows error, allows retry                       | Retry rollback                      |
-| Save Failure          | Backend/database error                   | Shows error, allows retry                       | Retry save                          |
-| Auth Expired          | User session/token expired               | Prompts user to re-authenticate                 | Log in again                        |
+# References
 
-## UI Components
-- Appointment details page/modal with privacy indicator
-- Privacy log/history panel
-- Rollback button (for privacy changes)
-- Success/Error notification banners or modals
-
-## Accessibility Considerations
-- All controls accessible via keyboard and screen readers
-- Sufficient color contrast for privacy indicators and error messages
-- Clear, actionable error messages and prompts
-
-## Performance Expectations
-- Privacy marking and rollback should complete within a second
-- UI should remain responsive during backend operations
-- System should handle log and save errors gracefully
-
-## Related Flows
-- Timesheet Generation and Export (UXF-BIL-001)
-- Appointment Categorization (UXF-CAT-001)
-- Error Notification Flow (UXF-NOT-001)
-
-## Notes
-- All privacy actions and changes are logged for audit and compliance
-- Future: Support for multi-user and admin troubleshooting
-
-## Change Tracking
-
-This section records the history of changes made to this document. Add a new row for each significant update.
-
-| Version | Date       | Author      | Description of Changes         |
-|---------|------------|-------------|-------------------------------|
-| 1.0     | 2024-06-11 | [Your Name] | Initial version               | 
+- **Related Requirements**: FR-PRI-001, FR-PRI-002, FR-PRI-003, UC-PRI-001
+- **Related Flows**:
+  - [Timesheet Generation and Export](HLD-BIL-001-Timesheet-Generation-and-Export.md)
+  - [Appointment Categorization](HLD-CAT-001-Appointment-Categorization.md)

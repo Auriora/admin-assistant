@@ -1,28 +1,39 @@
-# UX Flow Diagram and Description Template
+---
+title: "HLD: AI Integration and Recommendations"
+id: "HLD-AI-001"
+type: [ hld, architecture, workflow ]
+status: [ accepted ]
+owner: "Auriora Team"
+last_reviewed: "DD-MM-YYYY"
+tags: [hld, ai, recommendations, ux]
+links:
+  tooling: []
+---
 
-## Flow Information
-- **Flow ID**: UXF-AI-001
-- **Flow Name**: AI Integration and Recommendations
-- **Created By**: [Your Name]
-- **Creation Date**: 2024-06-11
+# High-Level Design: AI Integration and Recommendations
+
+- **Owner**: Auriora Team
+- **Status**: Accepted
+- **Created Date**: 2024-06-11
 - **Last Updated**: 2024-06-11
-- **Related Requirements**: FR-AI-001, FR-AI-002, FR-AI-003, FR-AI-004, FR-AI-005, FR-AI-006, NFR-AI-001
-- **Priority**: High
+- **Audience**: [Developers, UX Designers, Product Managers]
 
-## Flow Objective
-Integrate with OpenAI API to provide AI-powered recommendations and automation (e.g., appointment categorization, rules), while ensuring user review, privacy, and robust error handling.
+## 1. Purpose
 
-## User Personas
-- Professional user (primary, single-user scenario)
-- (Future) Admin or support user (for troubleshooting)
+This document describes the high-level design for integrating the OpenAI API to provide AI-powered recommendations and automation (e.g., for appointment categorization and rule generation). The design ensures user review and control, data privacy through sanitization, and robust error handling.
 
-## Preconditions
-- User is authenticated via Microsoft account
-- User has granted necessary permissions to the application
-- AI integration is enabled and configured
+## 2. Context
 
-## Flow Diagram
-```
+- **User Personas**: The primary user is a professional seeking to automate and streamline their administrative tasks.
+- **Preconditions**:
+  - The user must be authenticated.
+  - The AI integration must be enabled and configured in the system.
+
+## 3. Details
+
+### 3.1. Flow Diagram
+
+```mermaid
 @startuml
 actor User
 participant "Web UI" as UI
@@ -40,68 +51,34 @@ BE -> UI: Confirm update, show status
 @enduml
 ```
 
-## Detailed Flow Description
+### 3.2. Step-by-Step Flow
 
-### Entry Points
-- User triggers an AI-powered action (e.g., categorization, rules) from UI
-- System automatically triggers AI for relevant flows (if enabled)
+| Step # | Actor        | Action                                      | System Response                                      |
+|--------|--------------|---------------------------------------------|------------------------------------------------------|
+| 1      | User/System  | Triggers an AI-powered action.              | The system prepares and sanitizes the necessary data.|
+| 2      | Backend      | Sends the sanitized data to the OpenAI API. | Receives a recommendation or an error.               |
+| 3      | Backend      | Returns the recommendation to the UI.       | Displays the suggestion and allows user review.      |
+| 4      | User         | Reviews and optionally overrides the suggestion.| Sends the final decision to the backend.             |
+| 5      | Backend      | Saves the final decision.                   | Confirms the update or shows an error.               |
 
-### Step-by-Step Flow
+### 3.3. Error Scenarios
 
-| Step # | Actor        | Action                                      | System Response                                      | UI Elements                | Notes                                  |
-|--------|--------------|---------------------------------------------|------------------------------------------------------|----------------------------|----------------------------------------|
-| 1      | User/System  | Triggers AI-powered action                  | System prepares and sanitizes data                   | Action button, auto-trigger|                                        |
-| 2      | Backend      | Sends data to OpenAI API                    | Receives recommendation or error                     | N/A                        | Data is anonymized, sanitized          |
-| 3      | Backend      | Returns recommendation to UI                | Shows recommendation, allows user review/override    | Recommendation field, Accept/Override|                                        |
-| 4      | User         | Reviews/overrides recommendation            | Sends final decision to backend                      | Accept/Override buttons     |                                        |
-| 5      | Backend      | Saves final decision                        | Confirms update or shows error                       | Success/Error notification  |                                        |
+| Scenario          | Trigger                                     | System Response                                 |
+|-------------------|---------------------------------------------|-------------------------------------------------|
+| AI Unavailable    | The OpenAI API is down or returns an error. | Notifies the user and allows a retry or manual action. |
+| Privacy Violation | Data is not properly sanitized/anonymized.  | The request is blocked, and the error is logged. |
+| Save Failure      | A backend or database error occurs.         | An error message is shown, allowing a retry.    |
 
-### Exit Points
-- User reviews and accepts/overrides AI recommendation
-- System logs all actions for audit and compliance
-- User is notified of any errors and can retry or seek help
+### 3.4. Design Considerations
 
-### Error Scenarios
+- **UI Components**: The UI will include action buttons to trigger AI features and a recommendation field with `Accept` and `Override` options.
+- **Data Privacy**: All data sent to the OpenAI API must be sanitized and anonymized to protect user privacy.
+- **Persistent Chat**: For features like overlap resolution, a persistent chat interface will be used, storing the history of the AI interaction.
 
-| Error Scenario         | Trigger                                 | System Response                                 | User Recovery Action                |
-|-----------------------|-----------------------------------------|------------------------------------------------|-------------------------------------|
-| AI Unavailable        | OpenAI API error/downtime                | Notifies user, allows retry or manual action    | Retry or proceed manually           |
-| Privacy Violation     | Data not properly sanitized/anonymized   | Blocks request, logs error                      | User notified, admin reviews        |
-| Save Failure          | Backend/database error                   | Shows error, allows retry                       | Retry save                          |
-| Auth Expired          | User session/token expired               | Prompts user to re-authenticate                 | Log in again                        |
+# References
 
-## UI Components
-- Action buttons to trigger AI-powered features
-- Recommendation field with Accept/Override
-- Success/Error notification banners or modals
-
-## Accessibility Considerations
-- All controls accessible via keyboard and screen readers
-- Sufficient color contrast for recommendations and error messages
-- Clear, actionable error messages and prompts
-
-## Performance Expectations
-- AI recommendations should appear within a few seconds
-- UI should remain responsive during backend operations
-- System should handle AI and save errors gracefully
-
-## Related Flows
-- Appointment Categorization (UXF-CAT-001)
-- Rules and Guidelines Management (UXF-RUL-001)
-- Error Notification Flow (UXF-NOT-001)
-
-## Notes
-- All AI actions and user decisions are logged for audit and compliance
-- Future: Support for multi-user and admin troubleshooting
-
-## Additional Note: Persistent Chat/AI for Overlap Resolution and Beyond
-
-- The persistent chat/AI interface will be used for overlap resolution (see UXF-OVL-001) and other features in future. Chat history is stored for each session, enabling both synchronous and asynchronous user interaction with AI-powered features.
-
-## Change Tracking
-
-This section records the history of changes made to this document. Add a new row for each significant update.
-
-| Version | Date       | Author      | Description of Changes         |
-|---------|------------|-------------|-------------------------------|
-| 1.0     | 2024-06-11 | [Your Name] | Initial version               | 
+- **Related Requirements**: FR-AI-001 to FR-AI-006, NFR-AI-001
+- **Related Flows**:
+  - [Appointment Categorization](HLD-CAT-001-Appointment-Categorization.md)
+  - [Rules and Guidelines Management](HLD-RUL-001-Rules-and-Guidelines-Management.md)
+  - [Manual Overlap Resolution](HLD-OVL-001-Manual-Overlap-Resolution-and-Chat.md)

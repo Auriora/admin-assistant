@@ -1,29 +1,40 @@
-# UX Flow Diagram and Description Template
+---
+title: "HLD: Timesheet Generation and Export"
+id: "HLD-BIL-001"
+type: [ hld, architecture, workflow ]
+status: [ accepted ]
+owner: "Auriora Team"
+last_reviewed: "DD-MM-YYYY"
+tags: [hld, billing, export, ux]
+links:
+  tooling: []
+---
 
-## Flow Information
-- **Flow ID**: UXF-BIL-001
-- **Flow Name**: Timesheet Generation and Export
-- **Created By**: [Your Name]
-- **Creation Date**: 2024-06-11
+# High-Level Design: Timesheet Generation and Export
+
+- **Owner**: Auriora Team
+- **Status**: Accepted
+- **Created Date**: 2024-06-11
 - **Last Updated**: 2024-06-11
-- **Related Requirements**: FR-BIL-001, FR-BIL-002, FR-BIL-003, FR-BIL-004, FR-BIL-005, FR-BIL-006, FR-BIL-007, FR-BIL-008, FR-EXP-001, FR-EXP-002, FR-PRI-002; UC-BIL-001
-- **Priority**: High
+- **Audience**: [Developers, UX Designers, Product Managers]
 
-## Flow Objective
-Allow users to generate, review, and export categorized timesheets for a selected date range, with options to export as PDF, CSV, or Excel, and upload to OneDrive/Xero. The flow ensures accuracy, user control, and compliance with billing and privacy requirements.
+## 1. Purpose
 
-## User Personas
-- Professional user (primary, single-user scenario)
-- (Future) Admin or support user (for troubleshooting)
+This document describes the high-level design for generating, reviewing, and exporting categorized timesheets. The objective is to allow users to create timesheets for a selected date range in various formats (PDF, CSV, Excel) and optionally upload them to services like OneDrive or Xero. The flow must ensure accuracy, user control, and compliance with billing and privacy requirements.
 
-## Preconditions
-- User is authenticated via Microsoft account
-- Archive calendar is populated with appointments
-- User has granted necessary permissions to the application
-- PDF template is available (or default will be used)
+## 2. Context
 
-## Flow Diagram
-```
+- **User Personas**: The primary user is a professional managing their own billing and administrative tasks.
+- **Preconditions**:
+  - The user must be authenticated.
+  - The archive calendar must be populated with categorized appointments.
+  - A PDF template must be available, or a default will be used.
+
+## 3. Details
+
+### 3.1. Flow Diagram
+
+```mermaid
 @startuml
 actor User
 participant "Web UI" as UI
@@ -43,72 +54,35 @@ BE -> UI: Show download link, upload status, errors
 @enduml
 ```
 
-## Detailed Flow Description
+### 3.2. Step-by-Step Flow
 
-### Entry Points
-- User logs into the web application and navigates to the Timesheet/Export page.
-- User selects a date range and clicks "Generate Timesheet".
+| Step # | Actor   | Action                                      | System Response                                      |
+|--------|---------|---------------------------------------------|------------------------------------------------------|
+| 1      | User    | Navigates to the Timesheet/Export page.     | Loads export options and available date ranges.      |
+| 2      | User    | Selects a date range and clicks "Generate". | Sends a request to the backend.                      |
+| 3      | Backend | Fetches appointments from the archive.      | Receives appointment data for the date range.        |
+| 4      | Backend | Categorizes appointments.                   | Prompts the user for any ambiguous categories.       |
+| 5      | Backend | Generates the timesheet file (PDF/CSV/Excel).| Returns the generated file or an error.              |
+| 6      | Backend | Uploads the file to OneDrive/Xero.          | Confirms the upload or returns an error.             |
+| 7      | Backend | Returns the result to the UI.               | Displays a download link, upload status, and errors. |
 
-### Step-by-Step Flow
+### 3.3. Error Scenarios
 
-| Step # | Actor        | Action                                      | System Response                                      | UI Elements                | Notes                                  |
-|--------|--------------|---------------------------------------------|------------------------------------------------------|----------------------------|----------------------------------------|
-| 1      | User         | Navigates to Timesheet/Export page          | Loads export options and available date ranges        | Timesheet page, date picker|                                        |
-| 2      | User         | Selects date range, clicks "Generate"       | Sends request to backend                             | Date picker, Generate button|                                        |
-| 3      | Backend      | Fetches appointments from archive calendar  | Receives appointment data                            | N/A                        |                                        |
-| 4      | Backend      | Categorizes appointments (AI/rules/manual)  | Prompts user for ambiguous/missing categories        | Category selector, prompts | User can override categories           |
-| 5      | Backend      | Generates PDF/CSV/Excel timesheet           | Returns file or error                                | N/A                        | Uses template or default               |
-| 6      | Backend      | Uploads file to OneDrive/Xero               | Confirms upload or shows error                       | Upload status indicator     |                                        |
-| 7      | Backend      | Returns download link/status to UI          | Displays download link, upload status, errors        | Download link, status, error|                                        |
-| 8      | User         | Downloads file, reviews, or retries         | System logs action, allows retry if error            | Download button, Retry     |                                        |
+| Scenario             | Trigger                                     | System Response                                 |
+|----------------------|---------------------------------------------|-------------------------------------------------|
+| API Failure          | An error occurs with the OneDrive/Xero API. | Shows an error and allows a retry.              |
+| PDF Template Missing | The template is not found or is corrupt.    | Uses a default template and notifies the user.  |
+| Ambiguous Category   | An appointment cannot be auto-categorized.  | Prompts the user for manual input.              |
+| Export Failure       | An error occurs during file generation.     | Shows an error and allows a retry.              |
 
-### Exit Points
-- User successfully downloads timesheet and/or confirms upload to OneDrive/Xero.
-- User is notified of any errors and can retry or seek help.
-- System logs all actions for audit purposes.
+### 3.4. Design Considerations
 
-### Error Scenarios
+- **UI Components**: The UI will include a dedicated page for timesheets with a date picker, export options, and a generation button. It will also feature prompts for category overrides and status indicators for uploads.
+- **Accessibility**: All controls will be accessible via keyboard and screen readers.
+- **Performance**: Timesheet generation should be fast, and the UI must remain responsive during backend operations.
 
-| Error Scenario         | Trigger                                 | System Response                                 | User Recovery Action                |
-|-----------------------|-----------------------------------------|------------------------------------------------|-------------------------------------|
-| API Failure           | OneDrive/Xero API error                 | Shows error, allows retry                       | Retry upload, download locally      |
-| PDF Template Missing  | Template not found/corrupt              | Uses default template, notifies user            | Review output, upload manually      |
-| Ambiguous Category    | Appointment cannot be auto-categorized  | Prompts user for input                          | User selects/fixes category         |
-| Export Failure        | File generation error                   | Shows error, allows retry                       | Retry export                        |
-| Auth Expired          | User session/token expired              | Prompts user to re-authenticate                 | Log in again                        |
+# References
 
-## UI Components
-- Timesheet/Export page with date picker and export options
-- Category selector and override prompts
-- Generate/Download/Retry buttons
-- Upload status indicator
-- Success/Error notification banners or modals
-
-## Accessibility Considerations
-- All controls accessible via keyboard and screen readers
-- Sufficient color contrast for status and error indicators
-- Clear, actionable error messages and prompts
-
-## Performance Expectations
-- Timesheet generation and export should complete within a few seconds for typical data volumes
-- UI should remain responsive during background operations
-- System should handle API and export errors gracefully
-
-## Related Flows
-- Daily Calendar Archiving (UXF-CAL-001)
-- Error Notification Flow (UXF-NOT-001)
-- Authentication Flow
-
-## Notes
-- All export and upload actions are logged for audit and compliance
-- Future: Support for multi-user and admin troubleshooting
-
-## Change Tracking
-
-This section records the history of changes made to this document. Add a new row for each significant update.
-
-| Version | Date       | Author      | Description of Changes         |
-|---------|------------|-------------|-------------------------------|
-| 1.0     | 2024-06-11 | [Your Name] | Initial version               |
-
-</rewritten_file> 
+- **Related Requirements**: FR-BIL-001 to FR-BIL-008, FR-EXP-001, FR-EXP-002, FR-PRI-002, UC-BIL-001
+- **Related Flows**:
+  - [Daily Calendar Archiving](HLD-CAL-001-Daily-Calendar-Archiving.md)

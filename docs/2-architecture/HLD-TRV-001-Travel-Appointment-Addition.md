@@ -1,29 +1,40 @@
-# UX Flow Diagram and Description Template
+---
+title: "HLD: Travel Appointment Addition"
+id: "HLD-TRV-001"
+type: [ hld, architecture, workflow ]
+status: [ accepted ]
+owner: "Auriora Team"
+last_reviewed: "DD-MM-YYYY"
+tags: [hld, travel, automation, ux]
+links:
+  tooling: []
+---
 
-## Flow Information
-- **Flow ID**: UXF-TRV-001
-- **Flow Name**: Travel Appointment Addition
-- **Created By**: [Your Name]
-- **Creation Date**: 2024-06-11
+# High-Level Design: Travel Appointment Addition
+
+- **Owner**: Auriora Team
+- **Status**: Accepted
+- **Created Date**: 2024-06-11
 - **Last Updated**: 2024-06-11
-- **Related Requirements**: FR-TRV-001, FR-TRV-002, FR-TRV-003, FR-TRV-004, FR-TRV-005, FR-TRV-006, FR-TRV-007, FR-TRV-008; UC-TRV-001
-- **Priority**: High
+- **Audience**: [Developers, UX Designers, Product Managers]
 
-## Flow Objective
-Automatically add travel appointments to the user's calendar based on location data, using Google Directions API for travel time estimation and handling exceptions such as multi-day trips and traffic data unavailability. This flow ensures accurate travel time tracking for billing and scheduling.
+## 1. Purpose
 
-## User Personas
-- Professional user (primary, single-user scenario)
-- (Future) Admin or support user (for troubleshooting)
+This document describes the high-level design for automatically adding travel appointments to a user's calendar. The objective is to use location data from appointments and the Google Directions API to estimate travel time, creating separate calendar entries for travel. This ensures accurate time tracking for both billing and scheduling purposes.
 
-## Preconditions
-- User is authenticated via Microsoft account
-- Appointments with different locations exist in the calendar
-- User profile has Home location configured
-- User has granted necessary permissions to the application
+## 2. Context
 
-## Flow Diagram
-```
+- **User Personas**: The primary user is a professional who travels between appointments.
+- **Preconditions**:
+  - The user must be authenticated.
+  - Appointments with different locations must exist in the calendar.
+  - The user's "Home" location must be configured in their profile.
+
+## 3. Details
+
+### 3.1. Flow Diagram
+
+```mermaid
 @startuml
 actor User
 participant "Web UI" as UI
@@ -41,70 +52,34 @@ BE -> UI: Show travel appointments and status
 @enduml
 ```
 
-## Detailed Flow Description
+### 3.2. Step-by-Step Flow
 
-### Entry Points
-- User views calendar or triggers travel calculation (manually or as part of archiving/export process).
-- System detects appointments requiring travel and initiates calculation.
+| Step # | Actor        | Action                                      | System Response                                      |
+|--------|--------------|---------------------------------------------|------------------------------------------------------|
+| 1      | User/System  | Triggers travel calculation (manually or auto). | The system identifies appointments requiring travel. |
+| 2      | Backend      | Fetches appointments and their locations.   | Returns a list of appointment pairs needing travel.  |
+| 3      | Backend      | Requests travel time from the Google API.   | Receives the travel time or an error.                |
+| 4      | Backend      | Adds travel appointments to the calendar.   | Confirms the addition or surfaces an error.          |
+| 5      | Backend      | Returns the result to the UI.               | Displays the new travel appointments and any alerts. |
 
-### Step-by-Step Flow
+### 3.3. Error Scenarios
 
-| Step # | Actor        | Action                                      | System Response                                      | UI Elements                | Notes                                  |
-|--------|--------------|---------------------------------------------|------------------------------------------------------|----------------------------|----------------------------------------|
-| 1      | User/System  | Triggers travel calculation (manual/auto)   | System identifies appointments needing travel        | Button, auto-trigger       | Can be part of archiving/export        |
-| 2      | Backend      | Fetches appointments and locations          | Returns list of appointment pairs needing travel     | N/A                        |                                        |
-| 3      | Backend      | Requests travel time from Google API        | Receives travel time or error                        | N/A                        | Handles API quota, errors              |
-| 4      | Backend      | Adds travel appointments to calendar        | Confirms addition or shows error                     | N/A                        | Handles exceptions, multi-day trips    |
-| 5      | Backend      | Returns result to UI                        | Displays travel appointments, errors, or alerts      | Travel appt list, alerts   | Alerts for insufficient travel time    |
-| 6      | User         | Reviews travel appointments/alerts          | Can adjust or retry if needed                        | Travel appt list, Retry    |                                        |
+| Scenario              | Trigger                                     | System Response                                 |
+|-----------------------|---------------------------------------------|-------------------------------------------------|
+| API Quota Exceeded    | The Google Directions API limit is reached. | Notifies the user and skips the calculation.    |
+| Route Unreachable     | An invalid source or destination is provided. | Prompts the user to check the locations.        |
+| Traffic Data Unavail. | No traffic data is returned from the API.   | Uses the standard travel time and notifies the user. |
+| Insufficient Time     | Not enough time exists between appointments.| Alerts the user via email or an in-app notification. |
 
-### Exit Points
-- Travel appointments are added to the calendar.
-- User is notified of any errors, conflicts, or insufficient travel time.
-- System logs all actions for audit purposes.
+### 3.4. Design Considerations
 
-### Error Scenarios
+- **UI Components**: The calendar view will display the created travel appointments. Error and alert banners will be used to communicate issues.
+- **Accessibility**: All controls and indicators will be accessible to screen readers.
+- **Performance**: Travel calculations should be fast, and the UI must remain responsive during the process.
 
-| Error Scenario         | Trigger                                 | System Response                                 | User Recovery Action                |
-|-----------------------|-----------------------------------------|------------------------------------------------|-------------------------------------|
-| API Quota Exceeded    | Google Directions API limit reached      | Notifies user, skips travel calculation         | Retry later, check API usage        |
-| Route Unreachable     | Invalid source/destination               | Prompts user to check locations                 | User corrects location              |
-| Traffic Data Unavail. | No traffic data from API                 | Uses standard travel time, notifies user        | Accept fallback or retry            |
-| Insufficient Time     | Back-to-back appointments, not enough travel time | Alerts user via email/UI                | User adjusts schedule               |
-| Auth Expired          | User session/token expired               | Prompts user to re-authenticate                 | Log in again                        |
+# References
 
-## UI Components
-- Calendar view with travel appointments
-- Travel calculation trigger button (if manual)
-- Travel appointment list/summary
-- Error/alert banners or modals
-- Retry button (on error)
-
-## Accessibility Considerations
-- All controls accessible via keyboard and screen readers
-- Sufficient color contrast for travel and error indicators
-- Clear, actionable error messages and alerts
-
-## Performance Expectations
-- Travel calculation and appointment addition should complete within a few seconds for typical data volumes
-- UI should remain responsive during background operations
-- System should handle API and calculation errors gracefully
-
-## Related Flows
-- Location Recommendation and Assignment (UXF-LOC-001)
-- Daily Calendar Archiving (UXF-CAL-001)
-- Error Notification Flow (UXF-NOT-001)
-
-## Notes
-- All travel calculations and appointment additions are logged for audit and compliance
-- Future: Support for multi-user and admin troubleshooting
-
-## Change Tracking
-
-This section records the history of changes made to this document. Add a new row for each significant update.
-
-| Version | Date       | Author      | Description of Changes         |
-|---------|------------|-------------|-------------------------------|
-| 1.0     | 2024-06-11 | [Your Name] | Initial version               |
-
-</rewritten_file> 
+- **Related Requirements**: FR-TRV-001 to FR-TRV-008, UC-TRV-001
+- **Related Flows**:
+  - [Location Recommendation and Assignment](HLD-LOC-001-Location-Recommendation-and-Assignment.md)
+  - [Daily Calendar Archiving](HLD-CAL-001-Daily-Calendar-Archiving.md)

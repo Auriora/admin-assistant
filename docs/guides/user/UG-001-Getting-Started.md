@@ -242,7 +242,7 @@ admin-assistant config calendar archive list --user <USER_ID>
 
 ### Learning More
 - **CLI Reference**: See [CLI Command Structure](../../2-architecture/CLI-001-Command-Structure.md)
-- **Workflows**: See [Outlook Calendar Management Workflow](../../1-requirements/workflows/outlook-calendar-management-workflow.md)
+- **Workflows**: See [Outlook Calendar Management Workflow](../../1-requirements/WF-Outlook-Calendar-Management.md)
 - **Architecture**: See [System Architecture](../../2-architecture/ARCH-001-System-Architecture.md)
 
 ## Support

@@ -1,28 +1,39 @@
-# UX Flow Diagram and Description Template
+---
+title: "HLD: Location Recommendation and Assignment"
+id: "HLD-LOC-001"
+type: [ hld, architecture, workflow ]
+status: [ accepted ]
+owner: "Auriora Team"
+last_reviewed: "DD-MM-YYYY"
+tags: [hld, location, recommendation, ux]
+links:
+  tooling: []
+---
 
-## Flow Information
-- **Flow ID**: UXF-LOC-001
-- **Flow Name**: Location Recommendation and Assignment
-- **Created By**: [Your Name]
-- **Creation Date**: 2024-06-11
+# High-Level Design: Location Recommendation and Assignment
+
+- **Owner**: Auriora Team
+- **Status**: Accepted
+- **Created Date**: 2024-06-11
 - **Last Updated**: 2024-06-11
-- **Related Requirements**: FR-LOC-001, FR-LOC-002, FR-LOC-003, FR-LOC-004; UC-LOC-001
-- **Priority**: High
+- **Audience**: [Developers, UX Designers, Product Managers]
 
-## Flow Objective
-Assist users in assigning accurate locations to appointments that are missing this information, using recommendations from a fixed list, past appointments, or auto-creation from invitations. The flow ensures data completeness and consistency for downstream features like travel calculation and billing.
+## 1. Purpose
 
-## User Personas
-- Professional user (primary, single-user scenario)
-- (Future) Admin or support user (for troubleshooting)
+This document describes the high-level design for assisting users in assigning accurate locations to appointments. The objective is to use recommendations from a fixed list, past appointments, or auto-creation from invitations to ensure data completeness and consistency for downstream features like travel calculation.
 
-## Preconditions
-- User is authenticated via Microsoft account
-- Appointment(s) exist with missing or ambiguous location
-- User has granted necessary permissions to the application
+## 2. Context
 
-## Flow Diagram
-```
+- **User Personas**: The primary user is a professional who needs to maintain accurate location data for their appointments.
+- **Preconditions**:
+  - The user must be authenticated.
+  - An appointment must exist with a missing or ambiguous location.
+
+## 3. Details
+
+### 3.1. Flow Diagram
+
+```mermaid
 @startuml
 actor User
 participant "Web UI" as UI
@@ -43,67 +54,32 @@ BE -> UI: Confirm update, show status
 @enduml
 ```
 
-## Detailed Flow Description
+### 3.2. Step-by-Step Flow
 
-### Entry Points
-- User views or edits an appointment with a missing or ambiguous location (e.g., on calendar or appointment details page).
-- System detects missing location and prompts user.
+| Step # | Actor        | Action                                      | System Response                                      |
+|--------|--------------|---------------------------------------------|------------------------------------------------------|
+| 1      | User/System  | An appointment with a missing location is detected. | The system prompts the user to assign a location.    |
+| 2      | Backend      | Fetches recommended locations.              | Returns a list of recommendations to the UI.         |
+| 3      | User         | Selects a recommendation or adds a new one. | Sends the selection to the backend.                  |
+| 4      | Backend      | Validates and saves the location.           | Updates the appointment and the location list.       |
+| 5      | User         | (If conflict) Resolves the location conflict. | The system prompts the user for resolution.          |
 
-### Step-by-Step Flow
+### 3.3. Error Scenarios
 
-| Step # | Actor        | Action                                      | System Response                                      | UI Elements                | Notes                                  |
-|--------|--------------|---------------------------------------------|------------------------------------------------------|----------------------------|----------------------------------------|
-| 1      | User/System  | Appointment with missing location detected  | Prompts user to assign location                      | Prompt/modal, location field| Can be triggered on save or view       |
-| 2      | Backend      | Fetches recommended locations (fixed/past)  | Returns list of recommended locations                | Recommendation list         |                                        |
-| 3      | User         | Selects a recommended location or adds new  | Sends selection/addition to backend                  | Dropdown, Add button        |                                        |
-| 4      | Backend      | Validates and saves location to appointment | Updates appointment and location list if new         | N/A                        | Handles conflicts, duplicates          |
-| 5      | Backend      | Confirms update to UI                       | Shows success or error message                       | Success/Error notification  |                                        |
-| 6      | User         | (If conflict) Resolves location conflict    | System prompts for resolution                        | Conflict dialog             |                                        |
+| Scenario          | Trigger                                     | System Response                                 |
+|-------------------|---------------------------------------------|-------------------------------------------------|
+| Location Conflict | A new location conflicts with an existing one.| Prompts the user to resolve the conflict.       |
+| Invalid Location  | The user enters an invalid location format. | Shows an error and prevents saving.             |
+| Save Failure      | A backend or database error occurs.         | Shows an error message and allows a retry.      |
 
-### Exit Points
-- Appointment is updated with a valid location.
-- User is notified of any errors or conflicts and can resolve them.
-- System logs all actions for audit purposes.
+### 3.4. Design Considerations
 
-### Error Scenarios
+- **UI Components**: The UI will include a location field in the appointment details, a recommendation dropdown/list, an "add new" button, and a conflict resolution dialog.
+- **Accessibility**: All controls will be fully accessible via keyboard and screen readers.
 
-| Error Scenario         | Trigger                                 | System Response                                 | User Recovery Action                |
-|-----------------------|-----------------------------------------|------------------------------------------------|-------------------------------------|
-| Location Conflict     | New location conflicts with existing    | Prompts user to resolve conflict                | User selects/corrects location      |
-| Invalid Location      | User enters invalid location            | Shows error, does not save                      | User corrects input                 |
-| Save Failure          | Backend/database error                  | Shows error, allows retry                       | Retry save                          |
-| Auth Expired          | User session/token expired              | Prompts user to re-authenticate                 | Log in again                        |
+# References
 
-## UI Components
-- Appointment details page/modal with location field
-- Location recommendation dropdown/list
-- Add new location button/field
-- Conflict resolution dialog
-- Success/Error notification banners or modals
-
-## Accessibility Considerations
-- All controls accessible via keyboard and screen readers
-- Sufficient color contrast for prompts and error indicators
-- Clear, actionable error messages and prompts
-
-## Performance Expectations
-- Location recommendations should appear within a second
-- UI should remain responsive during backend operations
-- System should handle errors gracefully
-
-## Related Flows
-- Travel Appointment Addition (UXF-TRV-001)
-- Daily Calendar Archiving (UXF-CAL-001)
-- Error Notification Flow (UXF-NOT-001)
-
-## Notes
-- All location assignments and changes are logged for audit and compliance
-- Future: Support for multi-user and admin troubleshooting
-
-## Change Tracking
-
-This section records the history of changes made to this document. Add a new row for each significant update.
-
-| Version | Date       | Author      | Description of Changes         |
-|---------|------------|-------------|-------------------------------|
-| 1.0     | 2024-06-11 | [Your Name] | Initial version               | 
+- **Related Requirements**: FR-LOC-001, FR-LOC-002, FR-LOC-003, FR-LOC-004, UC-LOC-001
+- **Related Flows**:
+  - [Travel Appointment Addition](HLD-TRV-001-Travel-Appointment-Addition.md)
+  - [Daily Calendar Archiving](HLD-CAL-001-Daily-Calendar-Archiving.md)

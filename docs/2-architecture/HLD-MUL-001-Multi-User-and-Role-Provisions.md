@@ -1,29 +1,37 @@
-# UX Flow Diagram and Description Template
+---
+title: "HLD: Multi-User and Role Provisions"
+id: "HLD-MUL-001"
+type: [ hld, architecture, design ]
+status: [ proposed ]
+owner: "Auriora Team"
+last_reviewed: "DD-MM-YYYY"
+tags: [hld, multi-user, rbac, architecture]
+links:
+  tooling: []
+---
 
-## Flow Information
-- **Flow ID**: UXF-MUL-001
-- **Flow Name**: Multi-User and Role Provisions
-- **Created By**: [Your Name]
-- **Creation Date**: 2024-06-11
+# High-Level Design: Multi-User and Role Provisions
+
+- **Owner**: Auriora Team
+- **Status**: Proposed
+- **Created Date**: 2024-06-11
 - **Last Updated**: 2024-06-11
-- **Related Requirements**: FR-MUL-001, FR-ROL-001, NFR-MUL-001, NFR-ROL-001, NFR-ROL-002
-- **Priority**: Medium
+- **Audience**: [Developers, Architects, Product Managers]
 
-## Flow Objective
-Support future scalability by providing provisions for multi-user and role-based access, ensuring strict user data isolation, secure role management, and prevention of unauthorized access or escalation.
+## 1. Purpose
 
-## User Personas
-- Professional user (single or multi-user scenario)
-- Admin user (for user/role management)
-- (Future) Support user (for troubleshooting)
+This document describes the architectural provisions for future multi-user and role-based access control (RBAC). The objective is to ensure the system is designed for scalability, with strict user data isolation, secure role management, and prevention of unauthorized access or privilege escalation.
 
-## Preconditions
-- System is configured for multi-user and/or role-based access
-- User is authenticated via Microsoft account
-- User has granted necessary permissions to the application
+## 2. Context
 
-## Flow Diagram
-```
+- **User Personas**: This design considers two primary personas: the **Admin**, who manages users and roles, and the standard **User**, who accesses their own data.
+- **Preconditions**: The system must be configured for multi-user mode, and all users must be authenticated.
+
+## 3. Details
+
+### 3.1. Flow Diagram
+
+```mermaid
 @startuml
 actor Admin
 actor User
@@ -39,7 +47,7 @@ BE -> UI: Show user/role list
 Admin -> UI: Adds/edits/deletes user or role
 UI -> BE: Save changes
 BE -> DB: Update user/role info
-BE -> UI: Confirm update, show status
+
 User -> UI: Logs in, accesses data
 UI -> BE: Enforce user/role isolation
 BE -> DB: Fetch user-specific data
@@ -48,67 +56,32 @@ BE -> UI: Show user data
 @enduml
 ```
 
-## Detailed Flow Description
+### 3.2. Step-by-Step Flow
 
-### Entry Points
-- Admin navigates to User/Role Management page
-- User logs in or accesses data
+| Step # | Actor   | Action                                      | System Response                                      |
+|--------|---------|---------------------------------------------|------------------------------------------------------|
+| 1      | Admin   | Navigates to the User/Role Management page. | Loads and displays the list of users and roles.      |
+| 2      | Admin   | Adds, edits, or deletes a user or role.     | Sends the change request to the backend.             |
+| 3      | Backend | Updates the user/role information in the DB.| Confirms the update or returns an error.             |
+| 4      | User    | Logs in and accesses their data.            | The system enforces strict user/role data isolation. |
+| 5      | Backend | Fetches data specific to the user.          | Returns only the data the user is authorized to see. |
 
-### Step-by-Step Flow
+### 3.3. Error Scenarios
 
-| Step # | Actor        | Action                                      | System Response                                      | UI Elements                | Notes                                  |
-|--------|--------------|---------------------------------------------|------------------------------------------------------|----------------------------|----------------------------------------|
-| 1      | Admin        | Navigates to User/Role Management page      | Loads user/role list                                 | User/Role list, controls   |                                        |
-| 2      | Admin        | Adds, edits, or deletes user or role        | Sends change to backend                              | Add/Edit/Delete controls   |                                        |
-| 3      | Backend      | Updates user/role info in DB                | Confirms update or shows error                       | N/A                        |                                        |
-| 4      | User         | Logs in, accesses data                      | System enforces user/role isolation                  | User dashboard, data views |                                        |
-| 5      | Backend      | Fetches user-specific data                  | Returns only authorized data                         | N/A                        |                                        |
-| 6      | Backend      | Confirms access or shows error              | Shows data or access denied message                  | Success/Error notification  |                                        |
+| Scenario              | Trigger                                     | System Response                                 |
+|-----------------------|---------------------------------------------|-------------------------------------------------|
+| Unauthorized Access   | A user attempts to access another user's data. | Access is denied, and the event is logged.      |
+| Role Escalation       | A user attempts an unauthorized role change.| The action is denied, and the event is logged.  |
+| Save Failure          | A backend or database error occurs.         | An error message is shown, allowing a retry.    |
 
-### Exit Points
-- User/role changes are saved and reflected in access control
-- User accesses only their own data
-- Admin is notified of any errors and can resolve them
-- System logs all user/role actions for audit purposes
+### 3.4. Design Considerations
 
-### Error Scenarios
+- **UI Components**: An admin-only User/Role management page will be required.
+- **Data Isolation**: The core of the design is ensuring that all data queries are strictly filtered by `user_id`.
+- **Security**: All user and role management actions must be logged for a complete audit trail.
 
-| Error Scenario         | Trigger                                 | System Response                                 | User Recovery Action                |
-|-----------------------|-----------------------------------------|------------------------------------------------|-------------------------------------|
-| Unauthorized Access   | User attempts to access another's data   | Denies access, logs event                       | User sees access denied message      |
-| Role Escalation       | User attempts unauthorized role change   | Denies action, logs event                       | User sees error, admin notified      |
-| Save Failure          | Backend/database error                   | Shows error, allows retry                       | Retry save                          |
-| Auth Expired          | User session/token expired               | Prompts user to re-authenticate                 | Log in again                        |
+# References
 
-## UI Components
-- User/Role management page (admin)
-- User/Role list and controls
-- User dashboard and data views
-- Success/Error notification banners or modals
-
-## Accessibility Considerations
-- All controls accessible via keyboard and screen readers
-- Sufficient color contrast for controls and error messages
-- Clear, actionable error messages and prompts
-
-## Performance Expectations
-- User/role changes and access checks should complete within a second
-- UI should remain responsive during backend operations
-- System should handle access and save errors gracefully
-
-## Related Flows
-- Authentication Flow
-- Audit Log and Export (UXF-AUD-001)
-- Error Notification Flow (UXF-NOT-001)
-
-## Notes
-- All user/role actions are logged for audit and compliance
-- Future: Support for more granular permissions and external directory integration
-
-## Change Tracking
-
-This section records the history of changes made to this document. Add a new row for each significant update.
-
-| Version | Date       | Author      | Description of Changes         |
-|---------|------------|-------------|-------------------------------|
-| 1.0     | 2024-06-11 | [Your Name] | Initial version               | 
+- **Related Requirements**: FR-MUL-001, FR-ROL-001, NFR-MUL-001, NFR-ROL-001, NFR-ROL-002
+- **Related Flows**:
+  - [Audit Log and Export](HLD-AUD-001-Audit-Log-and-Export.md)

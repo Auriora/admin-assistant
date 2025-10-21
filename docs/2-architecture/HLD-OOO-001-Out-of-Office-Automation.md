@@ -1,28 +1,40 @@
-# UX Flow Diagram and Description Template
+---
+title: "HLD: Out-of-Office Automation"
+id: "HLD-OOO-001"
+type: [ hld, architecture, workflow ]
+status: [ accepted ]
+owner: "Auriora Team"
+last_reviewed: "DD-MM-YYYY"
+tags: [hld, ooo, automation, ux]
+links:
+  tooling: []
+---
 
-## Flow Information
-- **Flow ID**: UXF-OOO-001
-- **Flow Name**: Out-of-Office Automation
-- **Created By**: [Your Name]
-- **Creation Date**: 2024-06-11
+# High-Level Design: Out-of-Office Automation
+
+- **Owner**: Auriora Team
+- **Status**: Accepted
+- **Created Date**: 2024-06-11
 - **Last Updated**: 2024-06-11
-- **Related Requirements**: FR-OOO-001; UC-PRI-001
-- **Priority**: High
+- **Audience**: [Developers, UX Designers, Product Managers]
 
-## Flow Objective
-Automatically mark all appointments as Out-of-Office (OOO) for a specified period, ensuring consistent calendar status and user awareness. This flow supports user privacy, scheduling, and compliance with organizational policies.
+## 1. Purpose
 
-## User Personas
-- Professional user (primary, single-user scenario)
-- (Future) Admin or support user (for troubleshooting)
+This document describes the high-level design for automatically marking calendar appointments as "Out-of-Office" (OOO). The objective is to ensure a consistent calendar status for a specified period, which supports user privacy, accurate scheduling, and compliance with organizational policies.
 
-## Preconditions
-- User is authenticated via Microsoft account
-- Appointments exist in the calendar/archive
-- User has granted necessary permissions to the application
+## 2. Context
 
-## Flow Diagram
-```
+- **User Personas**: The primary user is a professional managing their own calendar.
+- **Preconditions**:
+  - The user must be authenticated.
+  - Appointments must exist in the user's calendar or archive.
+  - The application must have the necessary permissions to modify appointments.
+
+## 3. Details
+
+### 3.1. Flow Diagram
+
+```mermaid
 @startuml
 actor User
 participant "Web UI" as UI
@@ -37,61 +49,29 @@ BE -> UI: Show OOO status and confirmation
 @enduml
 ```
 
-## Detailed Flow Description
+### 3.2. Step-by-Step Flow
 
-### Entry Points
-- User selects an Out-of-Office period or triggers OOO automation (e.g., via dashboard or settings).
-- System detects OOO period (e.g., from user profile or external trigger) and initiates automation.
+| Step # | Actor        | Action                                      | System Response                                      |
+|--------|--------------|---------------------------------------------|------------------------------------------------------|
+| 1      | User/System  | Triggers OOO automation or selects a period.| The system identifies appointments in the OOO period.|
+| 2      | Backend      | Identifies the relevant appointments.       | Returns a list of appointments to be marked as OOO.  |
+| 3      | Backend      | Marks the appointments as Out-of-Office.    | Updates the appointments in the calendar/archive.    |
+| 4      | Backend      | Confirms the update to the UI.              | Shows the OOO status and a confirmation message.     |
 
-### Step-by-Step Flow
+### 3.3. Error Scenarios
 
-| Step # | Actor        | Action                                      | System Response                                      | UI Elements                | Notes                                  |
-|--------|--------------|---------------------------------------------|------------------------------------------------------|----------------------------|----------------------------------------|
-| 1      | User/System  | Triggers OOO automation or selects period   | System identifies appointments in OOO period         | OOO period selector/button | Can be manual or scheduled             |
-| 2      | Backend      | Identifies relevant appointments            | Returns list of appointments to be marked OOO        | N/A                        |                                        |
-| 3      | Backend      | Marks appointments as Out-of-Office         | Updates appointments in calendar/archive             | N/A                        |                                        |
-| 4      | Backend      | Confirms update to UI                       | Shows OOO status and confirmation                   | OOO status indicator        |                                        |
-| 5      | User         | Reviews OOO status, can adjust period       | System allows adjustment or re-run                   | OOO period selector/button |                                        |
+| Scenario       | Trigger                           | System Response                                 | User Recovery Action      |
+|----------------|-----------------------------------|-------------------------------------------------|---------------------------|
+| Save Failure   | A backend or database error occurs. | Shows an error message and allows a retry.      | Retry the save operation. |
+| Auth Expired   | The user's session or token has expired. | Prompts the user to re-authenticate.            | Log in again.             |
 
-### Exit Points
-- Appointments are marked as Out-of-Office for the selected period.
-- User is notified of any errors and can resolve them.
-- System logs all actions for audit purposes.
+### 3.4. Design Considerations
 
-### Error Scenarios
+- **UI Components**: The interface will include an OOO period selector or an automation trigger button, a status indicator on appointments, and success/error notifications.
+- **Accessibility**: All controls will be accessible via keyboard and screen readers.
 
-| Error Scenario         | Trigger                                 | System Response                                 | User Recovery Action                |
-|-----------------------|-----------------------------------------|------------------------------------------------|-------------------------------------|
-| Save Failure          | Backend/database error                   | Shows error, allows retry                       | Retry save                          |
-| Auth Expired          | User session/token expired               | Prompts user to re-authenticate                 | Log in again                        |
+# References
 
-## UI Components
-- OOO period selector or automation trigger button
-- OOO status indicator on calendar/appointments
-- Success/Error notification banners or modals
-
-## Accessibility Considerations
-- All controls accessible via keyboard and screen readers
-- Sufficient color contrast for OOO indicators and error messages
-- Clear, actionable error messages and prompts
-
-## Performance Expectations
-- OOO marking should complete within a second for typical data volumes
-- UI should remain responsive during backend operations
-- System should handle save errors gracefully
-
-## Related Flows
-- Appointment Privacy Management (UXF-PRI-001)
-- Error Notification Flow (UXF-NOT-001)
-
-## Notes
-- All OOO actions and changes are logged for audit and compliance
-- Future: Support for multi-user and admin troubleshooting
-
-## Change Tracking
-
-This section records the history of changes made to this document. Add a new row for each significant update.
-
-| Version | Date       | Author      | Description of Changes         |
-|---------|------------|-------------|-------------------------------|
-| 1.0     | 2024-06-11 | [Your Name] | Initial version               | 
+- **Related Requirements**: FR-OOO-001, UC-PRI-001
+- **Related Flows**:
+  - [Appointment Privacy Management](HLD-PRI-001-Appointment-Privacy-Management.md)

@@ -1,98 +1,75 @@
-# UX Flow Diagram and Description Template
+---
+title: "HLD: User Notification of Issues"
+id: "HLD-NOT-001"
+type: [ hld, architecture, workflow ]
+status: [ accepted ]
+owner: "Auriora Team"
+last_reviewed: "DD-MM-YYYY"
+tags: [hld, notification, ux, workflow]
+links:
+  tooling: []
+---
 
-## Flow Information
-- **Flow ID**: UXF-NOT-001
-- **Flow Name**: User Notification of Issues
-- **Created By**: [Your Name]
-- **Creation Date**: 2024-06-11
+# High-Level Design: User Notification of Issues
+
+- **Owner**: Auriora Team
+- **Status**: Accepted
+- **Created Date**: 2024-06-11
 - **Last Updated**: 2024-06-11
-- **Related Requirements**: FR-NOT-001; UC-NOT-001
-- **Priority**: High
+- **Audience**: [Developers, UX Designers, Product Managers]
 
-## Extended Flow Objective
-Notify users of missing/conflicting data, errors, or important system events via configurable channels (email, in-app/toast, or both), supporting progress updates, state, and percentage complete. Notifications are updatable by transaction_id and user preferences determine delivery channel. UI allows marking as read and visually distinguishes channel and state.
+## 1. Purpose
 
-## User Personas
-- Professional user (primary, single-user scenario)
-- (Future) Admin or support user (for troubleshooting)
+This document describes the high-level design for the user notification system. The objective is to notify users of missing or conflicting data, errors, or important system events via configurable channels (email, in-app/toast, or both). The system must support progress updates for long-running tasks, including state and percentage complete. Notifications must be updatable by a unique transaction ID, and the UI must allow users to manage their preferences.
 
-## Preconditions
-- User is authenticated via Microsoft account
-- User has granted necessary permissions to the application
-- System detects an issue requiring user attention
+## 2. Context
 
-## Flow Diagram
-```
+- **User Personas**: The primary user is a professional managing their own administrative tasks.
+- **Preconditions**:
+  - The user must be authenticated.
+  - The system must detect an event or issue that requires user attention.
+
+## 3. Details
+
+### 3.1. Flow Diagram
+
+```mermaid
 @startuml
 actor User
 participant "Web UI" as UI
 participant "Backend Service" as BE
 participant "Notification Service" as Notify
 
-BE -> Notify: Detects issue, triggers notification
-Notify -> UI: In-app notification
+BE -> Notify: Detects issue, triggers notification with transaction_id
+Notify -> UI: In-app notification (e.g., Toast)
 Notify -> User: Email notification (if configured)
 User -> UI: Views notification, takes action
 @enduml
 ```
 
-## Detailed Flow Description
+### 3.2. Step-by-Step Flow
 
-### Entry Points
-- System detects a missing/conflicting data or error during any user or background operation.
-- User receives notification via in-app banner, modal, or email.
+| Step # | Actor        | Action                                      | System Response                                      |
+|--------|--------------|---------------------------------------------|------------------------------------------------------|
+| 1      | System       | Detects an event, issue, or task progress.  | Triggers a notification via the configured channels. |
+| 2      | Notification | Creates/updates a notification by `transaction_id`. | The user receives a notification with progress/state.|
+| 3      | User         | Views the notification and its status.      | The system logs the user action.                     |
+| 4      | User         | Marks the notification as read or takes action. | The system updates the notification state.           |
+| 5      | User         | Changes their notification preferences.     | The system updates the delivery channel for future events. |
 
-### Step-by-Step Flow
+### 3.3. Error Scenarios
 
-| Step # | Actor        | Action                                      | System Response                                      | UI Elements                | Notes                                  |
-|--------|--------------|---------------------------------------------|------------------------------------------------------|----------------------------|----------------------------------------|
-| 1      | System       | Detects event/issue or task progress        | Triggers notification via configured channels        | N/A                        | Can be in-app, email, or both          |
-| 2      | Notification | Creates/updates notification (by transaction_id), sets progress, state, pct_complete | User receives notification with progress/state       | Notification banner/email   | Progress bar, state badge, channel icon|
-| 3      | User         | Views notification, sees progress/state     | System logs user action/response                     | Notification panel, links, mark as read |                                        |
-| 4      | User         | Marks notification as read or takes action  | System updates notification, logs response           | Mark as read button/icon    |                                        |
-| 5      | User         | Changes notification preferences            | System updates delivery channel for future events    | Preferences UI/table        |                                        |
-| 6      | System       | Logs notification and user response         | Updates audit log                                    | N/A                        |                                        |
+| Scenario             | Trigger                                     | System Response                                 |
+|----------------------|---------------------------------------------|-------------------------------------------------|
+| Notification Failure | The email or in-app notification fails to send. | The system logs the error and retries or uses a fallback channel. |
+| Auth Expired         | The user's session or token has expired.    | The system prompts the user to re-authenticate. |
 
-### Exit Points
-- User is notified of the issue and can take corrective action.
-- System logs all notifications and user responses for audit purposes.
+### 3.4. Design Considerations
 
-### Error Scenarios
+- **UI Components**: The UI will include notification banners/modals, an email template, a notification settings page for user preferences, progress bars, state badges, and channel icons.
+- **Accessibility**: All notifications must be accessible to screen readers, use sufficient color contrast, and provide clear, actionable content.
+- **Performance**: Notifications should be delivered within a few seconds of an event. The UI must remain responsive.
 
-| Error Scenario         | Trigger                                 | System Response                                 | User Recovery Action                |
-|-----------------------|-----------------------------------------|------------------------------------------------|-------------------------------------|
-| Notification Failure  | Email/in-app notification fails          | Logs error, retries or uses fallback channel    | User may not receive notification   |
-| Auth Expired          | User session/token expired               | Prompts user to re-authenticate                 | Log in again                        |
+# References
 
-## UI Components
-- Notification banners, modals, or panel in-app
-- Email notification template
-- Notification settings/configuration page (user can toggle channel per notification class)
-- Progress bar, state badge, channel icon in notification UI
-- Mark as read button/icon
-
-## Accessibility Considerations
-- All notifications accessible via screen readers
-- Sufficient color contrast for notification banners
-- Clear, actionable notification content
-
-## Performance Expectations
-- Notifications should be delivered within a few seconds of issue detection
-- UI should remain responsive during notification delivery
-- System should handle notification errors gracefully
-
-## Related Flows
-- All flows that may generate user-facing issues (e.g., archiving, export, travel, etc.)
-- Error Notification Flow (self-referential)
-
-## Notes
-- All notifications and user responses are logged for audit and compliance
-- Future: Support for multi-user and admin troubleshooting
-
-## Change Tracking
-
-This section records the history of changes made to this document. Add a new row for each significant update.
-
-| Version | Date       | Author      | Description of Changes         |
-|---------|------------|-------------|-------------------------------|
-| 1.0     | 2024-06-11 | [Your Name] | Initial version               | 
+- **Related Requirements**: FR-NOT-001, UC-NOT-001
