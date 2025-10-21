@@ -1,10 +1,32 @@
-# 3. Specific Requirements
+---
+title: "SRS Specific Requirements"
+id: "SRS-Specific-Requirements"
+type: [ srs, requirements ]
+status: [ approved ]
+owner: "Auriora Team"
+last_reviewed: "2024-12-19"
+tags: [srs, requirements, functional, non-functional]
+links:
+  tooling: []
+---
+
+# Specific Requirements
+
+- **Owner**: Auriora Team
+- **Status**: Approved
+- **Created Date**: DD-MM-YYYY
+- **Last Updated**: 2024-12-19
+- **Audience**: [Developers, Testers, Project Managers]
+
+## 1. Purpose
 
 This section details the specific functional and non-functional requirements of the Admin Assistant system.
 
-## 3.1 Functional Requirements
+## 2. Details
 
-### 3.1.1 Calendar Archiving
+### 2.1 Functional Requirements
+
+#### 2.1.1 Calendar Archiving
 
 | ID           | Requirement                                                                                      | Priority    | Rationale                                   |
 |--------------|--------------------------------------------------------------------------------------------------|-------------|---------------------------------------------|
@@ -19,7 +41,7 @@ This section details the specific functional and non-functional requirements of 
 | FR-CAL-009   | Prevent duplicate archiving: if archiving is in progress, new requests wait; only archive from last archived appointment unless overridden. | Must-have | Data integrity and efficiency.              |
 | FR-CAL-010   | Manual archive trigger must provide real-time feedback: show 'archive started' and 'archive complete' notifications, updating the same notification as state changes. | Should-have | Improves user experience and clarity. |
 
-### 3.1.x Overlap Resolution
+#### 2.1.2 Overlap Resolution
 
 | ID           | Requirement                                                                                      | Priority    | Rationale                                   |
 |--------------|--------------------------------------------------------------------------------------------------|-------------|---------------------------------------------|
@@ -31,7 +53,7 @@ This section details the specific functional and non-functional requirements of 
 | FR-OVL-006   | The ActionLog must group/associate all appointments needing resolution for a given overlap, referencing a virtual calendar containing the full details of the overlapping appointments. | Must-have | Ensures all relevant data is available for resolution. |
 | FR-OVL-007   | The user must be able to update an existing appointment or create a new one as the result of a resolution. | Must-have | Supports all user workflows.                |
 
-### 3.1.2 Timesheet Extraction and Billing
+#### 2.1.3 Timesheet Extraction and Billing
 
 | ID           | Requirement                                                                                      | Priority    | Rationale                                   |
 |--------------|--------------------------------------------------------------------------------------------------|-------------|---------------------------------------------|
@@ -44,7 +66,7 @@ This section details the specific functional and non-functional requirements of 
 | FR-BIL-007   | On OneDrive/Xero API failure, system retries and notifies user.                                  | Must-have   | Reliability and user awareness.             |
 | FR-BIL-008   | Billing is always based on the archive; after billing, archive is locked for that period. Option to include missed appointments in next timesheet. | Must-have | Data consistency and auditability.          |
 
-### 3.1.3 Location Recommendation
+#### 2.1.4 Location Recommendation
 
 | ID           | Requirement                                                                                      | Priority    | Rationale                                   |
 |--------------|--------------------------------------------------------------------------------------------------|-------------|---------------------------------------------|
@@ -53,7 +75,7 @@ This section details the specific functional and non-functional requirements of 
 | FR-LOC-003   | If location is unknown or ambiguous, prompt user for input.                                      | Must-have   | Ensures location accuracy.                  |
 | FR-LOC-004   | If user adds a location that conflicts with existing ones, prompt user to resolve.               | Must-have   | Prevents data inconsistency.                |
 
-### 3.1.4 Travel Assumptions and Calculation
+#### 2.1.5 Travel Assumptions and Calculation
 
 | ID           | Requirement                                                                                      | Priority    | Rationale                                   |
 |--------------|--------------------------------------------------------------------------------------------------|-------------|---------------------------------------------|
@@ -66,7 +88,7 @@ This section details the specific functional and non-functional requirements of 
 | FR-TRV-007   | If back-to-back appointments leave insufficient travel time, alert user via email.               | Must-have   | Prevents scheduling conflicts.              |
 | FR-TRV-008   | For all-day/multi-day events, adjust start/end location logic accordingly.                       | Must-have   | Accurate travel planning.                   |
 
-### 3.1.5 Categorization and Privacy
+#### 2.1.6 Categorization and Privacy
 
 | ID           | Requirement                                                                                      | Priority    | Rationale                                   |
 |--------------|--------------------------------------------------------------------------------------------------|-------------|---------------------------------------------|
@@ -76,13 +98,13 @@ This section details the specific functional and non-functional requirements of 
 | FR-PRI-002   | Exclude private appointments from timesheet exports.                                             | Must-have   | Privacy compliance.                         |
 | FR-PRI-003   | Maintain a log of all privacy/out-of-office changes; allow user to roll back individual changes via UI. | Must-have | Transparency and error recovery.            |
 
-### 3.1.6 Out-of-Office Automation
+#### 2.1.7 Out-of-Office Automation
 
 | ID           | Requirement                                                                                      | Priority    | Rationale                                   |
 |--------------|--------------------------------------------------------------------------------------------------|-------------|---------------------------------------------|
 | FR-OOO-001   | Automatically mark all appointments as Out-of-Office.                                            | Must-have   | Consistent calendar status.                 |
 
-### 3.1.7 Rules and Guidelines
+#### 2.1.8 Rules and Guidelines
 
 | ID           | Requirement                                                                                      | Priority    | Rationale                                   |
 |--------------|--------------------------------------------------------------------------------------------------|-------------|---------------------------------------------|
@@ -90,7 +112,7 @@ This section details the specific functional and non-functional requirements of 
 | FR-RUL-002   | Allow user to edit/add rules via the UI.                                                         | Must-have   | User empowerment.                           |
 | FR-RUL-003   | Use OpenAI API for complex recommendations.                                                      | Should-have | Advanced automation.                        |
 
-### 3.1.8 User Interface
+#### 2.1.9 User Interface
 
 | ID           | Requirement                                                                                      | Priority    | Rationale                                   |
 |--------------|--------------------------------------------------------------------------------------------------|-------------|---------------------------------------------|
@@ -99,7 +121,7 @@ This section details the specific functional and non-functional requirements of 
 | FR-UI-003    | Detailed lists must be paged; calendar views show only relevant data for selected date range.    | Must-have   | Usability with large data sets.             |
 | FR-UI-004    | UI must be responsive and handle mobile layouts gracefully.                                      | Must-have   | Mobile usability.                           |
 
-### 3.1.9 Additional/Recommended
+#### 2.1.10 Additional/Recommended
 
 | ID           | Requirement                                                                                      | Priority    | Rationale                                   |
 |--------------|--------------------------------------------------------------------------------------------------|-------------|---------------------------------------------|
@@ -111,7 +133,7 @@ This section details the specific functional and non-functional requirements of 
 | FR-EXP-001   | Support CSV/Excel export in addition to PDF.                                                     | Should-have | Flexibility in reporting.                   |
 | FR-EXP-002   | Export functions must handle special characters, large data sets, and ensure format compatibility. | Must-have | Robustness in reporting.                    |
 
-### 3.1.10 AI Integration (OpenAI)
+#### 2.1.11 AI Integration (OpenAI)
 
 | ID           | Requirement                                                                                      | Priority    | Rationale                                   |
 |--------------|--------------------------------------------------------------------------------------------------|-------------|---------------------------------------------|
@@ -122,7 +144,7 @@ This section details the specific functional and non-functional requirements of 
 | FR-AI-005    | If OpenAI is unavailable, system retries later; not time-critical.                               | Must-have   | Robustness to external API downtime.        |
 | FR-AI-006    | System must sanitize input to OpenAI to prevent prompt injection attacks.                        | Must-have   | Security.                                   |
 
-### 3.1.11 Notification System
+#### 2.1.12 Notification System
 
 | ID           | Requirement                                                                                      | Priority    | Rationale                                   |
 |--------------|--------------------------------------------------------------------------------------------------|-------------|---------------------------------------------|
@@ -133,7 +155,7 @@ This section details the specific functional and non-functional requirements of 
 | FR-NOT-006   | The UI must visually distinguish notification channels (toast/email/both), show progress and state, and allow marking as read. | Must-have   | Clarity and usability.                      |
 | FR-NOT-007   | All notification events and user responses must be logged for audit and compliance.              | Must-have   | Traceability and compliance.                |
 
-### 3.1.12 Command-Line Interface (CLI)
+#### 2.1.13 Command-Line Interface (CLI)
 
 | ID           | Requirement                                                                                      | Priority    | Rationale                                   |
 |--------------|--------------------------------------------------------------------------------------------------|-------------|---------------------------------------------|
@@ -142,9 +164,9 @@ This section details the specific functional and non-functional requirements of 
 | FR-CLI-003   | CLI must be secure, require authentication for sensitive operations, and log all actions.        | Must-have   | Security and auditability.                   |
 | FR-CLI-004   | CLI commands must be scriptable and support non-interactive operation.                          | Must-have   | Automation and integration.                  |
 
-## 3.2 Non-Functional Requirements
+### 2.2 Non-Functional Requirements
 
-### 3.2.1 Security
+#### 2.2.1 Security
 
 | ID              | Requirement                                                                                  | Priority    | Rationale                                   |
 |-----------------|----------------------------------------------------------------------------------------------|-------------|---------------------------------------------|
@@ -157,7 +179,7 @@ This section details the specific functional and non-functional requirements of 
 | NFR-SEC-007     | System must prevent sensitive data exposure in logs, exports, and API responses.                 | Must-have   | Data privacy.                               |
 | NFR-SEC-008     | System must be adaptable to changes in privacy laws or API terms.                                | Must-have   | Legal compliance.                           |
 
-### 3.2.2 Reliability & Availability
+#### 2.2.2 Reliability & Availability
 
 | ID              | Requirement                                                                                  | Priority    | Rationale                                   |
 |-----------------|----------------------------------------------------------------------------------------------|-------------|---------------------------------------------|
@@ -165,14 +187,14 @@ This section details the specific functional and non-functional requirements of 
 | NFR-REL-002     | Graceful error handling for API failures, network issues, and unexpected errors.             | Must-have   | User experience and data integrity.         |
 | NFR-REL-003     | No data loss or corruption during archiving, export, or sync operations.                     | Must-have   | Data integrity.                             |
 
-### 3.2.3 Performance
+#### 2.2.3 Performance
 
 | ID              | Requirement                                                                                  | Priority    | Rationale                                   |
 |-----------------|----------------------------------------------------------------------------------------------|-------------|---------------------------------------------|
 | NFR-PERF-001    | UI actions should complete within a few seconds; background jobs within 5 minutes.           | Must-have   | Responsive user experience.                 |
 | NFR-PERF-002    | System must scale to handle increased data volume and future multi-user support.             | Must-have   | Scalability.                                |
 
-### 3.2.4 Usability
+#### 2.2.4 Usability
 
 | ID              | Requirement                                                                                  | Priority    | Rationale                                   |
 |-----------------|----------------------------------------------------------------------------------------------|-------------|---------------------------------------------|
@@ -180,7 +202,7 @@ This section details the specific functional and non-functional requirements of 
 | NFR-USE-002     | UI should meet accessibility standards (e.g., WCAG 2.1 AA).                                  | Must-have   | Accessibility for all users.                |
 | NFR-USE-003     | UI must be responsive and usable on mobile devices.                                          | Must-have   | Mobile usability.                           |
 
-### 3.2.5 Maintainability
+#### 2.2.5 Maintainability
 
 | ID              | Requirement                                                                                  | Priority    | Rationale                                   |
 |-----------------|----------------------------------------------------------------------------------------------|-------------|---------------------------------------------|
@@ -188,7 +210,7 @@ This section details the specific functional and non-functional requirements of 
 | NFR-MNT-002     | System must be easily extensible for new features and integrations.                          | Must-have   | Future-proofing.                            |
 | NFR-MNT-003     | All environment-specific settings must be configurable, not hard-coded.                      | Must-have   | Deployment flexibility.                     |
 
-### 3.2.6 Auditability
+#### 2.2.6 Auditability
 
 | ID              | Requirement                                                                                  | Priority    | Rationale                                   |
 |-----------------|----------------------------------------------------------------------------------------------|-------------|---------------------------------------------|
@@ -196,7 +218,7 @@ This section details the specific functional and non-functional requirements of 
 | NFR-AUD-002     | Maintain an audit trail of automated changes for transparency and traceability.              | Must-have   | Accountability.                             |
 | NFR-AUD-003     | System must manage audit log size and performance; old logs may be archived or pruned.           | Must-have   | Prevents performance issues.                |
 
-### 3.2.7 Compliance & Privacy
+#### 2.2.7 Compliance & Privacy
 
 | ID              | Requirement                                                                                  | Priority    | Rationale                                   |
 |-----------------|----------------------------------------------------------------------------------------------|-------------|---------------------------------------------|
@@ -204,7 +226,7 @@ This section details the specific functional and non-functional requirements of 
 | NFR-COM-002     | Obtain user consent for accessing and processing calendar and personal data.                 | Must-have   | User rights and transparency.               |
 | NFR-COM-003     | Adhere to Microsoft, Xero, and Google API terms of service.                                  | Must-have   | Third-party compliance.                     |
 
-### 3.2.8 Backup & Recovery
+#### 2.2.8 Backup & Recovery
 
 | ID              | Requirement                                                                                  | Priority    | Rationale                                   |
 |-----------------|----------------------------------------------------------------------------------------------|-------------|---------------------------------------------|
@@ -212,10 +234,14 @@ This section details the specific functional and non-functional requirements of 
 | NFR-BKP-002     | Ability to restore service and data in case of failure.                                      | Must-have   | Disaster recovery.                          |
 | NFR-BKP-003     | System must verify backup completeness and restore consistency.                                  | Must-have   | Data integrity and disaster recovery.        |
 
-### 3.2.9 Multi-user/Role Provisions
+#### 2.2.9 Multi-user/Role Provisions
 
 | ID              | Requirement                                                                                  | Priority    | Rationale                                   |
 |-----------------|----------------------------------------------------------------------------------------------|-------------|---------------------------------------------|
 | NFR-MUL-001      | System must ensure strict user data isolation in multi-user mode.                                | Must-have   | Data privacy and security.                  |
 | NFR-ROL-001      | System must prevent unauthorized role escalation.                                                | Must-have   | Security.                                   |
 | NFR-ROL-002      | System must prevent unauthorized role escalation.                                                | Must-have   | Security.                                   |
+
+# References
+
+- Link to additional resources, specs, or tickets

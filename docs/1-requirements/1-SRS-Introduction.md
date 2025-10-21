@@ -1,8 +1,24 @@
-# 1. Introduction
+---
+title: "SRS Introduction"
+id: "SRS-Introduction"
+type: [ srs, introduction ]
+status: [ approved ]
+owner: "Auriora Team"
+last_reviewed: "2024-12-19"
+tags: [srs, introduction, requirements]
+links:
+  tooling: []
+---
 
-This section provides an introduction to the Admin Assistant system and this SRS document.
+# Introduction
 
-## 1.1 Purpose
+- **Owner**: Auriora Team
+- **Status**: Approved
+- **Created Date**: DD-MM-YYYY
+- **Last Updated**: 2024-12-19
+- **Audience**: [Developers, UX/UI Designers, Project Managers, Stakeholders, Quality Assurance, Security/Compliance]
+
+## 1. Purpose
 
 The purpose of this Software Requirements Specification (SRS) is to define the functional and non-functional requirements for the Admin Assistant system. Admin Assistant is a web application that automates calendar archiving, timesheet extraction, billing, travel calculation, and appointment categorization for a single user (with future support for multiple users and roles). The system integrates with Microsoft 365 Calendar via the Microsoft Graph API and uses Microsoft account authentication. This document establishes a clear foundation for the development, testing, and deployment of the system, ensuring that all stakeholders have a shared understanding of the system's capabilities and constraints.
 
@@ -14,7 +30,9 @@ This SRS document serves as the primary reference for:
 - **Quality-assurance engineers** creating verification and validation plans.
 - **Security and compliance teams** ensuring adherence to relevant standards.
 
-## 1.2 Scope
+## 2. Context
+
+### Scope
 
 This Software Requirements Specification (SRS) document defines the requirements for Admin Assistant. The scope of this document **includes**:
 
@@ -33,7 +51,9 @@ This SRS document **does not include**:
 - User documentation or training materials for end users
 - Deployment or operational procedures for server environments
 
-## 1.3 Definitions and Acronyms
+## 3. Details
+
+### Definitions and Acronyms
 
 - **SRS**: Software Requirements Specification
 - **UI**: User Interface
@@ -44,3 +64,7 @@ This SRS document **does not include**:
 - **CRUD**: Create, Read, Update, Delete
 - **MVP**: Minimum Viable Product
 - **Microsoft Graph API**: Microsoft API for accessing Microsoft 365 services
+
+# References
+
+- Link to additional resources, specs, or tickets

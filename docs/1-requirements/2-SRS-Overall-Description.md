@@ -1,14 +1,45 @@
-# 2. Overall Description
+---
+title: "SRS Overall Description"
+id: "SRS-Overall-Description"
+type: [ srs, description ]
+status: [ approved ]
+owner: "Auriora Team"
+last_reviewed: "2024-12-19"
+tags: [srs, description, requirements]
+links:
+  tooling: []
+---
 
-This section provides a high-level overview of the Admin Assistant system, including its purpose, functionality, and how it interacts with its environment.
+# Overall Description
 
-Admin Assistant is a web application designed for professionals who rely on Microsoft 365 Calendar to manage appointments, billing, and travel. The system automates the archiving of calendar appointments, extraction of timesheets for billing, travel time calculation, and appointment categorization, integrating with Microsoft 365 via the Microsoft Graph API. The application is intended for single-user operation initially, with provisions for future multi-user and role-based access.
+- **Owner**: Auriora Team
+- **Status**: Approved
+- **Created Date**: DD-MM-YYYY
+- **Last Updated**: 2024-12-19
+- **Audience**: [Developers, Project Managers, Stakeholders]
 
-## 2.1 Product Perspective
+## 1. Purpose
+
+This section provides a high-level overview of the Admin Assistant system, including its purpose, functionality, and how it interacts with its environment. Admin Assistant is a web application designed for professionals who rely on Microsoft 365 Calendar to manage appointments, billing, and travel. The system automates the archiving of calendar appointments, extraction of timesheets for billing, travel time calculation, and appointment categorization, integrating with Microsoft 365 via the Microsoft Graph API. The application is intended for single-user operation initially, with provisions for future multi-user and role-based access.
+
+## 2. Context
+
+### Product Perspective
 
 Admin Assistant operates as a standalone web application, integrating directly with the user's Microsoft 365 account using the Microsoft Graph API. It interacts with external services such as OneDrive, Xero, Google Directions API, and OpenAI for document storage, billing, travel time estimation, and AI-powered recommendations and automation, respectively. The system is designed to be extensible for future integration with additional services and multi-user environments.
 
-## 2.2 Product Functions
+### Assumptions
+
+The following assumptions are made regarding the Admin Assistant system:
+
+- User has a Microsoft 365 account with calendar access
+- User has access to OneDrive and Xero accounts
+- User consents to use of external APIs (Google Directions, OpenAI)
+- User will configure locations and rules as needed
+
+## 3. Details
+
+### Product Functions
 
 - Automated daily archiving of calendar appointments
 - Manual trigger for archiving
@@ -30,17 +61,17 @@ Notable functions or capabilities that the Admin Assistant system will not provi
 - Support for non-Microsoft calendar sources (initially)
 - In-app billing or payment processing (beyond Xero integration)
 
-## 2.3 Constraints
+### Constraints
 
 The following constraints affect the design and implementation of the Admin Assistant system:
 
-### Technical Constraints
+#### Technical Constraints
 
 - Must use Microsoft Graph API for calendar access
 - Must use Microsoft authentication
 - Must support integration with OneDrive, Xero, Google Directions API, and OpenAI
 
-### Technology Stack Constraints
+#### Technology Stack Constraints
 
 - The project will be implemented in **Python** using the **Flask** web framework.
 - **Bootstrap** will be used for layout and graphics, integrated via **Flask-Bootstrap** or **Flask-Bootstrap4**.
@@ -49,16 +80,11 @@ The following constraints affect the design and implementation of the Admin Assi
 - The system must be deployable on standard cloud or on-premise infrastructure.
 - **Alternative:** For future scalability or if a more full-featured framework is required, **Django** (with django-crispy-forms and django-bootstrap4) may be considered.
 
-### Business Constraints
+#### Business Constraints
 
 - Initially single-user, but must be designed for future multi-user and role-based support
 - Must comply with data privacy and security best practices
 
-## 2.4 Assumptions
+# References
 
-The following assumptions are made regarding the Admin Assistant system:
-
-- User has a Microsoft 365 account with calendar access
-- User has access to OneDrive and Xero accounts
-- User consents to use of external APIs (Google Directions, OpenAI)
-- User will configure locations and rules as needed
+- Link to additional resources, specs, or tickets

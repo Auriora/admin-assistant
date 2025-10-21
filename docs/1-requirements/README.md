@@ -41,7 +41,7 @@ links:
   - [ ] Delete this `Usage Notes` section before publishing.
   - [ ] Ensure the document is linked from the relevant `README.md` file.
 
-- **Naming Convention**: N/A for this file.
+- **Naming Convention**: `<type>-<description>.md` (e.g., `SRS-Overview.md`, `WF-Outlook-Calendar.md`). For sequenced documents, use a numeric prefix: `[number]-<type>-<description>.md`.
 
 ## 5. Available Templates
 

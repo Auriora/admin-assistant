@@ -1,8 +1,30 @@
-# 7. Requirements Prioritization Matrix
+---
+title: "SRS Prioritization Matrix"
+id: "SRS-Prioritization-Matrix"
+type: [ srs, prioritization ]
+status: [ approved ]
+owner: "Auriora Team"
+last_reviewed: "2024-12-19"
+tags: [srs, prioritization, requirements]
+links:
+  tooling: []
+---
+
+# Requirements Prioritization Matrix
+
+- **Owner**: Auriora Team
+- **Status**: Approved
+- **Created Date**: DD-MM-YYYY
+- **Last Updated**: 2024-12-19
+- **Audience**: [Project Managers, Product Owners, Developers]
+
+## 1. Purpose
 
 This section provides a comprehensive framework for prioritizing requirements based on their importance, complexity, and value. Use this matrix to make informed decisions about what to implement and in what order.
 
-## Prioritization Matrix
+## 2. Details
+
+### Prioritization Matrix
 
 | Requirement ID | Priority (MoSCoW) | Complexity (1-5) | Value (1-5) | Value/Complexity Ratio | Implementation Order | Rationale/Notes |
 |----------------|-------------------|------------------|-------------|------------------------|----------------------|-----------------|
@@ -34,13 +56,13 @@ This section provides a comprehensive framework for prioritizing requirements ba
 | NFR-BKP-001    | Must Have         | 3                | 4           | 1.33                   | 3                    | Must-have |
 | NFR-AI-001     | Must Have         | 3                | 5           | 1.67                   | 8                    | Must-have |
 
-## Rationale
+### Rationale
 - Requirements with the highest value and lowest complexity are prioritized first.
 - Core security, reliability, compliance, and maintainability are implemented before advanced features.
 - Features that are provisions for future scalability (multi-user, roles) are lower priority.
 - AI-powered features are prioritized after core and UI features are stable.
 
-## Implementation Order
+### Implementation Order
 1. Core Security, Reliability, Compliance, and Maintainability (NFR-SEC-001, NFR-REL-001, NFR-COM-001, NFR-MNT-001, NFR-PERF-001)
 2. UI Foundation and Usability (NFR-USE-001, FR-UI-001)
 3. Archiving and Timesheet Core (FR-CAL-001, FR-BIL-001, FR-BIL-003, FR-BIL-004)
@@ -52,7 +74,7 @@ This section provides a comprehensive framework for prioritizing requirements ba
 
 See the table above for detailed rationale and value/complexity analysis for each requirement.
 
-## How to Use This Matrix
+### How to Use This Matrix
 
 1. **List all requirements** in the table above, using their unique IDs
 2. **Assign a MoSCoW priority** to each requirement:
@@ -81,7 +103,7 @@ See the table above for detailed rationale and value/complexity analysis for eac
    - Dependencies between requirements
 7. **Document your rationale** for prioritization decisions
 
-## Prioritization Strategies
+### Prioritization Strategies
 
 Consider these strategies when prioritizing requirements:
 
@@ -90,7 +112,7 @@ Consider these strategies when prioritizing requirements:
 3. **Dependency-based prioritization**: Implement prerequisites before dependent requirements
 4. **Technical foundation prioritization**: Build core technical components before features that rely on them
 
-## AI Assistance for Prioritization
+### AI Assistance for Prioritization
 
 Use these prompts with your AI assistant to help with the prioritization process:
 
@@ -101,7 +123,7 @@ Use these prompts with your AI assistant to help with the prioritization process
 - "What risks should I consider when prioritizing [requirement]?"
 - "How might the complexity change if I implement [requirement A] before [requirement B]?"
 
-## Example: Completed Prioritization Matrix
+### Example: Completed Prioritization Matrix
 
 Here's an example of a completed prioritization matrix for a generic system:
 
@@ -110,3 +132,7 @@ Here's an example of a completed prioritization matrix for a generic system:
 | FR-DOC-001     | Must Have         | 3                | 5           | 1.67                   | 1                    | Integration is core functionality needed for the system to work |
 | FR-USR-001     | Must Have         | 2                | 5           | 2.5                    | 2                    | User authentication is essential for security and access control |
 | NFR-SEC-001    | Must Have         | 2                | 5           | 2.5                    | 3                    | HTTPS is required for secure communications |
+
+# References
+
+- Link to additional resources, specs, or tickets

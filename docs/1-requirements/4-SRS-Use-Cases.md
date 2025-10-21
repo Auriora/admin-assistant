@@ -1,8 +1,30 @@
-# 4. Use Cases
+---
+title: "SRS Use Cases"
+id: "SRS-Use-Cases"
+type: [ srs, use-cases ]
+status: [ approved ]
+owner: "Auriora Team"
+last_reviewed: "2024-12-19"
+tags: [srs, use-cases, requirements]
+links:
+  tooling: []
+---
+
+# Use Cases
+
+- **Owner**: Auriora Team
+- **Status**: Approved
+- **Created Date**: DD-MM-YYYY
+- **Last Updated**: 2024-12-19
+- **Audience**: [Developers, Testers, Product Managers]
+
+## 1. Purpose
 
 This section describes the key use cases for the Admin Assistant system, focusing on user interactions and expected outcomes. These use cases represent the most important scenarios that the system must support.
 
-## 4.1 UC-CAL-001 Archive Daily Appointments
+## 2. Details
+
+### 2.1 UC-CAL-001 Archive Daily Appointments
 
 | Field                        | Description                                                                                                   |
 |------------------------------|---------------------------------------------------------------------------------------------------------------|
@@ -18,7 +40,7 @@ This section describes the key use cases for the Admin Assistant system, focusin
 | **Related FRs**              | FR-CAL-001, FR-CAL-002, FR-CAL-003                                                                            |
 | **Related NFRs**             | NFR-REL-001                                                                                                   |
 
-## 4.2 UC-BIL-001 Generate and Export Timesheet
+### 2.2 UC-BIL-001 Generate and Export Timesheet
 
 | Field                        | Description                                                                                                   |
 |------------------------------|---------------------------------------------------------------------------------------------------------------|
@@ -34,7 +56,7 @@ This section describes the key use cases for the Admin Assistant system, focusin
 | **Related FRs**              | FR-BIL-001, FR-BIL-002, FR-BIL-003, FR-BIL-004, FR-PRI-002, FR-EXP-001                                       |
 | **Related NFRs**             | NFR-PERF-001, NFR-SEC-001                                                                                     |
 
-## 4.3 UC-LOC-001 Recommend/Assign Location
+### 2.3 UC-LOC-001 Recommend/Assign Location
 
 | Field                        | Description                                                                                                   |
 |------------------------------|---------------------------------------------------------------------------------------------------------------|
@@ -50,7 +72,7 @@ This section describes the key use cases for the Admin Assistant system, focusin
 | **Related FRs**              | FR-LOC-001, FR-LOC-002                                                                                        |
 | **Related NFRs**             | NFR-USE-001                                                                                                   |
 
-## 4.4 UC-TRV-001 Add Travel Appointments
+### 2.4 UC-TRV-001 Add Travel Appointments
 
 | Field                        | Description                                                                                                   |
 |------------------------------|---------------------------------------------------------------------------------------------------------------|
@@ -66,7 +88,7 @@ This section describes the key use cases for the Admin Assistant system, focusin
 | **Related FRs**              | FR-TRV-001, FR-TRV-002, FR-TRV-003                                                                            |
 | **Related NFRs**             | NFR-PERF-001, NFR-REL-001                                                                                     |
 
-## 4.5 UC-CAT-001 Categorize Appointments
+### 2.5 UC-CAT-001 Categorize Appointments
 
 | Field                        | Description                                                                                                   |
 |------------------------------|---------------------------------------------------------------------------------------------------------------|
@@ -82,7 +104,7 @@ This section describes the key use cases for the Admin Assistant system, focusin
 | **Related FRs**              | FR-CAT-001, FR-CAT-002                                                                                        |
 | **Related NFRs**             | NFR-USE-001                                                                                                   |
 
-## 4.6 UC-PRI-001 Mark Appointments as Private
+### 2.6 UC-PRI-001 Mark Appointments as Private
 
 | Field                        | Description                                                                                                   |
 |------------------------------|---------------------------------------------------------------------------------------------------------------|
@@ -98,7 +120,7 @@ This section describes the key use cases for the Admin Assistant system, focusin
 | **Related FRs**              | FR-PRI-001, FR-PRI-002                                                                                        |
 | **Related NFRs**             | NFR-SEC-001                                                                                                   |
 
-## 4.7 UC-UI-001 Manage Rules and Guidelines
+### 2.7 UC-UI-001 Manage Rules and Guidelines
 
 | Field                        | Description                                                                                                   |
 |------------------------------|---------------------------------------------------------------------------------------------------------------|
@@ -114,7 +136,7 @@ This section describes the key use cases for the Admin Assistant system, focusin
 | **Related FRs**              | FR-RUL-001, FR-RUL-002, FR-RUL-003                                                                            |
 | **Related NFRs**             | NFR-MNT-001                                                                                                   |
 
-## 4.8 UC-NOT-001 Notify User of Issues
+### 2.8 UC-NOT-001 Notify User of Issues
 
 | Field                        | Description                                                                                                   |
 |------------------------------|---------------------------------------------------------------------------------------------------------------|
@@ -130,7 +152,7 @@ This section describes the key use cases for the Admin Assistant system, focusin
 | **Related FRs**              | FR-NOT-001                                                                                                    |
 | **Related NFRs**             | NFR-REL-001                                                                                                   |
 
-## 4.9 UC-NOT-002 Advanced Notification Handling
+### 2.9 UC-NOT-002 Advanced Notification Handling
 
 | Field                        | Description                                                                                                   |
 |------------------------------|---------------------------------------------------------------------------------------------------------------|
@@ -146,7 +168,7 @@ This section describes the key use cases for the Admin Assistant system, focusin
 | **Related FRs**              | FR-NOT-002, FR-NOT-003, FR-NOT-004, FR-NOT-005, FR-NOT-006, FR-NOT-007                                       |
 | **Related NFRs**             | NFR-REL-001, NFR-USE-001, NFR-AUD-001                                                                         |
 
-## 4.x UC-OVL-001 Manual Overlap Resolution and AI Chat
+### 2.10 UC-OVL-001 Manual Overlap Resolution and AI Chat
 
 | Field                        | Description                                                                                                   |
 |------------------------------|---------------------------------------------------------------------------------------------------------------|
@@ -161,3 +183,7 @@ This section describes the key use cases for the Admin Assistant system, focusin
 | **Special Requirements**     | - Persistent chat interface<br>- AI-powered suggestions<br>- All actions logged for audit                     |
 | **Related FRs**              | FR-OVL-001, FR-OVL-002, FR-OVL-003, FR-OVL-004, FR-OVL-005, FR-OVL-006, FR-OVL-007                           |
 | **Related NFRs**             | NFR-USE-001, NFR-AUD-001                                                                                      |
+
+# References
+
+- Link to additional resources, specs, or tickets
