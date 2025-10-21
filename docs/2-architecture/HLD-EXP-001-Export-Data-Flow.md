@@ -78,5 +78,5 @@ User -> UI: Downloads file
 
 - **Related Requirements**: FR-EXP-001, FR-EXP-002, UC-BIL-001
 - **Related Flows**:
-  - [Timesheet Generation and Export](HLD-BIL-001-Timesheet-Generation-and-Export.md)
-  - [Audit Log and Export](HLD-AUD-001-Audit-Log-and-Export.md)
+  - [Timesheet Generation and Export](./HLD-BIL-001-Timesheet-Generation-and-Export.md)
+  - [Audit Log and Export](./HLD-AUD-001-Audit-Log-and-Export.md)

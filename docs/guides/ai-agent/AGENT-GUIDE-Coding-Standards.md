@@ -98,7 +98,7 @@ Adherence to these coding standards is paramount for maintaining a high-quality,
 
 # References
 
--   [General Preferences](AGENT-GUIDE-General-Preferences.md)
+-   [General Preferences](./AGENT-GUIDE-General-Preferences.md)
 -   [HLD: Observability Design](../../2-architecture/ARCH-002-Observability.md) (for logging best practices)
 -   `docs/1-requirements/` (for SRS documentation)
 -   `docs/2-architecture/` (for design documentation)

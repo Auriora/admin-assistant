@@ -85,4 +85,4 @@ BE -> UI: Show download link, upload status, errors
 
 - **Related Requirements**: FR-BIL-001 to FR-BIL-008, FR-EXP-001, FR-EXP-002, FR-PRI-002, UC-BIL-001
 - **Related Flows**:
-  - [Daily Calendar Archiving](HLD-CAL-001-Daily-Calendar-Archiving.md)
+  - [Daily Calendar Archiving](./HLD-CAL-001-Daily-Calendar-Archiving.md)

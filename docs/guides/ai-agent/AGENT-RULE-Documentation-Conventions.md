@@ -138,7 +138,7 @@ This rule is cross-referenced with `preferences.md` for general project preferen
 
 # References
 
--   [General Preferences](AGENT-GUIDE-General-Preferences.md)
+-   [General Preferences](./AGENT-GUIDE-General-Preferences.md)
 -   `docs/updates/README.md`
 -   `docs/updates/index.md`
 -   `CHANGELOG.md`

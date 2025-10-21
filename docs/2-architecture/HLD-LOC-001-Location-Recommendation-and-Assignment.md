@@ -81,5 +81,5 @@ BE -> UI: Confirm update, show status
 
 - **Related Requirements**: FR-LOC-001, FR-LOC-002, FR-LOC-003, FR-LOC-004, UC-LOC-001
 - **Related Flows**:
-  - [Travel Appointment Addition](HLD-TRV-001-Travel-Appointment-Addition.md)
-  - [Daily Calendar Archiving](HLD-CAL-001-Daily-Calendar-Archiving.md)
+  - [Travel Appointment Addition](./HLD-TRV-001-Travel-Appointment-Addition.md)
+  - [Daily Calendar Archiving](./HLD-CAL-001-Daily-Calendar-Archiving.md)

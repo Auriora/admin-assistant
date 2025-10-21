@@ -82,5 +82,5 @@ BE -> UI: Confirm update, show status
 
 - **Related Requirements**: FR-CAT-001, FR-CAT-002, FR-BIL-002, FR-BIL-005, UC-CAT-001
 - **Related Flows**:
-  - [Timesheet Generation and Export](HLD-BIL-001-Timesheet-Generation-and-Export.md)
-  - [Daily Calendar Archiving](HLD-CAL-001-Daily-Calendar-Archiving.md)
+  - [Timesheet Generation and Export](./HLD-BIL-001-Timesheet-Generation-and-Export.md)
+  - [Daily Calendar Archiving](./HLD-CAL-001-Daily-Calendar-Archiving.md)

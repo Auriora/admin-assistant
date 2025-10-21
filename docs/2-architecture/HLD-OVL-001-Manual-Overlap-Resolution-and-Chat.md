@@ -70,6 +70,6 @@ This document describes the high-level design for the manual overlap resolution 
 
 - **Related Requirements**: FR-OVL-001 to FR-OVL-007, FR-AI-001 to FR-AI-006
 - **Related Flows**:
-  - [Daily Calendar Archiving](HLD-CAL-001-Daily-Calendar-Archiving.md)
-  - [AI Integration and Recommendations](HLD-AI-001-AI-Integration-and-Recommendations.md)
-  - [Audit Log and Export](HLD-AUD-001-Audit-Log-and-Export.md)
+  - [Daily Calendar Archiving](./HLD-CAL-001-Daily-Calendar-Archiving.md)
+  - [AI Integration and Recommendations](./HLD-AI-001-AI-Integration-and-Recommendations.md)
+  - [Audit Log and Export](./HLD-AUD-001-Audit-Log-and-Export.md)

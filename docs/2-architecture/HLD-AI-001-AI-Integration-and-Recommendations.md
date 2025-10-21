@@ -79,6 +79,6 @@ BE -> UI: Confirm update, show status
 
 - **Related Requirements**: FR-AI-001 to FR-AI-006, NFR-AI-001
 - **Related Flows**:
-  - [Appointment Categorization](HLD-CAT-001-Appointment-Categorization.md)
-  - [Rules and Guidelines Management](HLD-RUL-001-Rules-and-Guidelines-Management.md)
-  - [Manual Overlap Resolution](HLD-OVL-001-Manual-Overlap-Resolution-and-Chat.md)
+  - [Appointment Categorization](./HLD-CAT-001-Appointment-Categorization.md)
+  - [Rules and Guidelines Management](./HLD-RUL-001-Rules-and-Guidelines-Management.md)
+  - [Manual Overlap Resolution](./HLD-OVL-001-Manual-Overlap-Resolution-and-Chat.md)

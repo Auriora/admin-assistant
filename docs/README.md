@@ -14,7 +14,7 @@ The Admin Assistant is a Microsoft 365 Calendar management system that automates
 
 ### Supporting Documentation
 - **[Documentation-Review-Analysis.md](Documentation-Review-Analysis.md)** - Analysis of documentation gaps and redundancy
-- **[1-requirements/](1-requirements)** - Complete Software Requirements Specification
+- **[1-requirements/](./1-requirements/README.md)** - Complete Software Requirements Specification
 - **[2-design/](2-design)** - System architecture and design documents
 - **[guidelines/](guidelines)** - Technical implementation guidelines
 
@@ -26,7 +26,7 @@ The Admin Assistant is a Microsoft 365 Calendar management system that automates
 3. Use prompts from [AI-Implementation-Prompts.md](AI-Implementation-Prompts.md) for AI-assisted development
 
 ### For Understanding the System
-1. Start with [1-requirements/0-SRS-Overview.md](1-requirements/0-SRS-Overview.md)
+1. Start with [1-requirements/0-SRS-Overview.md](./1-requirements/0-SRS-Overview.md)
 2. Review [2-design/architecture.md](2-design/architecture.md)
 3. Check [Current-Implementation-Status.md](Current-Implementation-Status.md) for current capabilities
 

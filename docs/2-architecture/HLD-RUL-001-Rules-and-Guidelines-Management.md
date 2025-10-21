@@ -79,5 +79,5 @@ BE -> UI: Confirm update, show status
 
 - **Related Requirements**: FR-RUL-001, FR-RUL-002, FR-RUL-003, UC-UI-001
 - **Related Flows**:
-  - [Appointment Categorization](HLD-CAT-001-Appointment-Categorization.md)
-  - [Timesheet Generation and Export](HLD-BIL-001-Timesheet-Generation-and-Export.md)
+  - [Appointment Categorization](./HLD-CAT-001-Appointment-Categorization.md)
+  - [Timesheet Generation and Export](./HLD-BIL-001-Timesheet-Generation-and-Export.md)

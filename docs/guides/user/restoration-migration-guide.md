@@ -294,7 +294,7 @@ admin-assistant restore list-configs --help
 ```
 
 ### Documentation
-- [Appointment Restoration Guide](appointment-restoration-guide.md) - Complete usage guide
+- [Appointment Restoration Guide](./appointment-restoration-guide.md) - Complete usage guide
 - [CLI Command Structure](../../2-architecture/CLI-001-Command-Structure.md) - Full CLI documentation
 
 ### Testing

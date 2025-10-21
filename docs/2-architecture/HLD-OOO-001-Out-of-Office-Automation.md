@@ -74,4 +74,4 @@ BE -> UI: Show OOO status and confirmation
 
 - **Related Requirements**: FR-OOO-001, UC-PRI-001
 - **Related Flows**:
-  - [Appointment Privacy Management](HLD-PRI-001-Appointment-Privacy-Management.md)
+  - [Appointment Privacy Management](./HLD-PRI-001-Appointment-Privacy-Management.md)

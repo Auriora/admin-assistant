@@ -133,4 +133,4 @@ admin-assistant login msgraph --user <USER_ID>
 
 # References
 
-- [System Architecture](ARCH-001-System-Architecture.md)
+- [System Architecture](./ARCH-001-System-Architecture.md)

@@ -72,8 +72,8 @@ These operational best practices are critical for ensuring that AI agents functi
 
 # References
 
--   [General Preferences](AGENT-GUIDE-General-Preferences.md)
--   [Coding Standards for AI-Generated Code](AGENT-GUIDE-Coding-Standards.md)
+-   [General Preferences](./AGENT-GUIDE-General-Preferences.md)
+-   [Coding Standards for AI-Generated Code](./AGENT-GUIDE-Coding-Standards.md)
 -   [IMPL: Code Structure Overview](../../3-implementation/IMPL-Code-Structure.md)
 -   [IMPL: Database Migration Implementation Summary](../../3-implementation/IMPL-Migration-Implementation-Summary.md)
 -   `docs/1-requirements/` (for SRS documentation)

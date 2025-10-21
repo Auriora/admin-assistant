@@ -82,5 +82,5 @@ BE -> UI: Confirm update, show status
 
 - **Related Requirements**: FR-PRI-001, FR-PRI-002, FR-PRI-003, UC-PRI-001
 - **Related Flows**:
-  - [Timesheet Generation and Export](HLD-BIL-001-Timesheet-Generation-and-Export.md)
-  - [Appointment Categorization](HLD-CAT-001-Appointment-Categorization.md)
+  - [Timesheet Generation and Export](./HLD-BIL-001-Timesheet-Generation-and-Export.md)
+  - [Appointment Categorization](./HLD-CAT-001-Appointment-Categorization.md)

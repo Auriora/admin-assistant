@@ -70,5 +70,5 @@ Archive completed for user alice@example.com (7 appointments archived)
 
 # References
 
-- [CLI Command Structure](HLD-CLI-001-Command-Structure.md)
-- [System Architecture](ARCH-001-System-Architecture.md)
+- [CLI Command Structure](./HLD-CLI-001-Command-Structure.md)
+- [System Architecture](./ARCH-001-System-Architecture.md)

@@ -81,5 +81,5 @@ BE -> UI: Show travel appointments and status
 
 - **Related Requirements**: FR-TRV-001 to FR-TRV-008, UC-TRV-001
 - **Related Flows**:
-  - [Location Recommendation and Assignment](HLD-LOC-001-Location-Recommendation-and-Assignment.md)
-  - [Daily Calendar Archiving](HLD-CAL-001-Daily-Calendar-Archiving.md)
+  - [Location Recommendation and Assignment](./HLD-LOC-001-Location-Recommendation-and-Assignment.md)
+  - [Daily Calendar Archiving](./HLD-CAL-001-Daily-Calendar-Archiving.md)

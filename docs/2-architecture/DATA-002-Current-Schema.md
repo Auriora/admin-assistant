@@ -110,5 +110,5 @@ CREATE INDEX idx_audit_log_user_time ON audit_log(user_id, created_at);
 
 # References
 
-- [Application Data Model](DATA-001-Application-Data-Model.md)
-- [System Architecture](ARCH-001-System-Architecture.md)
+- [Application Data Model](./DATA-001-Application-Data-Model.md)
+- [System Architecture](./ARCH-001-System-Architecture.md)

@@ -106,8 +106,8 @@ This document cross-references other core rule files that define specific conven
 
 # References
 
--   [Documentation Conventions](AGENT-RULE-Documentation-Conventions.md)
--   [Git Commit & Branching Conventions](AGENT-RULE-Git-Conventions.md)
--   [Planning Protocol](AGENT-GUIDE-Planning-Protocol.md)
--   [Testing Conventions](AGENT-RULE-Testing-Conventions.md)
+-   [Documentation Conventions](./AGENT-RULE-Documentation-Conventions.md)
+-   [Git Commit & Branching Conventions](./AGENT-RULE-Git-Conventions.md)
+-   [Planning Protocol](./AGENT-GUIDE-Planning-Protocol.md)
+-   [Testing Conventions](./AGENT-RULE-Testing-Conventions.md)
 -   `docs/updates/README.md`

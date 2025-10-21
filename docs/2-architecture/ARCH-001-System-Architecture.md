@@ -107,5 +107,5 @@ A key pattern in this architecture is the **Orchestrator**, which is the single 
 
 # References
 
-- [CLI Design Document](HLD-CLI-001-Command-Structure.md)
-- [Application Data Model](DATA-001-Application-Data-Model.md)
+- [CLI Design Document](./HLD-CLI-001-Command-Structure.md)
+- [Application Data Model](./DATA-001-Application-Data-Model.md)

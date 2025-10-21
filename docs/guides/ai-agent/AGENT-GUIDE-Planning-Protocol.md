@@ -98,6 +98,6 @@ This planning protocol is cross-referenced with `preferences.md` for general pro
 
 # References
 
--   [General Preferences](AGENT-GUIDE-General-Preferences.md)
+-   [General Preferences](./AGENT-GUIDE-General-Preferences.md)
 -   `docs/updates/README.md` (for updating implementation notes)
 -   `docs/updates/index.md` (for linking implementation notes)

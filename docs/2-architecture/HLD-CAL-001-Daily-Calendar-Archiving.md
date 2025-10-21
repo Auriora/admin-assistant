@@ -92,5 +92,5 @@ BE -> UI: Notify user (if error)
 
 - **Related Requirements**: FR-CAL-001 to FR-CAL-009, UC-CAL-001
 - **Related Flows**:
-  - [Manual Overlap Resolution](HLD-OVL-001-Manual-Overlap-Resolution-and-Chat.md)
-  - [Timesheet Generation and Export](HLD-BIL-001-Timesheet-Generation-and-Export.md)
+  - [Manual Overlap Resolution](./HLD-OVL-001-Manual-Overlap-Resolution-and-Chat.md)
+  - [Timesheet Generation and Export](./HLD-BIL-001-Timesheet-Generation-and-Export.md)
