@@ -72,5 +72,5 @@ Verify that the system accurately calculates travel needs, adds travel appointme
 
 # References
 
--   [HLD: Travel Appointment Addition](../../2-architecture/HLD-TRV-001-Travel-Appointment-Addition.md)
--   [HLD: User Notification of Issues](../../2-architecture/HLD-NOT-001-User-Notification-of-Issues.md)
+-   [HLD: Travel Appointment Addition](../2-architecture/HLD-TRV-001-Travel-Appointment-Addition.md)
+-   [HLD: User Notification of Issues](../2-architecture/HLD-NOT-001-User-Notification-of-Issues.md)

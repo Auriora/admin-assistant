@@ -68,5 +68,5 @@ Verify that the system recommends a location for appointments missing one, allow
 
 # References
 
--   [HLD: Location Recommendation and Assignment](../../2-architecture/HLD-LOC-001-Location-Recommendation-and-Assignment.md)
--   [HLD: Travel Appointment Addition](../../2-architecture/HLD-TRV-001-Travel-Appointment-Addition.md)
+-   [HLD: Location Recommendation and Assignment](../2-architecture/HLD-LOC-001-Location-Recommendation-and-Assignment.md)
+-   [HLD: Travel Appointment Addition](../2-architecture/HLD-TRV-001-Travel-Appointment-Addition.md)

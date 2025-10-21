@@ -68,5 +68,5 @@ Verify that the system accurately recommends billing categories for appointments
 
 # References
 
--   [HLD: Appointment Categorization](../../2-architecture/HLD-CAT-001-Appointment-Categorization.md)
--   [HLD: AI Integration and Recommendations](../../2-architecture/HLD-AI-001-AI-Integration-and-Recommendations.md)
+-   [HLD: Appointment Categorization](../2-architecture/HLD-CAT-001-Appointment-Categorization.md)
+-   [HLD: AI Integration and Recommendations](../2-architecture/HLD-AI-001-AI-Integration-and-Recommendations.md)

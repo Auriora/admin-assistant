@@ -69,5 +69,5 @@ Verify that the user can add, edit, and delete rules and guidelines via the UI, 
 
 # References
 
--   [HLD: Rules and Guidelines Management](../../2-architecture/HLD-RUL-001-Rules-and-Guidelines-Management.md)
--   [HLD: AI Integration and Recommendations](../../2-architecture/HLD-AI-001-AI-Integration-and-Recommendations.md)
+-   [HLD: Rules and Guidelines Management](../2-architecture/HLD-RUL-001-Rules-and-Guidelines-Management.md)
+-   [HLD: AI Integration and Recommendations](../2-architecture/HLD-AI-001-AI-Integration-and-Recommendations.md)

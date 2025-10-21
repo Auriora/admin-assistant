@@ -75,6 +75,6 @@ Verify that the user can generate a timesheet PDF from archived appointments, an
 
 # References
 
--   [HLD: Timesheet Generation and Export](../../2-architecture/HLD-BIL-001-Timesheet-Generation-and-Export.md)
--   [HLD: Appointment Privacy Management](../../2-architecture/HLD-PRI-001-Appointment-Privacy-Management.md)
--   [HLD: User Notification of Issues](../../2-architecture/HLD-NOT-001-User-Notification-of-Issues.md)
+-   [HLD: Timesheet Generation and Export](../2-architecture/HLD-BIL-001-Timesheet-Generation-and-Export.md)
+-   [HLD: Appointment Privacy Management](../2-architecture/HLD-PRI-001-Appointment-Privacy-Management.md)
+-   [HLD: User Notification of Issues](../2-architecture/HLD-NOT-001-User-Notification-of-Issues.md)

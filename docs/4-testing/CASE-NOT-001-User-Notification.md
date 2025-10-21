@@ -64,4 +64,4 @@ Verify that the system reliably detects missing or conflicting data and notifies
 
 # References
 
--   [HLD: User Notification of Issues](../../2-architecture/HLD-NOT-001-User-Notification-of-Issues.md)
+-   [HLD: User Notification of Issues](../2-architecture/HLD-NOT-001-User-Notification-of-Issues.md)

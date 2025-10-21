@@ -146,7 +146,7 @@ Testing will be conducted using `pytest` as the primary framework, leveraging ma
 
 # References
 
--   [Implementation: Testing and Observability](IMPL-Testing-And-Observability.md)
--   [pytest.ini](pytest.ini) (relative path to project root)
--   [tests/conftest.py](tests/conftest.py) (relative path to project root)
+-   [Implementation: Testing and Observability](../3-implementation/IMPL-Testing-And-Observability.md)
+-   [pytest.ini](../../pytest.ini) (relative path to project root)
+-   [tests/conftest.py](../../tests/conftest.py) (relative path to project root)
 -   `docs/Current-Implementation-Status.md` (Note: This path might need adjustment if the file is renamed or moved.)

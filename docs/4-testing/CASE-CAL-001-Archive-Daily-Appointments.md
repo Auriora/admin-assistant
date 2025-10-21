@@ -98,6 +98,6 @@ sample_appointments = [
 
 # References
 
--   [HLD: Daily Calendar Archiving](../../2-architecture/HLD-CAL-001-Daily-Calendar-Archiving.md)
--   [WF: Outlook Calendar Management Workflow](../../1-requirements/workflows/WF-Outlook-Calendar-Management.md)
--   [IMPL: Testing and Observability](../../3-implementation/IMPL-Testing-And-Observability.md)
+-   [HLD: Daily Calendar Archiving](../2-architecture/HLD-CAL-001-Daily-Calendar-Archiving.md)
+-   [WF: Outlook Calendar Management Workflow](../1-requirements/workflows/WF-Outlook-Calendar-Management.md)
+-   [IMPL: Testing and Observability](../3-implementation/IMPL-Testing-And-Observability.md)

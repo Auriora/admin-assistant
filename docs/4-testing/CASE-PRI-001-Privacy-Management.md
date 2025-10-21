@@ -70,5 +70,5 @@ Verify that the system automatically marks personal and travel appointments as p
 
 # References
 
--   [HLD: Appointment Privacy Management](../../2-architecture/HLD-PRI-001-Appointment-Privacy-Management.md)
--   [HLD: Timesheet Generation and Export](../../2-architecture/HLD-BIL-001-Timesheet-Generation-and-Export.md)
+-   [HLD: Appointment Privacy Management](../2-architecture/HLD-PRI-001-Appointment-Privacy-Management.md)
+-   [HLD: Timesheet Generation and Export](../2-architecture/HLD-BIL-001-Timesheet-Generation-and-Export.md)

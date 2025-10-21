@@ -21,7 +21,7 @@ links:
 
 ## 1. Purpose
 
-This document describes the memory management improvements implemented to address memory accumulation issues in the test suite. The changes focus on ensuring proper cleanup of resources between tests, preventing memory leaks, and providing tools for monitoring memory usage. This strategy aims to improve test reliability, efficiency, and maintainability.
+This document outlines the strategy for managing memory within the Admin Assistant test suite. The primary objective is to address and prevent memory accumulation issues, ensure proper cleanup of resources between tests, and provide tools for monitoring memory usage. This strategy aims to improve test reliability, efficiency, and maintainability.
 
 ## 2. Test Matrix
 
@@ -154,6 +154,6 @@ The implemented changes address the identified memory management issues by ensur
 
 # References
 
--   [Implementation: Testing and Observability](IMPL-Testing-And-Observability.md)
+-   [Implementation: Testing and Observability](../3-implementation/IMPL-Testing-And-Observability.md)
 -   `tests/conftest.py` (relative path to project root)
 -   `tests/run_memory_aware_tests.py` (relative path to project root)
