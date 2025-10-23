@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Set, Literal
 
 
 @dataclass(slots=True)
@@ -119,3 +119,97 @@ class Task:
             raw=payload,
         )
 
+
+@dataclass(slots=True)
+class TaskCluster:
+    """Cluster of related task indices identified during deduplication."""
+
+    cluster_id: int
+    indices: List[int]
+
+    @property
+    def size(self) -> int:
+        """Return the number of tasks represented by the cluster."""
+
+        return len(self.indices)
+
+
+DecisionAction = Literal["keep", "delete", "merge", "move"]
+DecisionSource = Literal["auto", "ai", "rule"]
+
+
+@dataclass(slots=True)
+class DedupDecision:
+    """Structured decision emitted by deduplication pipelines."""
+
+    task_key: str
+    cluster_index: int
+    raw_action: str
+    source: DecisionSource
+    rationale: str
+    comment: str
+    merged_title: Optional[str] = None
+    target_list: Optional[str] = None
+    cluster_id: Optional[int] = None
+    cluster_size: Optional[int] = None
+    canonical_cluster_index: Optional[int] = None
+    canonical_row_index: Optional[int] = None
+    canonical_list: Optional[str] = None
+
+    def action(self) -> DecisionAction:
+        """Return the normalized action for the decision."""
+
+        action_lower = self.raw_action.lower()
+        if action_lower.startswith("move"):
+            return "move"
+        if action_lower in {"keep", "delete", "merge"}:
+            return action_lower  # type: ignore[return-value]
+        return "keep"
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Serialize the decision into a dictionary suitable for persistence."""
+
+        return {
+            "task_key": self.task_key,
+            "cluster_index": self.cluster_index,
+            "raw_action": self.raw_action,
+            "source": self.source,
+            "rationale": self.rationale,
+            "comment": self.comment,
+            "merged_title": self.merged_title,
+            "target_list": self.target_list,
+            "cluster_id": self.cluster_id,
+            "cluster_size": self.cluster_size,
+            "canonical_cluster_index": self.canonical_cluster_index,
+            "canonical_row_index": self.canonical_row_index,
+            "canonical_list": self.canonical_list,
+        }
+
+    @classmethod
+    def from_dict(cls, payload: Dict[str, Any]) -> "DedupDecision":
+        """Hydrate a decision from a dictionary representation."""
+
+        return cls(
+            task_key=str(payload.get("task_key", "")),
+            cluster_index=int(payload.get("cluster_index", 0)),
+            raw_action=str(payload.get("raw_action", "keep")),
+            source=str(payload.get("source", "ai")) or "ai",  # type: ignore[arg-type]
+            rationale=str(payload.get("rationale", "")),
+            comment=str(payload.get("comment", "")),
+            merged_title=payload.get("merged_title"),
+            target_list=payload.get("target_list"),
+            cluster_id=payload.get("cluster_id"),
+            cluster_size=payload.get("cluster_size"),
+            canonical_cluster_index=payload.get("canonical_cluster_index"),
+            canonical_row_index=payload.get("canonical_row_index"),
+            canonical_list=payload.get("canonical_list"),
+        )
+
+
+__all__: Set[str] = {
+    "TaskDateTime",
+    "LinkedResource",
+    "Task",
+    "TaskCluster",
+    "DedupDecision",
+}

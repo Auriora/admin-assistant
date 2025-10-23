@@ -50,6 +50,9 @@ dependencies = [
     "asyncpg==0.30.0",
     "alembic==1.17.0",
 
+    # Similarity utilities
+    "rapidfuzz==3.9.6",
+
     # Utilities
     "python-dotenv==1.1.1",
     "pytz==2025.2",
